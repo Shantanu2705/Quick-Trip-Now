@@ -10,8 +10,8 @@ const STEPS = ["Travel Details", "Personal Info", "Payment"];
 export function BookingWizard() {
   const [currentStep, setCurrentStep] = useState(0);
   const [error, setError] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<"idle" | "verifying" | "awaiting_upi" | "awaiting_otp" | "success">("idle");
+  const [otp, setOtp] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [paymentData, setPaymentData] = useState({
     cardNumber: "",
@@ -30,18 +30,13 @@ export function BookingWizard() {
     specialRequests: "",
   });
 
-  const processPayment = () => {
-    setIsProcessing(true);
-    const delay = paymentMethod === "upi" ? 6000 : 2000; // UPI takes longer to simulate user opening app
+  const triggerSuccess = () => {
+    setPaymentStatus("success");
     setTimeout(() => {
-      setIsProcessing(false);
-      setPaymentSuccess(true);
-      setTimeout(() => {
-        const message = `*New Tour Booking Request*\n\n*Package:* ${formData.packageType}\n*Date:* ${formData.date}\n*Guests:* ${formData.adults} Adults, ${formData.children} Children\n\n*Customer Details*\n*Name:* ${formData.fullName}\n*Email:* ${formData.email}\n*Phone:* ${formData.phone}\n*Special Requests:* ${formData.specialRequests || 'None'}\n\n*Status:* Payment Confirmed on Website`;
-        const encodedMessage = encodeURIComponent(message);
-        window.open(`https://wa.me/919429694567?text=${encodedMessage}`, '_blank');
-      }, 1500);
-    }, delay);
+      const message = `*New Tour Booking Request*\n\n*Package:* ${formData.packageType}\n*Date:* ${formData.date}\n*Guests:* ${formData.adults} Adults, ${formData.children} Children\n\n*Customer Details*\n*Name:* ${formData.fullName}\n*Email:* ${formData.email}\n*Phone:* ${formData.phone}\n*Special Requests:* ${formData.specialRequests || 'None'}\n\n*Status:* Payment Confirmed on Website`;
+      const encodedMessage = encodeURIComponent(message);
+      window.open(`https://wa.me/919429694567?text=${encodedMessage}`, '_blank');
+    }, 1500);
   };
 
   const handleNext = () => {
@@ -64,50 +59,46 @@ export function BookingWizard() {
     
     if (currentStep === STEPS.length - 1) {
       setError("");
+      setPaymentStatus("verifying");
       
-      // Payment Validation
-      if (paymentMethod === "card") {
-        const cardNum = paymentData.cardNumber.replace(/\s/g, "");
-        if (!/^\d{16}$/.test(cardNum)) return setError("Please enter a valid 16-digit card number.");
-        
-        // Luhn Algorithm to check if card actually mathematically exists
-        let sum = 0;
-        let isEven = false;
-        for (let i = cardNum.length - 1; i >= 0; i--) {
-          let digit = parseInt(cardNum.charAt(i), 10);
-          if (isEven) {
-            digit *= 2;
-            if (digit > 9) digit -= 9;
+      setTimeout(() => {
+        if (paymentMethod === "card") {
+          const cardNum = paymentData.cardNumber.replace(/\s/g, "");
+          if (!/^\d{16}$/.test(cardNum)) { setPaymentStatus("idle"); return setError("Please enter a valid 16-digit card number."); }
+          
+          let sum = 0;
+          let isEven = false;
+          for (let i = cardNum.length - 1; i >= 0; i--) {
+            let digit = parseInt(cardNum.charAt(i), 10);
+            if (isEven) {
+              digit *= 2;
+              if (digit > 9) digit -= 9;
+            }
+            sum += digit;
+            isEven = !isEven;
           }
-          sum += digit;
-          isEven = !isEven;
-        }
-        if (sum % 10 !== 0) return setError("This card number does not exist. Please check the digits.");
-        
-        if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(paymentData.expiry)) return setError("Please enter a valid expiry date (MM/YY).");
-        
-        const [month, year] = paymentData.expiry.split("/");
-        const expiryDate = new Date(2000 + parseInt(year), parseInt(month) - 1);
-        if (expiryDate < new Date()) return setError("Card has expired.");
-        
-        if (!/^\d{3,4}$/.test(paymentData.cvv)) return setError("Please enter a valid CVV (3 or 4 digits).");
-        
-        processPayment();
-      } else {
-        if (!/^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/.test(paymentData.upiId)) {
-          return setError("Please enter a valid UPI ID (e.g. name@bank).");
-        }
-        
-        // Simulate checking UPI ID existence with Bank API
-        setIsProcessing(true);
-        setTimeout(() => {
+          if (sum % 10 !== 0) { setPaymentStatus("idle"); return setError("This card number does not exist in the global banking network."); }
+          
+          if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(paymentData.expiry)) { setPaymentStatus("idle"); return setError("Please enter a valid expiry date (MM/YY)."); }
+          const [month, year] = paymentData.expiry.split("/");
+          const expiryDate = new Date(2000 + parseInt(year), parseInt(month) - 1);
+          if (expiryDate < new Date()) { setPaymentStatus("idle"); return setError("Card has expired."); }
+          
+          if (!/^\d{3,4}$/.test(paymentData.cvv)) { setPaymentStatus("idle"); return setError("Please enter a valid CVV."); }
+          
+          setPaymentStatus("awaiting_otp");
+        } else {
+          if (!/^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/.test(paymentData.upiId)) {
+            setPaymentStatus("idle");
+            return setError("Please enter a valid UPI ID (e.g. name@bank).");
+          }
           if (paymentData.upiId.toLowerCase().includes('fail') || paymentData.upiId.toLowerCase().includes('invalid')) {
-            setIsProcessing(false);
-            return setError("This UPI ID does not exist or is inactive.");
+            setPaymentStatus("idle");
+            return setError("Bank Response: This VPA does not exist or is currently inactive.");
           }
-          processPayment();
-        }, 1200);
-      }
+          setPaymentStatus("awaiting_upi");
+        }
+      }, 1500); // Simulate network latency for bank verification
       return;
     }
     
@@ -210,7 +201,7 @@ export function BookingWizard() {
               </div>
             )}
 
-            {currentStep === 2 && !paymentSuccess && !isProcessing && (
+            {currentStep === 2 && paymentStatus === "idle" && (
               <div className="space-y-6 flex-1 flex flex-col items-center justify-center py-4">
                 <h3 className="text-3xl font-heading font-bold text-center">Payment Details</h3>
                 <p className="text-muted-foreground text-center max-w-md">
@@ -255,33 +246,57 @@ export function BookingWizard() {
               </div>
             )}
 
-            {currentStep === 2 && isProcessing && !paymentSuccess && (
+            {currentStep === 2 && paymentStatus === "verifying" && (
               <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6 flex-1 flex flex-col items-center justify-center py-8 text-center">
                  <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+                 <h3 className="text-3xl font-heading font-bold text-primary">Verifying Details...</h3>
+                 <p className="text-muted-foreground max-w-md">Contacting banking network securely.</p>
+              </motion.div>
+            )}
+
+            {currentStep === 2 && paymentStatus === "awaiting_upi" && (
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6 flex-1 flex flex-col items-center justify-center py-8 text-center">
+                 <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+                 <h3 className="text-3xl font-heading font-bold text-primary">Approve Payment</h3>
+                 <div className="bg-primary/10 border border-primary/20 p-6 rounded-2xl max-w-md w-full">
+                   <p className="text-foreground font-medium mb-2">
+                     A payment request of <strong className="text-lg">₹8,000</strong> has been sent to your UPI App.
+                   </p>
+                   <p className="text-sm text-muted-foreground">
+                     ID: <span className="font-semibold text-foreground">{paymentData.upiId}</span>
+                   </p>
+                 </div>
+                 <p className="text-sm font-medium animate-pulse text-muted-foreground mt-4">Waiting for you to authorize the payment on your phone...</p>
                  
-                 {paymentMethod === "upi" ? (
-                   <>
-                     <h3 className="text-3xl font-heading font-bold text-primary">Approve Payment</h3>
-                     <div className="bg-primary/10 border border-primary/20 p-6 rounded-2xl max-w-md">
-                       <p className="text-foreground font-medium mb-2">
-                         A payment request of <strong className="text-lg">₹8,000</strong> has been sent to your UPI App.
-                       </p>
-                       <p className="text-sm text-muted-foreground">
-                         ID: <span className="font-semibold text-foreground">{paymentData.upiId}</span>
-                       </p>
-                     </div>
-                     <p className="text-sm font-medium animate-pulse text-muted-foreground mt-4">Waiting for you to authorize the payment...</p>
-                   </>
-                 ) : (
-                   <>
-                     <h3 className="text-3xl font-heading font-bold text-primary">Processing Payment</h3>
-                     <p className="text-muted-foreground max-w-md">Please do not close or refresh this window.</p>
-                   </>
-                 )}
+                 <div className="mt-8 p-4 border border-dashed border-primary/50 bg-primary/5 rounded-xl w-full max-w-md">
+                   <p className="text-xs font-bold text-primary mb-3 uppercase tracking-wider">Test Mode Simulator</p>
+                   <p className="text-xs text-muted-foreground mb-4">Because this is a test environment, simulate your phone's action here:</p>
+                   <div className="flex gap-2 justify-center">
+                     <Button onClick={() => triggerSuccess()} className="bg-emerald-600 hover:bg-emerald-700 text-white flex-1">Approve via App</Button>
+                     <Button onClick={() => { setPaymentStatus("idle"); setError("Payment was declined or timed out on the UPI app."); }} variant="destructive" className="flex-1">Decline</Button>
+                   </div>
+                 </div>
+              </motion.div>
+            )}
+
+            {currentStep === 2 && paymentStatus === "awaiting_otp" && (
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6 flex-1 flex flex-col items-center justify-center py-8 text-center">
+                 <h3 className="text-3xl font-heading font-bold text-primary">Enter OTP</h3>
+                 <div className="bg-primary/10 border border-primary/20 p-6 rounded-2xl max-w-md w-full">
+                   <p className="text-foreground font-medium mb-4">
+                     An OTP has been sent to the mobile number linked to card ending in <strong className="text-lg">{paymentData.cardNumber.slice(-4)}</strong>.
+                   </p>
+                   <input type="text" placeholder="Enter OTP (Test: 1234)" value={otp} onChange={(e) => setOtp(e.target.value)} className="w-full bg-background border border-input rounded-xl px-4 py-3 text-center tracking-[0.5em] font-bold text-xl focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                   <Button onClick={() => { if(otp === '1234') triggerSuccess(); else setError("Invalid OTP entered."); }} className="w-full mt-4 h-12">Submit OTP</Button>
+                 </div>
+                 <div className="mt-4 p-3 border border-dashed border-primary/50 bg-primary/5 rounded-xl w-full max-w-md">
+                   <p className="text-xs font-bold text-primary mb-1 uppercase tracking-wider">Test Mode</p>
+                   <p className="text-xs text-muted-foreground">Enter <strong className="text-foreground">1234</strong> to simulate a successful payment.</p>
+                 </div>
               </motion.div>
             )}
             
-            {currentStep === 2 && paymentSuccess && (
+            {currentStep === 2 && paymentStatus === "success" && (
               <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6 flex-1 flex flex-col items-center justify-center py-8 text-center">
                  <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mb-4">
                    <Check className="w-12 h-12 text-emerald-600 dark:text-emerald-400" />
@@ -307,18 +322,18 @@ export function BookingWizard() {
         <Button 
           variant="outline" 
           onClick={handleBack} 
-          disabled={currentStep === 0 || isProcessing || paymentSuccess}
+          disabled={currentStep === 0 || paymentStatus !== "idle"}
           className="rounded-xl px-6"
         >
           <ArrowLeft className="w-4 h-4 mr-2" /> Back
         </Button>
         <Button 
           onClick={handleNext} 
-          disabled={isProcessing || paymentSuccess}
+          disabled={paymentStatus !== "idle"}
           className="rounded-xl px-8 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all"
         >
-          {isProcessing ? "Processing..." : (currentStep === STEPS.length - 1 ? "Proceed to Pay" : "Continue")} 
-          {!isProcessing && <ChevronRight className="w-4 h-4 ml-2" />}
+          {paymentStatus === "verifying" ? "Processing..." : (currentStep === STEPS.length - 1 ? "Proceed to Pay" : "Continue")} 
+          {paymentStatus === "idle" && <ChevronRight className="w-4 h-4 ml-2" />}
         </Button>
       </div>
     </div>
