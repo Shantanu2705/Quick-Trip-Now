@@ -134,11 +134,11 @@ export function FeaturedTours() {
                     <span className="text-xs text-muted-foreground uppercase font-semibold tracking-wider">Starting from</span>
                     <span className="text-2xl font-bold text-primary font-heading">₹{tour.price}</span>
                   </div>
-                  <Button asChild className="rounded-xl font-medium px-6">
-                    <Link href={`/book?package=${tour.slug}`}>
+                  <Link href={`/book?package=${tour.slug}`}>
+                    <Button className="rounded-xl font-medium px-6">
                       Book Now
-                    </Link>
-                  </Button>
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </motion.div>

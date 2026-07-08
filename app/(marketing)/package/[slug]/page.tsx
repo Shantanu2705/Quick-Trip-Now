@@ -177,11 +177,11 @@ export default async function PackageDetailsPage({ params }: { params: Promise<{
               <span className="text-xl font-bold">₹{PACKAGE_DATA.pricePerAdult * 2}</span>
             </div>
 
-            <Button asChild className="w-full py-6 mt-6 text-lg rounded-xl font-bold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all">
-              <Link href={`/book?package=${slug}`}>
+            <Link href={`/book?package=${slug}`}>
+              <Button className="w-full py-6 mt-6 text-lg rounded-xl font-bold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all">
                 Book Now
-              </Link>
-            </Button>
+              </Button>
+            </Link>
             
             <p className="text-center text-xs text-muted-foreground mt-4">
               You won't be charged yet.
