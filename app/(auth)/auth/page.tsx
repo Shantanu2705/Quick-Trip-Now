@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, Chrome, Github, AlertCircle } from "lucide-react";
+import { Mail, Lock, User, AlertCircle } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import {
   signInWithPopup,
