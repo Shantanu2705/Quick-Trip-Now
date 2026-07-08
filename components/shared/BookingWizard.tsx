@@ -32,6 +32,7 @@ export function BookingWizard() {
 
   const processPayment = () => {
     setIsProcessing(true);
+    const delay = paymentMethod === "upi" ? 6000 : 2000; // UPI takes longer to simulate user opening app
     setTimeout(() => {
       setIsProcessing(false);
       setPaymentSuccess(true);
@@ -40,7 +41,7 @@ export function BookingWizard() {
         const encodedMessage = encodeURIComponent(message);
         window.open(`https://wa.me/919429694567?text=${encodedMessage}`, '_blank');
       }, 1500);
-    }, 2000);
+    }, delay);
   };
 
   const handleNext = () => {
@@ -209,7 +210,7 @@ export function BookingWizard() {
               </div>
             )}
 
-            {currentStep === 2 && !paymentSuccess && (
+            {currentStep === 2 && !paymentSuccess && !isProcessing && (
               <div className="space-y-6 flex-1 flex flex-col items-center justify-center py-4">
                 <h3 className="text-3xl font-heading font-bold text-center">Payment Details</h3>
                 <p className="text-muted-foreground text-center max-w-md">
@@ -252,6 +253,32 @@ export function BookingWizard() {
                   <span className="text-xl font-bold font-heading">₹8,000</span>
                 </div>
               </div>
+            )}
+
+            {currentStep === 2 && isProcessing && !paymentSuccess && (
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6 flex-1 flex flex-col items-center justify-center py-8 text-center">
+                 <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+                 
+                 {paymentMethod === "upi" ? (
+                   <>
+                     <h3 className="text-3xl font-heading font-bold text-primary">Approve Payment</h3>
+                     <div className="bg-primary/10 border border-primary/20 p-6 rounded-2xl max-w-md">
+                       <p className="text-foreground font-medium mb-2">
+                         A payment request of <strong className="text-lg">₹8,000</strong> has been sent to your UPI App.
+                       </p>
+                       <p className="text-sm text-muted-foreground">
+                         ID: <span className="font-semibold text-foreground">{paymentData.upiId}</span>
+                       </p>
+                     </div>
+                     <p className="text-sm font-medium animate-pulse text-muted-foreground mt-4">Waiting for you to authorize the payment...</p>
+                   </>
+                 ) : (
+                   <>
+                     <h3 className="text-3xl font-heading font-bold text-primary">Processing Payment</h3>
+                     <p className="text-muted-foreground max-w-md">Please do not close or refresh this window.</p>
+                   </>
+                 )}
+              </motion.div>
             )}
             
             {currentStep === 2 && paymentSuccess && (
