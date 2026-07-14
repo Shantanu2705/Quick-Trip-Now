@@ -8,7 +8,6 @@ import { auth, db } from "@/lib/firebase";
 import {
   signInWithPopup,
   GoogleAuthProvider,
-  OAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
 } from "firebase/auth";
@@ -25,25 +24,29 @@ export default function AuthPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSuccess = async (user: any, nameToSave?: string) => {
-    if (db && user) {
-      try {
-        const userRef = doc(db, "users", user.uid);
-        const docSnap = await getDoc(userRef);
-        if (!docSnap.exists()) {
-          await setDoc(userRef, {
-            uid: user.uid,
-            email: user.email,
-            name: nameToSave || user.displayName || "User",
-            createdAt: new Date(),
-          });
+  const handleSuccess = async (user: any, nameToSave?: string, isNewUser?: boolean) => {
+    try {
+      if (isNewUser) {
+        // Backend handles creating user in Firebase and Firestore
+      } else {
+        // Just verify session status
+        const token = await user.getIdToken();
+        const res = await fetch("/api/auth/session", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.message || "Account not approved");
         }
-      } catch (err) {
-        console.error("Error saving user to Firestore", err);
       }
+      setLoginSession();
+      router.push("/");
+    } catch (err: any) {
+      auth?.signOut();
+      let msg = err.message || "Failed to login. Account may not be approved.";
+      if (msg.includes("Firebase")) msg = "Invalid credentials or account does not exist.";
+      setError(msg);
     }
-    setLoginSession();
-    router.push("/");
   };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
@@ -58,13 +61,29 @@ export default function AuthPage() {
     try {
       if (isLogin) {
         const userCred = await signInWithEmailAndPassword(auth, email, password);
-        await handleSuccess(userCred.user);
+        await handleSuccess(userCred.user, undefined, false);
       } else {
-        const userCred = await createUserWithEmailAndPassword(auth, email, password);
-        await handleSuccess(userCred.user, name);
+        // Instead of calling createUserWithEmailAndPassword, call our backend API
+        const res = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, fullName: name })
+        });
+        const data = await res.json();
+        
+        if (!data.success) {
+          throw new Error(data.message || "Signup failed");
+        }
+        
+        // After backend signup, we can sign in client-side to get the token (though they are pending)
+        // Wait, if pending, they can't login. We show a message instead of logging in.
+        setError("Signup successful! Please wait for admin approval.");
+        setIsLogin(true); // Switch to login screen
       }
     } catch (err: any) {
-      setError(err.message || "An error occurred");
+      let msg = err.message || "An error occurred";
+      if (msg.includes("Firebase")) msg = "Invalid credentials or account does not exist.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -79,26 +98,23 @@ export default function AuthPage() {
     try {
       const provider = new GoogleAuthProvider();
       const userCred = await signInWithPopup(auth, provider);
-      await handleSuccess(userCred.user);
+      
+      // Sync user with Firestore
+      const token = await userCred.user.getIdToken();
+      await fetch("/api/auth/oauth", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      await handleSuccess(userCred.user, undefined, false);
     } catch (err: any) {
-      setError(err.message || "Failed to sign in with Google");
+      let msg = err.message || "Failed to sign in with Google";
+      if (msg.includes("Firebase")) msg = "Failed to sign in. Please try again.";
+      setError(msg);
     }
   };
 
-  const handleMicrosoftSignIn = async () => {
-    if (!auth) {
-      setError("Firebase not configured");
-      return;
-    }
-    setError("");
-    try {
-      const provider = new OAuthProvider("microsoft.com");
-      const userCred = await signInWithPopup(auth, provider);
-      await handleSuccess(userCred.user);
-    } catch (err: any) {
-      setError(err.message || "Failed to sign in with Microsoft");
-    }
-  };
+
 
   return (
     <motion.div
@@ -205,19 +221,7 @@ export default function AuthPage() {
           {isLogin ? "Sign in with Google" : "Sign up with Google"}
         </button>
 
-        <button
-          onClick={handleMicrosoftSignIn}
-          type="button"
-          className="flex items-center justify-center gap-2 bg-background border border-border text-foreground rounded-xl py-3 font-semibold hover:bg-muted transition-colors shadow-sm text-sm"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 21 21">
-            <path fill="#f35325" d="M1 1h9v9H1z" />
-            <path fill="#81bc06" d="M11 1h9v9h-9z" />
-            <path fill="#05a6f0" d="M1 11h9v9H1z" />
-            <path fill="#ffba08" d="M11 11h9v9h-9z" />
-          </svg>
-          {isLogin ? "Sign in with Microsoft" : "Sign up with Microsoft"}
-        </button>
+
       </div>
 
       <div className="mt-8 text-center">

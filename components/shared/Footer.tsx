@@ -23,7 +23,12 @@ const FOOTER_LINKS = {
   ],
 };
 
-export function Footer() {
+interface FooterProps {
+  phone?: string;
+  email?: string;
+}
+
+export function Footer({ phone = "+91 98765 43210", email = "support@quicktripnow.com" }: FooterProps) {
   return (
     <footer className="bg-secondary text-secondary-foreground pt-20 pb-10">
       <div className="container mx-auto px-4 md:px-8">
@@ -88,15 +93,15 @@ export function Footer() {
             <h4 className="font-heading font-medium text-lg mb-6">Contact Us</h4>
             <ul className="flex flex-col gap-4">
               <li>
-                <a href="tel:+919429694567" className="text-secondary-foreground/80 hover:text-accent transition-colors flex items-center gap-3">
+                <a href={`tel:${phone}`} className="text-secondary-foreground/80 hover:text-accent transition-colors flex items-center gap-3">
                   <div className="bg-secondary-foreground/10 p-2 rounded-full"><Phone className="w-4 h-4" /></div>
-                  +91 9429694567
+                  {phone}
                 </a>
               </li>
               <li>
-                <a href="mailto:hello@quicktripnow.com" className="text-secondary-foreground/80 hover:text-accent transition-colors flex items-center gap-3">
+                <a href={`mailto:${email}`} className="text-secondary-foreground/80 hover:text-accent transition-colors flex items-center gap-3">
                   <div className="bg-secondary-foreground/10 p-2 rounded-full"><Mail className="w-4 h-4" /></div>
-                  hello@quicktripnow.com
+                  {email}
                 </a>
               </li>
               <li className="flex items-start gap-3 text-secondary-foreground/80 mt-2">

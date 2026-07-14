@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, User, Headset } from "lucide-react";
+import { Menu, X, User as UserIcon, Headset, ShieldCheck, LogOut, LayoutDashboard } from "lucide-react";
 import { Logo } from "./Logo";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 const NAV_LINKS = [
   { label: "Home", href: "/" },
@@ -21,6 +22,7 @@ export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { user, userData, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -77,13 +79,43 @@ export function Navbar() {
               </div>
             </div>
             
-            <Link
-              href="/auth"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-full font-semibold text-sm flex items-center gap-2 transition-colors shadow-md"
-            >
-              <User className="w-4 h-4" />
-              Sign in / Sign up
-            </Link>
+            {user ? (
+              <div className="flex items-center gap-4 ml-4 pl-4 border-l border-border/50">
+                <div className="flex flex-col text-right">
+                  <span className={cn("text-xs font-semibold uppercase tracking-wider opacity-70", isSolid ? "text-foreground" : "text-white")}>
+                    {userData?.role || 'Welcome'}
+                  </span>
+                  <span className={cn("text-sm font-bold", isSolid ? "text-foreground" : "text-white")}>
+                    {userData?.fullName || user.email}
+                  </span>
+                </div>
+                {userData?.role === 'admin' && (
+                  <Link href="/admin" className="p-2.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-full transition-colors" title="Dashboard">
+                    <LayoutDashboard className="w-5 h-5" />
+                  </Link>
+                )}
+                <button onClick={signOut} className="p-2.5 bg-destructive/10 text-destructive hover:bg-destructive/20 rounded-full transition-colors" title="Logout">
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <Link
+                  href="/agent-auth"
+                  className="bg-transparent border border-primary text-primary hover:bg-primary/10 px-5 py-2.5 rounded-full font-semibold text-sm flex items-center gap-2 transition-colors shadow-sm"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  Agent Login
+                </Link>
+                <Link
+                  href="/auth"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-full font-semibold text-sm flex items-center gap-2 transition-colors shadow-md"
+                >
+                  <UserIcon className="w-4 h-4" />
+                  Sign in / Sign up
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -138,14 +170,52 @@ export function Navbar() {
                 </div>
               </div>
 
-              <Link
-                href="/auth"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-3 rounded-lg font-medium text-base flex items-center justify-center gap-2 mt-2"
-              >
-                <User className="w-5 h-5" />
-                Sign in / Sign up
-              </Link>
+              {user ? (
+                <div className="flex flex-col gap-2 mt-2 px-4 pb-4">
+                  <div className="bg-muted p-4 rounded-xl flex items-center justify-between mb-2">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-semibold uppercase text-muted-foreground">{userData?.role || 'Welcome'}</span>
+                      <span className="font-bold text-foreground">{userData?.fullName || user.email}</span>
+                    </div>
+                  </div>
+                  {userData?.role === 'admin' && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="bg-primary/10 text-primary hover:bg-primary/20 px-4 py-3 rounded-lg font-medium text-base flex items-center justify-center gap-2"
+                    >
+                      <LayoutDashboard className="w-5 h-5" />
+                      Admin Dashboard
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => { signOut(); setIsMobileMenuOpen(false); }}
+                    className="bg-destructive/10 text-destructive hover:bg-destructive/20 px-4 py-3 rounded-lg font-medium text-base flex items-center justify-center gap-2"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    Sign Out
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <Link
+                    href="/agent-auth"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="bg-transparent border border-primary text-primary hover:bg-primary/10 px-4 py-3 rounded-lg font-medium text-base flex items-center justify-center gap-2 mt-2"
+                  >
+                    <ShieldCheck className="w-5 h-5" />
+                    Agent Login
+                  </Link>
+                  <Link
+                    href="/auth"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-3 rounded-lg font-medium text-base flex items-center justify-center gap-2 mt-2"
+                  >
+                    <UserIcon className="w-5 h-5" />
+                    Sign in / Sign up
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         )}

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { BookingSearchCard } from "./BookingSearchCard";
 
-export function Hero() {
+export function Hero({ globalMaxChildAge = 12 }: { globalMaxChildAge?: number }) {
   return (
     <section className="relative w-full h-[100svh] min-h-[700px] flex items-center justify-center pt-20 overflow-hidden">
       {/* Background Image & Overlay */}
@@ -12,7 +12,7 @@ export function Hero() {
         <Image
           src="/images/hero_bg.png"
           alt="Majestic Himalayan Landscape"
-          fill
+          fill sizes="100vw"
           priority
           className="object-cover object-[center_30%]"
         />
@@ -42,7 +42,7 @@ export function Hero() {
         </div>
 
         {/* Floating Booking Card */}
-        <BookingSearchCard />
+        <BookingSearchCard globalMaxChildAge={globalMaxChildAge} />
       </div>
     </section>
   );
