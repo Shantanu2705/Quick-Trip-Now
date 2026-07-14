@@ -118,6 +118,10 @@ export function Footer({ phone = "+91 98765 43210", email = "support@quicktripno
           <p className="text-secondary-foreground/60 text-sm">
             © {new Date().getFullYear()} Quick Trip Now. All rights reserved.
           </p>
+
+          <p className="text-secondary-foreground/60 text-sm text-center">
+            Designed by <a href="https://digitaldictionary.in/" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors font-medium">Digital Dictionary</a>
+          </p>
           
           <div className="flex items-center gap-4">
             <a href="#" className="bg-secondary-foreground/10 hover:bg-accent hover:text-accent-foreground text-secondary-foreground p-2.5 rounded-full transition-all">
