@@ -5,7 +5,15 @@ import { getFirestore } from 'firebase-admin/firestore';
 if (!getApps().length) {
   try {
     if (process.env.FIREBASE_PRIVATE_KEY) {
-      const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/gm, '\n');
+      let privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/gm, '\n');
+      
+      // Remove surrounding quotes if Vercel accidentally included them
+      if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+        privateKey = privateKey.slice(1, -1);
+      }
+      if (privateKey.startsWith("'") && privateKey.endsWith("'")) {
+        privateKey = privateKey.slice(1, -1);
+      }
 
       initializeApp({
         credential: cert({
