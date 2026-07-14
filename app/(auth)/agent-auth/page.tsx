@@ -31,7 +31,7 @@ export default function AgentAuthPage() {
         if (contentType && contentType.includes("application/json")) {
           const data = await res.json();
           if (!data.success) {
-            throw new Error(data.message || "Account not approved");
+            throw new Error(data.error ? `${data.message}: ${data.error}` : (data.message || "Account not approved"));
           }
         } else {
           const text = await res.text();

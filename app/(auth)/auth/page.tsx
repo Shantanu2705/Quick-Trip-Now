@@ -34,9 +34,12 @@ export default function AuthPage() {
         const res = await fetch("/api/auth/session", {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const data = await res.json();
-        if (!data.success) {
-          throw new Error(data.message || "Account not approved");
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const data = await res.json();
+          if (!data.success) {
+            throw new Error(data.error ? `${data.message}: ${data.error}` : (data.message || "Account not approved"));
+          }
         }
       }
       setLoginSession();
