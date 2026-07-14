@@ -13,4 +13,11 @@ async function sessionHandler(req: AuthenticatedRequest) {
   });
 }
 
-export const GET = (req: NextRequest) => withAuth(req, sessionHandler);
+export const GET = async (req: NextRequest) => {
+  try {
+    return await withAuth(req, sessionHandler);
+  } catch (error: any) {
+    console.error("Critical Route Handler Error:", error);
+    return NextResponse.json({ success: false, message: "Critical Error", error: error.message }, { status: 500 });
+  }
+};
