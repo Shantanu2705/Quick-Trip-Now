@@ -26,9 +26,19 @@ export default function AgentAuthPage() {
         const res = await fetch("/api/auth/session", {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const data = await res.json();
-        if (!data.success) {
-          throw new Error(data.message || "Account not approved");
+        
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const data = await res.json();
+          if (!data.success) {
+            throw new Error(data.message || "Account not approved");
+          }
+        } else {
+          const text = await res.text();
+          console.error("Non-JSON response:", text);
+          // Strip out some HTML tags to make it readable in the UI
+          const readableError = text.replace(/<[^>]*>?/gm, '').trim().substring(0, 100);
+          throw new Error(`Vercel Server Error: ${res.status} - ${readableError}`);
         }
       }
       setLoginSession();
