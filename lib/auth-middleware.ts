@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminServices } from './firebase-admin';
+import { adminAuth, adminDb, crashError } from './firebase-admin';
 
 export interface AuthenticatedRequest extends NextRequest {
   user?: {
@@ -20,8 +20,6 @@ export async function withAuth(
     if (!authHeader?.startsWith('Bearer ')) {
       return NextResponse.json({ success: false, message: 'Unauthorized', error: 'No token provided' }, { status: 401 });
     }
-
-    const { adminAuth, adminDb, crashError } = await getAdminServices();
 
     if (crashError) {
       return NextResponse.json({ 
