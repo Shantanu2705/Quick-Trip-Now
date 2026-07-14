@@ -85,7 +85,6 @@ export default function AuthPage() {
       }
     } catch (err: any) {
       let msg = err.message || "An error occurred";
-      if (msg.includes("Firebase")) msg = "Invalid credentials or account does not exist.";
       setError(msg);
     } finally {
       setLoading(false);
@@ -112,7 +111,6 @@ export default function AuthPage() {
       await handleSuccess(userCred.user, undefined, false);
     } catch (err: any) {
       let msg = err.message || "Failed to sign in with Google";
-      if (msg.includes("Firebase")) msg = "Failed to sign in. Please try again.";
       setError(msg);
     }
   };

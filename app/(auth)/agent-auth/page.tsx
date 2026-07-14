@@ -46,7 +46,6 @@ export default function AgentAuthPage() {
     } catch (err: any) {
       auth?.signOut();
       let msg = err.message || "Failed to login. Account may not be approved.";
-      if (msg.includes("Firebase")) msg = "Invalid credentials or account does not exist.";
       setError(msg);
     }
   };
@@ -81,7 +80,6 @@ export default function AgentAuthPage() {
       }
     } catch (err: any) {
       let msg = err.message || "An error occurred";
-      if (msg.includes("Firebase")) msg = "Invalid credentials or account does not exist.";
       setError(msg);
     } finally {
       setLoading(false);
@@ -112,7 +110,6 @@ export default function AgentAuthPage() {
       await handleSuccess(userCred.user, undefined, false);
     } catch (err: any) {
       let msg = err.message || "Failed to sign in with Google";
-      if (msg.includes("Firebase")) msg = "Failed to sign in. Please try again.";
       setError(msg);
     }
   };
