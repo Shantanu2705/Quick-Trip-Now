@@ -21,6 +21,15 @@ export async function withAuth(
       return NextResponse.json({ success: false, message: 'Unauthorized', error: 'No token provided' }, { status: 401 });
     }
 
+    if (!adminAuth || !adminDb) {
+      console.error('Firebase Admin is not initialized properly. Check environment variables.');
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Server Configuration Error', 
+        error: 'Firebase Admin not initialized. Please check Vercel environment variables.' 
+      }, { status: 500 });
+    }
+
     const token = authHeader.split('Bearer ')[1];
     const decodedToken = await adminAuth.verifyIdToken(token);
     const uid = decodedToken.uid;
