@@ -8,10 +8,12 @@ export interface Destination {
   image: string;
   description: string;
   isPopular?: boolean;
+  isUpcoming?: boolean;
   history?: string;
   touristPlaces?: string;
   bestTimeToVisit?: string;
   mainAttractions?: string[];
+  durations?: string[];
 }
 
 export interface Vehicle {
@@ -23,9 +25,13 @@ export interface Vehicle {
   maxAdults?: number;
   maxChildren?: number;
   maxChildAge?: number;
+  gstPercentage?: number;
   ac?: boolean;
   seats?: number;
   unavailableDates?: string[];
+  inclusions?: { text: string; included: boolean }[];
+  exclusions?: { text: string; included: boolean }[];
+  termsAndConditions?: string;
 }
 
 export interface CabRoute {
@@ -51,6 +57,7 @@ export interface Package {
   category: string;
   childPrice?: number;
   maxChildAge?: number;
+  gstPercentage?: number;
   seasonalPrices?: { startDate: string; endDate: string; price: number }[];
   rating: number;
   reviews: number;
@@ -61,6 +68,10 @@ export interface Package {
   highlights?: string[];
   itinerary?: { day: number; title: string; desc: string }[];
   inclusions?: { text: string; included: boolean }[];
+  termsAndConditions?: string;
+  maxAdults?: number;
+  maxChildren?: number;
+  maxInfants?: number;
 }
 
 export async function getPackages() {

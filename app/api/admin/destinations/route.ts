@@ -36,6 +36,7 @@ async function createDestinationHandler(req: AuthenticatedRequest) {
     }
 
     const newDest = {
+      ...data,
       name: data.name,
       slug: data.slug,
       image: data.image,

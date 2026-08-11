@@ -1,0 +1,64 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Publicly readable collections (Tour packages, destinations, vehicles, routes)
+    match /packages/{document=**} {
+      allow read: if true;
+      allow write: if false; // Only admins can write (handled via admin SDK)
+    }
+
+    match /destinations/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /vehicles/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /cab_routes/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /settings/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Bookings
+    match /bookings/{bookingId} {
+      // Users can only read their own bookings
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Allow users to create bookings for themselves
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false; // Modifications by admin SDK only
+    }
+
+    // Audit logs
+    match /auditLogs/{document=**} {
+      allow read, write: if false; // Admin only
+    }
+    
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

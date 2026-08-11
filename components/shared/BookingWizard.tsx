@@ -17,18 +17,20 @@ export function BookingWizard({
   selectedDate,
   adultsCount,
   childrenCount,
-  basePrice,
-  childPrice,
-  maxChildAge
+  infantsCount,
+  maxChildAge,
+  selectedVehicleId,
+  vehiclesRequired,
 }: {
   packageData?: any;
   availableVehicles?: any[];
   selectedDate?: Date;
   adultsCount?: number;
   childrenCount?: number;
-  basePrice?: number;
-  childPrice?: number;
+  infantsCount?: number;
   maxChildAge?: number;
+  selectedVehicleId?: string;
+  vehiclesRequired?: number;
 }) {
   const { userData, loading: authLoading } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
@@ -36,23 +38,15 @@ export function BookingWizard({
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "verifying" | "success">("idle");
   const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
 
-  // Initialize dynamic travelers array
+  // Initialize single leader traveler
   const [travelers, setTravelers] = useState(() => {
-    const adults = Array.from({ length: adultsCount || 1 }, () => ({
+    return [{
       type: "adult" as const,
       fullName: "",
       email: "",
       phone: "",
       age: ""
-    }));
-    const children = Array.from({ length: childrenCount || 0 }, () => ({
-      type: "child" as const,
-      fullName: "",
-      email: "",
-      phone: "",
-      age: ""
-    }));
-    return [...adults, ...children];
+    }];
   });
   const [specialRequests, setSpecialRequests] = useState("");
 
@@ -62,12 +56,23 @@ export function BookingWizard({
   const hasDiscount = discountPercent > 0;
   const discountMultiplier = hasDiscount ? (100 - discountPercent) / 100 : 1;
 
-  const safeBasePrice = basePrice || 0;
-  const safeChildPrice = childPrice ?? safeBasePrice;
+  useEffect(() => {
+    if (selectedVehicleId && availableVehicles && availableVehicles.length > 0 && !selectedVehicle) {
+      const v = availableVehicles.find(v => v.id === selectedVehicleId);
+      if (v) {
+        setSelectedVehicle({ ...v, qtyRequired: vehiclesRequired || 1 });
+      }
+    }
+  }, [selectedVehicleId, availableVehicles, vehiclesRequired, selectedVehicle]);
+
   const safeAdults = adultsCount || 1;
   const safeChildren = childrenCount || 0;
-  const totalBasePrice = (safeBasePrice * safeAdults) + (safeChildPrice * safeChildren);
-  const finalPrice = hasDiscount ? totalBasePrice * discountMultiplier : totalBasePrice;
+  const safeInfants = infantsCount || 0;
+  const totalBasePrice = selectedVehicle ? ((selectedVehicle.price || selectedVehicle.pricePerDay || 0) * (selectedVehicle.qtyRequired || 1)) : 0;
+  const discountedBasePrice = hasDiscount ? totalBasePrice * discountMultiplier : totalBasePrice;
+  const gstPercent = packageData?.gstPercentage || 0;
+  const gstAmount = (discountedBasePrice * gstPercent) / 100;
+  const finalPrice = Math.round(discountedBasePrice + gstAmount);
 
   useEffect(() => {
     if (userData && travelers.length > 0 && !travelers[0].fullName) {
@@ -88,24 +93,7 @@ export function BookingWizard({
     return <div className="py-24 text-center">Loading...</div>;
   }
 
-  if (!userData) {
-    return (
-      <div className="w-full max-w-2xl mx-auto bg-background rounded-3xl shadow-2xl border border-border overflow-hidden p-12 text-center">
-        <div className="flex justify-center mb-6">
-          <div className="bg-primary/10 p-4 rounded-full">
-            <Lock className="w-10 h-10 text-primary" />
-          </div>
-        </div>
-        <h2 className="text-3xl font-heading font-bold mb-4">Authentication Required</h2>
-        <p className="text-muted-foreground mb-8">You must be logged in as a customer or agent to complete a booking.</p>
-        <div className="flex justify-center gap-4">
-          <Link href="/auth">
-            <Button className="rounded-xl px-8">Sign In / Register</Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
+
 
   const triggerSuccess = async () => {
     setPaymentStatus("success");
@@ -116,7 +104,7 @@ export function BookingWizard({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: userData.uid,
+          userId: userData?.uid || "guest",
           customerName: travelers[0].fullName,
           email: travelers[0].email,
           phone: travelers[0].phone,
@@ -125,10 +113,13 @@ export function BookingWizard({
           date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
           adultsCount: safeAdults,
           childrenCount: safeChildren,
+          infantsCount: safeInfants,
           travelers: travelers,
           specialRequests: specialRequests,
           amount: finalPrice,
           baseAmount: totalBasePrice,
+          gstPercentage: gstPercent,
+          gstAmount: Math.round(gstAmount),
           discountApplied: hasDiscount,
           discountPercentage: discountPercent,
           type: 'tour',
@@ -306,7 +297,7 @@ export function BookingWizard({
               return (
                 <div className="space-y-6 flex-1">
                   <h3 className="text-2xl font-heading font-bold">Select Vehicle for Your Tour</h3>
-                  <p className="text-muted-foreground">Select a vehicle that accommodates your party. (No extra charges for vehicles on this tour package).</p>
+                  <p className="text-muted-foreground">Select a vehicle that accommodates your party. The vehicle you choose determines the price of your package.</p>
                   
                   {filteredVehicles.length === 0 ? (
                     <div className="text-center py-12 border border-dashed rounded-xl border-border">
@@ -317,8 +308,35 @@ export function BookingWizard({
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {filteredVehicles.map(v => {
-                        const capacityPerVehicle = v.seats || 4;
-                        const qtyRequired = Math.max(1, Math.ceil((safeAdults + safeChildren) / capacityPerVehicle));
+                        const calculateCars = () => {
+                          let cars = 0;
+                          let a = safeAdults;
+                          let c = safeChildren;
+                          let i = safeInfants;
+                          let maxA = v.maxAdults || v.seats || 4;
+                          let totalSeats = v.seats || 4;
+                        
+                          if (a === 0 && c === 0 && i === 0) return 1;
+                        
+                          while (a > 0 || c > 0 || i > 0) {
+                            cars++;
+                            let adultsInThisCar = Math.min(a, maxA);
+                            a -= adultsInThisCar;
+                            
+                            let seatsLeft = totalSeats - adultsInThisCar;
+                            
+                            let childrenInThisCar = Math.min(c, seatsLeft);
+                            c -= childrenInThisCar;
+                            seatsLeft -= childrenInThisCar;
+                            
+                            let infantsInThisCar = Math.min(i, seatsLeft);
+                            i -= infantsInThisCar;
+                            
+                            if (totalSeats <= 0) break;
+                          }
+                          return cars;
+                        };
+                        const qtyRequired = calculateCars();
                         
                         return (
                         <div 
@@ -354,8 +372,7 @@ export function BookingWizard({
                               {v.seats} Seats/veh
                             </div>
                             <div className="flex items-center gap-2">
-                              <Check className="w-4 h-4 text-emerald-500" /> 
-                              {v.ac ? "AC" : "Non-AC"}
+                              <span className="font-bold text-foreground">₹{v.price || v.pricePerDay}</span>
                             </div>
                           </div>
                         </div>
@@ -448,15 +465,26 @@ export function BookingWizard({
                     <span className="font-semibold text-right">
                       {safeAdults} Adult{safeAdults > 1 ? 's' : ''}
                       {safeChildren > 0 && `, ${safeChildren} Child${safeChildren > 1 ? 'ren' : ''}`}
+                      {safeInfants > 0 && `, ${safeInfants} Infant${safeInfants > 1 ? 's' : ''}`}
                     </span>
                   </div>
                   
                   {hasDiscount && (
-                    <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
+                    <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 pb-4 border-b border-border/50">
                       <span>Agent Discount ({discountPercent}%)</span>
                       <span>-₹{Math.round(totalBasePrice * (discountPercent / 100)).toLocaleString("en-IN")}</span>
                     </div>
                   )}
+
+                  <div className="flex justify-between items-center pb-4 border-b border-border/50">
+                    <span className="text-muted-foreground">Base Price</span>
+                    <span className="font-semibold text-right">₹{Math.round(discountedBasePrice).toLocaleString("en-IN")}</span>
+                  </div>
+
+                  <div className="flex justify-between items-center pb-4 border-b border-border/50">
+                    <span className="text-muted-foreground">GST ({gstPercent}%)</span>
+                    <span className="font-semibold text-right">₹{Math.round(gstAmount).toLocaleString("en-IN")}</span>
+                  </div>
 
                   <div className="flex justify-between items-center pt-2">
                     <span className="text-foreground font-bold text-lg">Total Amount</span>

@@ -6,17 +6,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { Clock, Users, ArrowRight, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
 import { getPackages, Package } from "@/lib/firestore-utils";
-import { getApplicablePrice } from "@/lib/price-utils";
 
 export function FeaturedTours() {
-  const { userData } = useAuth();
-  const discountPercent = userData?.role === "agent" || userData?.role === "admin" 
-    ? (userData.discountPercentage ?? 20) 
-    : 0;
-  const hasDiscount = discountPercent > 0;
-  const discountMultiplier = hasDiscount ? (100 - discountPercent) / 100 : 1;
   const [tours, setTours] = useState<Package[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -83,7 +75,6 @@ export function FeaturedTours() {
             </div>
           ) : (
             tours.map((tour, index) => {
-              const currentPrice = getApplicablePrice(tour.seasonalPrices);
               return (
                 <motion.div
                   key={tour.id}
@@ -135,15 +126,8 @@ export function FeaturedTours() {
                     
                     <div className="flex items-center justify-between">
                       <div className="flex flex-col">
-                        <span className="text-xs text-muted-foreground uppercase font-semibold tracking-wider">Starting from</span>
-                        {hasDiscount ? (
-                          <div className="flex flex-col">
-                            <span className="text-sm line-through text-muted-foreground">₹{currentPrice}</span>
-                            <span className="text-2xl font-bold text-primary font-heading">₹{Math.round(currentPrice * discountMultiplier)}</span>
-                          </div>
-                        ) : (
-                          <span className="text-2xl font-bold text-primary font-heading">₹{currentPrice}</span>
-                        )}
+                        <span className="text-xs text-primary uppercase font-bold tracking-wider">Dynamic Pricing</span>
+                        <span className="text-sm text-muted-foreground font-medium">Based on Vehicle Choice</span>
                       </div>
                       <Link href={`/package/${tour.slug}`}>
                         <Button className="rounded-xl font-medium px-6">

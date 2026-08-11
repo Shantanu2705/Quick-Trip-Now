@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { getDestinations, Destination } from "@/lib/firestore-utils";
 
-export function PopularDestinations() {
+export function UpcomingServices() {
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -15,9 +15,9 @@ export function PopularDestinations() {
     async function fetchDestinations() {
       try {
         const data = await getDestinations();
-        // Filter popular destinations and limit to 4 just in case
-        const popular = data.filter(d => d.isPopular).slice(0, 4);
-        setDestinations(popular);
+        // Filter upcoming destinations and limit to 4 just in case
+        const upcoming = data.filter(d => d.isUpcoming).slice(0, 4);
+        setDestinations(upcoming);
       } catch (error) {
         console.error("Error fetching destinations:", error);
       } finally {
@@ -38,7 +38,7 @@ export function PopularDestinations() {
               viewport={{ once: true }}
               className="text-primary font-bold tracking-wider uppercase text-sm mb-2 block"
             >
-              Explore the unknown
+              Something new is brewing
             </motion.span>
             <motion.h2 
               initial={{ opacity: 0, y: 20 }}
@@ -47,7 +47,7 @@ export function PopularDestinations() {
               transition={{ delay: 0.1 }}
               className="text-3xl md:text-5xl font-heading font-bold text-foreground"
             >
-              Service at your Doorstep
+              Upcoming Services
             </motion.h2>
           </div>
           <motion.div

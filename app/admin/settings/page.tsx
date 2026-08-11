@@ -14,7 +14,9 @@ export default function AdminSettingsPage() {
     taxRate: 18,
     agentRegistrationEnabled: true,
     maintenanceMode: false,
-    globalMaxChildAge: 12
+    globalMaxChildAge: 12,
+    enableBookingNotifications: false,
+    adminNotificationPhone: ""
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -214,6 +216,45 @@ export default function AdminSettingsPage() {
                 <div className="w-14 h-7 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-amber-500"></div>
               </label>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border-border/50 shadow-sm overflow-hidden">
+          <div className="h-1 w-full bg-blue-500" />
+          <CardHeader>
+            <CardTitle>Notifications</CardTitle>
+            <CardDescription>Configure automatic booking alerts via WhatsApp/SMS (requires Twilio env vars).</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center justify-between p-4 border border-border rounded-xl bg-muted/10">
+              <div className="space-y-1">
+                <h4 className="font-semibold text-foreground">Booking Alerts</h4>
+                <p className="text-sm text-muted-foreground">Send an automatic message when a booking is confirmed.</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  className="sr-only peer" 
+                  checked={settings.enableBookingNotifications}
+                  onChange={(e) => setSettings({...settings, enableBookingNotifications: e.target.checked})}
+                />
+                <div className="w-14 h-7 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-500"></div>
+              </label>
+            </div>
+
+            {settings.enableBookingNotifications && (
+              <div className="space-y-2 max-w-md">
+                <label className="text-sm font-semibold text-foreground">Notification Phone Number</label>
+                <input 
+                  type="text"
+                  placeholder="e.g. +919876543210 or whatsapp:+919876543210"
+                  value={settings.adminNotificationPhone} 
+                  onChange={(e) => setSettings({...settings, adminNotificationPhone: e.target.value})}
+                  className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all"
+                />
+                <p className="text-xs text-muted-foreground">Enter the number with country code. Prefix with "whatsapp:" for WhatsApp messages.</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

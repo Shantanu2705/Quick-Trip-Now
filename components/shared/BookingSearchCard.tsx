@@ -29,8 +29,10 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
   const [date, setDate] = useState<Date>();
   const [adults, setAdults] = useState<number>(2);
   const [children, setChildren] = useState<number>(0);
+  const [infants, setInfants] = useState<number>(0);
   const [guestError, setGuestError] = useState("");
   const [destination, setDestination] = useState("");
+  const [duration, setDuration] = useState("");
   const [cabRouteId, setCabRouteId] = useState("");
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -59,14 +61,23 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
       setGuestError("Need at least 1 adult");
       return;
     }
+    if (!duration) {
+      setGuestError("Please select a duration");
+      return;
+    }
     const params = new URLSearchParams();
     if (destination) params.set("destination", destination);
+    if (duration) params.set("duration", duration);
     if (date) params.set("date", date.toISOString());
     params.set("adults", adults.toString());
     params.set("children", children.toString());
+    params.set("infants", infants.toString());
     
     router.push(`/packages?${params.toString()}`);
   };
+
+  const selectedDestObj = destinations.find(d => d.name === destination);
+  const availableDurations = selectedDestObj?.durations || [];
 
   const handleCabExplore = () => {
     if (!cabRouteId) {
@@ -83,6 +94,7 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
     params.set("date", date.toISOString());
     params.set("adults", adults.toString());
     params.set("children", children.toString());
+    params.set("infants", infants.toString());
     
     router.push(`/book?${params.toString()}`);
   };
@@ -92,7 +104,7 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-      className="w-full max-w-[1100px] mx-auto relative flex flex-col items-center"
+      className="w-full max-w-[1400px] mx-auto relative flex flex-col items-center"
     >
       {/* Premium Glass Tabs */}
       <div className="flex items-center p-1.5 bg-white/10 backdrop-blur-md rounded-full border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.1)] mb-8 z-10">
@@ -161,6 +173,33 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
               {/* Divider */}
               <div className="hidden md:block w-px h-12 bg-border" />
 
+              {/* Duration Field (Dropdown) */}
+              <div className="flex-1 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-4">
+                <div className="bg-primary/10 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                  <Clock className="w-6 h-6 text-primary" />
+                </div>
+                <div className="flex flex-col flex-1 relative">
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Duration</span>
+                  <Select value={duration} onValueChange={(val) => setDuration(val || "")} disabled={!destination}>
+                    <SelectTrigger className="border-none shadow-none p-0 h-auto focus:ring-0 bg-transparent text-left text-base font-semibold w-full">
+                      <SelectValue placeholder="Select duration" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableDurations.length > 0 ? (
+                        availableDurations.map(dur => (
+                          <SelectItem key={dur} value={dur}>{dur}</SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="none" disabled>No durations configured</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="hidden md:block w-px h-12 bg-border" />
+
               {/* Date Field */}
               <Popover>
                 <PopoverTrigger className="flex-1 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-4 text-left outline-none">
@@ -197,7 +236,7 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                     <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Travelers</span>
                     <div className="flex items-center gap-1">
                       <span className="text-base font-semibold text-foreground">
-                        {adults} Adult{adults !== 1 ? 's' : ''}{children > 0 ? `, ${children} Child${children !== 1 ? 'ren' : ''}` : ''}
+                        {adults} Adult{adults !== 1 ? 's' : ''}{children > 0 ? `, ${children} Child${children !== 1 ? 'ren' : ''}` : ''}{infants > 0 ? `, ${infants} Infant${infants !== 1 ? 's' : ''}` : ''}
                       </span>
                     </div>
                     {guestError && (
@@ -240,6 +279,22 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                         </button>
                       </div>
                     </div>
+                    <div className="h-px bg-border/50 w-full" />
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-sm">Infants</span>
+                        <span className="text-xs text-muted-foreground">Under 2</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => setInfants(Math.max(0, infants - 1))} className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled={infants <= 0}>
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="w-4 text-center font-medium">{infants}</span>
+                        <button onClick={() => setInfants(infants + 1)} className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors">
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </PopoverContent>
               </Popover>
@@ -275,7 +330,18 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                   <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Select Package</span>
                   <Select value={cabRouteId} onValueChange={(val) => val && setCabRouteId(val)}>
                     <SelectTrigger className="border-none shadow-none p-0 h-auto focus:ring-0 bg-transparent text-left text-base font-semibold w-full">
-                      <SelectValue placeholder="Where are you going?" />
+                      <SelectValue placeholder="Where are you going?">
+                        {cabRouteId && cabRoutes.find(r => r.id === cabRouteId) ? (
+                          <div className="flex flex-col gap-1">
+                            <span className="font-semibold text-base text-foreground">{cabRoutes.find(r => r.id === cabRouteId)!.title}</span>
+                            {cabRoutes.find(r => r.id === cabRouteId)!.subtitle && (
+                              <span className="text-[13px] text-muted-foreground font-normal leading-tight">
+                                {cabRoutes.find(r => r.id === cabRouteId)!.subtitle}
+                              </span>
+                            )}
+                          </div>
+                        ) : undefined}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent className="min-w-[320px] p-2">
                       {cabRoutes.length > 0 ? (
@@ -336,7 +402,7 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                     <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Travelers</span>
                     <div className="flex items-center gap-1">
                       <span className="text-base font-semibold text-foreground">
-                        {adults} Adult{adults !== 1 ? 's' : ''}{children > 0 ? `, ${children} Child${children !== 1 ? 'ren' : ''}` : ''}
+                        {adults} Adult{adults !== 1 ? 's' : ''}{children > 0 ? `, ${children} Child${children !== 1 ? 'ren' : ''}` : ''}{infants > 0 ? `, ${infants} Infant${infants !== 1 ? 's' : ''}` : ''}
                       </span>
                     </div>
                     {guestError && (
@@ -375,6 +441,22 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                         </button>
                         <span className="w-4 text-center font-medium">{children}</span>
                         <button onClick={() => setChildren(children + 1)} className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors">
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="h-px bg-border/50 w-full" />
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-sm">Infants</span>
+                        <span className="text-xs text-muted-foreground">Under 2</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => setInfants(Math.max(0, infants - 1))} className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled={infants <= 0}>
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="w-4 text-center font-medium">{infants}</span>
+                        <button onClick={() => setInfants(infants + 1)} className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors">
                           <Plus className="w-4 h-4" />
                         </button>
                       </div>

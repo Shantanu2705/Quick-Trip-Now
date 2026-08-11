@@ -21,23 +21,9 @@ async function createPackageHandler(req: AuthenticatedRequest) {
       return NextResponse.json({ success: false, message: 'Missing required fields' }, { status: 400 });
     }
 
-    if (!data.seasonalPrices || !Array.isArray(data.seasonalPrices) || data.seasonalPrices.length === 0) {
-      return NextResponse.json({ success: false, message: 'At least one seasonal price is required' }, { status: 400 });
-    }
-
-    // Validate seasonal prices
-    for (const season of data.seasonalPrices) {
-      if (!season.startDate || !season.endDate || !season.price) {
-        return NextResponse.json({ success: false, message: 'All fields in seasonal pricing are required' }, { status: 400 });
-      }
-      if (new Date(season.endDate) < new Date(season.startDate)) {
-        return NextResponse.json({ success: false, message: 'End date cannot be before start date in seasonal pricing' }, { status: 400 });
-      }
-      if (Number(season.price) <= 0) {
-        return NextResponse.json({ success: false, message: 'Price must be greater than zero' }, { status: 400 });
-      }
-      season.price = Number(season.price);
-    }
+    if (data.maxAdults) data.maxAdults = Number(data.maxAdults);
+    if (data.maxChildren) data.maxChildren = Number(data.maxChildren);
+    if (data.maxInfants) data.maxInfants = Number(data.maxInfants);
 
     data.days = Number(data.days) || 0;
     data.nights = Number(data.nights) || 0;
@@ -76,23 +62,9 @@ async function updatePackageHandler(req: AuthenticatedRequest) {
       return NextResponse.json({ success: false, message: 'Missing required fields' }, { status: 400 });
     }
 
-    if (!updateData.seasonalPrices || !Array.isArray(updateData.seasonalPrices) || updateData.seasonalPrices.length === 0) {
-      return NextResponse.json({ success: false, message: 'At least one seasonal price is required' }, { status: 400 });
-    }
-
-    // Validate seasonal prices
-    for (const season of updateData.seasonalPrices) {
-      if (!season.startDate || !season.endDate || !season.price) {
-        return NextResponse.json({ success: false, message: 'All fields in seasonal pricing are required' }, { status: 400 });
-      }
-      if (new Date(season.endDate) < new Date(season.startDate)) {
-        return NextResponse.json({ success: false, message: 'End date cannot be before start date in seasonal pricing' }, { status: 400 });
-      }
-      if (Number(season.price) <= 0) {
-        return NextResponse.json({ success: false, message: 'Price must be greater than zero' }, { status: 400 });
-      }
-      season.price = Number(season.price);
-    }
+    if (updateData.maxAdults) updateData.maxAdults = Number(updateData.maxAdults);
+    if (updateData.maxChildren) updateData.maxChildren = Number(updateData.maxChildren);
+    if (updateData.maxInfants) updateData.maxInfants = Number(updateData.maxInfants);
 
     updateData.days = Number(updateData.days) || 0;
     updateData.nights = Number(updateData.nights) || 0;
@@ -100,6 +72,8 @@ async function updatePackageHandler(req: AuthenticatedRequest) {
     // Remove old properties if they exist
     if ('price' in updateData) delete updateData.price;
     if ('pricePerChild' in updateData) delete updateData.pricePerChild;
+    if ('seasonalPrices' in updateData) delete updateData.seasonalPrices;
+    if ('childPrice' in updateData) delete updateData.childPrice;
 
     await adminDb.collection('packages').doc(id).update(updateData);
     

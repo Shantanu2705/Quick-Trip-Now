@@ -99,7 +99,6 @@ export function Navbar() {
                 </button>
               </div>
             ) : (
-              <>
                 <Link
                   href="/agent-auth"
                   className="bg-transparent border border-primary text-primary hover:bg-primary/10 px-5 py-2.5 rounded-full font-semibold text-sm flex items-center gap-2 transition-colors shadow-sm"
@@ -107,14 +106,6 @@ export function Navbar() {
                   <ShieldCheck className="w-4 h-4" />
                   Agent Login
                 </Link>
-                <Link
-                  href="/auth"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-full font-semibold text-sm flex items-center gap-2 transition-colors shadow-md"
-                >
-                  <UserIcon className="w-4 h-4" />
-                  Sign in / Sign up
-                </Link>
-              </>
             )}
           </div>
 
@@ -197,7 +188,6 @@ export function Navbar() {
                   </button>
                 </div>
               ) : (
-                <>
                   <Link
                     href="/agent-auth"
                     onClick={() => setIsMobileMenuOpen(false)}
@@ -206,15 +196,6 @@ export function Navbar() {
                     <ShieldCheck className="w-5 h-5" />
                     Agent Login
                   </Link>
-                  <Link
-                    href="/auth"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-3 rounded-lg font-medium text-base flex items-center justify-center gap-2 mt-2"
-                  >
-                    <UserIcon className="w-5 h-5" />
-                    Sign in / Sign up
-                  </Link>
-                </>
               )}
             </div>
           </motion.div>

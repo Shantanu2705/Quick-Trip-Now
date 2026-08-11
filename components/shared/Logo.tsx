@@ -1,15 +1,27 @@
 import Link from "next/link";
-import { Compass } from "lucide-react";
 
-export function Logo({ className = "" }: { className?: string }) {
-  return (
-    <Link href="/" className={`flex items-center gap-2 group ${className}`}>
-      <div className="bg-primary text-primary-foreground p-1.5 rounded-xl group-hover:scale-105 transition-transform duration-300">
-        <Compass className="w-6 h-6" />
+export function Logo({ className = "", variant = "default" }: { className?: string, variant?: "default" | "bare" }) {
+  if (variant === "bare") {
+    return (
+      <div className={`flex items-center justify-center ${className}`}>
+        <img 
+          src="/images/logo_transparent.png" 
+          alt="Quick Trip Now Logo" 
+          className="object-contain w-full h-full drop-shadow-md" 
+        />
       </div>
-      <span className="font-heading font-bold text-xl tracking-tight">
-        <span className="text-primary">QuickTrip</span><span className="text-secondary">Now</span>
-      </span>
+    );
+  }
+
+  return (
+    <Link href="/" className={`flex items-center group ${className}`}>
+      <div className="relative h-20 w-72 hover:scale-105 transition-transform duration-300 flex items-center justify-center">
+        <img 
+          src="/images/logo_transparent.png" 
+          alt="Quick Trip Now Logo" 
+          className="object-contain w-full h-full drop-shadow-md" 
+        />
+      </div>
     </Link>
   );
 }

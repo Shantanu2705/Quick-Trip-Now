@@ -7,8 +7,8 @@ import { getGlobalSettings } from "@/lib/settings-server";
 
 export const dynamic = "force-dynamic";
 
-export default async function BookPage({ searchParams }: { searchParams: Promise<{ type?: string, package?: string, date?: string, adults?: string, children?: string, route?: string }> }) {
-  const { type, package: packageSlug, date, adults, children, route } = await searchParams;
+export default async function BookPage({ searchParams }: { searchParams: Promise<{ type?: string, package?: string, date?: string, adults?: string, children?: string, infants?: string, route?: string, vehicleId?: string, vehiclesRequired?: string }> }) {
+  const { type, package: packageSlug, date, adults, children, infants, route, vehicleId, vehiclesRequired } = await searchParams;
   const isVehicle = type === "cabs";
 
   let packageData = null;
@@ -19,6 +19,8 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
   let maxChildAge = 12;
   const adultsCount = parseInt(adults || "2", 10) || 2;
   const childrenCount = parseInt(children || "0", 10) || 0;
+  const infantsCount = parseInt(infants || "0", 10) || 0;
+  const reqVehicles = parseInt(vehiclesRequired || "1", 10) || 1;
   let parsedDate: Date | undefined;
 
   const settings = await getGlobalSettings();
@@ -46,8 +48,6 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
 
     if (!packageData) return notFound();
 
-    basePrice = getApplicablePrice(packageData.seasonalPrices, parsedDate);
-    childPrice = packageData.childPrice || basePrice;
     maxChildAge = packageData.maxChildAge || globalMaxChildAge;
   } else {
     if (!route) return notFound();
@@ -88,6 +88,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
             selectedDate={parsedDate}
             adultsCount={adultsCount}
             childrenCount={childrenCount}
+            infantsCount={infantsCount}
             maxChildAge={maxChildAge}
           />
         ) : (
@@ -97,9 +98,10 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
             selectedDate={parsedDate} 
             adultsCount={adultsCount} 
             childrenCount={childrenCount}
-            basePrice={basePrice} 
-            childPrice={childPrice}
+            infantsCount={infantsCount}
             maxChildAge={maxChildAge}
+            selectedVehicleId={vehicleId}
+            vehiclesRequired={reqVehicles}
           />
         )}
       </div>

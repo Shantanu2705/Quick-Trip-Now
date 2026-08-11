@@ -14,6 +14,8 @@ export default function AdminVehiclesPage() {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  const [inclusions, setInclusions] = useState([{ text: "", included: true }]);
+
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [unavailableDateInput, setUnavailableDateInput] = useState("");
@@ -30,6 +32,8 @@ export default function AdminVehiclesPage() {
     ac: true,
     status: "Active",
     unavailableDates: [] as string[],
+    termsAndConditions: "",
+    gstPercentage: 0,
   });
 
   const fetchVehicles = async () => {
@@ -72,7 +76,10 @@ export default function AdminVehiclesPage() {
       ac: v.ac !== undefined ? v.ac : true,
       status: v.status || "Active",
       unavailableDates: v.unavailableDates || [],
+      termsAndConditions: v.termsAndConditions || "",
+      gstPercentage: v.gstPercentage || 0,
     });
+    setInclusions(v.inclusions && v.inclusions.length > 0 ? v.inclusions : [{ text: "", included: true }]);
     setImageFile(null);
     setImagePreview(v.image || "");
     setIsModalOpen(true);
@@ -165,6 +172,7 @@ export default function AdminVehiclesPage() {
       const payload = {
         ...(editingId ? { id: editingId } : {}),
         ...formData,
+        inclusions,
         image: imageUrl
       };
       const method = editingId ? "PUT" : "POST";
@@ -198,8 +206,9 @@ export default function AdminVehiclesPage() {
     setImageFile(null);
     setImagePreview("");
     setFormData({
-      name: "", type: "", image: "", price: 0, seats: 4, maxAdults: 4, maxChildren: 0, maxChildAge: 12, ac: true, status: "Active", unavailableDates: []
+      name: "", type: "", image: "", price: 0, seats: 4, maxAdults: 4, maxChildren: 0, maxChildAge: 12, ac: true, status: "Active", unavailableDates: [], termsAndConditions: "", gstPercentage: 0
     });
+    setInclusions([{ text: "", included: true }]);
     setUnavailableDateInput("");
   };
 
@@ -292,6 +301,10 @@ export default function AdminVehiclesPage() {
                   <input type="number" required value={formData.price} onChange={e => setFormData({...formData, price: Number(e.target.value)})} className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary" />
                 </div>
                 <div>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">GST Percentage (%)</label>
+                  <input type="number" value={formData.gstPercentage} onChange={e => setFormData({...formData, gstPercentage: Number(e.target.value)})} className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary" placeholder="e.g. 12" />
+                </div>
+                <div>
                   <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Total Seats</label>
                   <input type="number" required value={formData.seats} onChange={e => setFormData({...formData, seats: Number(e.target.value)})} className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary" />
                 </div>
@@ -338,6 +351,35 @@ export default function AdminVehiclesPage() {
                   ) : (
                     <p className="text-xs text-muted-foreground">No unavailable dates set. This vehicle is available every day.</p>
                   )}
+                </div>
+
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Terms & Conditions</label>
+                  <textarea 
+                    value={formData.termsAndConditions} onChange={e => setFormData({...formData, termsAndConditions: e.target.value})}
+                    className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all min-h-[100px]"
+                    placeholder="Enter vehicle-specific terms and conditions here..."
+                  />
+                </div>
+              </div>
+
+              {/* Inclusions */}
+              <div className="border-t border-border pt-4">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="font-bold">Inclusions / Exclusions</h3>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setInclusions([...inclusions, { text: "", included: true }])}>+ Add Item</Button>
+                </div>
+                <div className="space-y-2">
+                  {inclusions.map((item, index) => (
+                    <div key={index} className="flex gap-2 items-center bg-muted/10 p-2 rounded-xl border border-border/50">
+                      <select value={item.included ? "true" : "false"} onChange={e => { const newInc = [...inclusions]; newInc[index].included = e.target.value === "true"; setInclusions(newInc); }} className="bg-background border border-border rounded-lg py-2 px-2 text-sm focus:outline-none">
+                        <option value="true">Included</option>
+                        <option value="false">Excluded</option>
+                      </select>
+                      <input type="text" placeholder="e.g. Fuel, Toll Taxes" value={item.text} onChange={e => { const newInc = [...inclusions]; newInc[index].text = e.target.value; setInclusions(newInc); }} className="flex-1 bg-background border border-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-primary" />
+                      <button type="button" onClick={() => setInclusions(inclusions.filter((_, i) => i !== index))} className="p-2 text-destructive hover:bg-destructive/10 rounded-lg"><Trash2 className="w-4 h-4" /></button>
+                    </div>
+                  ))}
                 </div>
               </div>
 

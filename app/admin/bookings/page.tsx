@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, RefreshCw, Eye, CalendarDays, Receipt, Users } from "lucide-react";
+import { Search, RefreshCw, Eye, CalendarDays, Receipt, Users, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
+import { BookingInvoice } from "@/components/admin/BookingInvoice";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
@@ -13,6 +14,35 @@ export default function AdminBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    setGeneratingPdf(true);
+    try {
+      const htmlToImage = await import("html-to-image");
+      const jsPDF = (await import("jspdf")).default;
+      
+      const element = document.getElementById("booking-invoice-pdf");
+      if (!element) return;
+      
+      const imgData = await htmlToImage.toPng(element, { pixelRatio: 2 });
+
+      const img = new window.Image();
+      img.src = imgData;
+      await new Promise((resolve) => { img.onload = resolve; });
+
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (img.height * pdfWidth) / img.width;
+      
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Booking_${selectedBooking.id}.pdf`);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
 
   const fetchBookings = async () => {
     setLoading(true);
@@ -161,16 +191,25 @@ export default function AdminBookingsPage() {
       </Card>
 
       <Dialog open={!!selectedBooking} onOpenChange={(open) => !open && setSelectedBooking(null)}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto rounded-3xl p-0 border-none overflow-hidden">
+        <DialogContent className="max-w-4xl sm:max-w-4xl md:max-w-4xl max-h-[85vh] overflow-y-auto rounded-3xl p-0 border-none overflow-hidden">
           {selectedBooking && (
-            <div className="bg-background">
-              <div className="bg-primary/5 border-b border-border p-6 md:p-8">
-                <DialogHeader>
+            <div className="bg-background" id="booking-details-pdf">
+              <div className="bg-primary/5 border-b border-border p-6 md:p-8 flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+                <DialogHeader className="text-left">
                   <DialogTitle className="text-2xl font-heading font-bold">Booking Details</DialogTitle>
                   <DialogDescription>
                     ID: <span className="font-mono">{selectedBooking.id}</span>
                   </DialogDescription>
                 </DialogHeader>
+                <button 
+                  id="pdf-download-btn"
+                  onClick={handleDownloadPdf} 
+                  disabled={generatingPdf}
+                  className="bg-primary text-primary-foreground px-4 py-2 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-all shadow-sm disabled:opacity-70"
+                >
+                  <Download className="w-4 h-4" />
+                  {generatingPdf ? "Generating..." : "Download PDF"}
+                </button>
               </div>
               
               <div className="p-6 md:p-8 space-y-8">
@@ -182,8 +221,12 @@ export default function AdminBookingsPage() {
                   </h3>
                   <div className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl border border-border/50">
                     <div>
-                      <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Package</div>
-                      <div className="font-medium">{selectedBooking.packageType || selectedBooking.packageName || "N/A"}</div>
+                      <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                        {selectedBooking.vehicleName ? "Vehicle / Route" : "Package"}
+                      </div>
+                      <div className="font-medium">
+                        {selectedBooking.vehicleName || selectedBooking.packageType || selectedBooking.packageName || "Custom Booking"}
+                      </div>
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Date</div>
@@ -210,42 +253,43 @@ export default function AdminBookingsPage() {
                   )}
                 </div>
 
-                {/* Travelers List */}
+                {/* Lead Traveler Details */}
                 <div>
                   <h3 className="text-lg font-heading font-bold mb-4 flex items-center gap-2">
                     <Users className="w-5 h-5 text-primary" />
-                    Travelers ({selectedBooking.travelers?.length || 1})
+                    Lead Traveler
                   </h3>
                   <div className="space-y-3">
                     {selectedBooking.travelers && selectedBooking.travelers.length > 0 ? (
-                      selectedBooking.travelers.map((t: any, idx: number) => (
-                        <div key={idx} className="bg-background border border-border rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-2 shadow-sm">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
-                              {idx + 1}
-                            </div>
-                            <div>
-                              <div className="font-bold text-sm">
-                                {t.fullName}
-                                {idx === 0 && <span className="ml-2 text-[10px] uppercase tracking-wider bg-muted text-muted-foreground px-1.5 py-0.5 rounded">Lead</span>}
-                              </div>
-                              <div className="text-xs text-muted-foreground">{t.email}</div>
-                            </div>
-                          </div>
-                          <div className="text-sm font-medium text-muted-foreground md:text-right">
-                            {t.phone}
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      // Fallback for older bookings
                       <div className="bg-background border border-border rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-2 shadow-sm">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
                             1
                           </div>
                           <div>
-                            <div className="font-bold text-sm">{selectedBooking.customerName || selectedBooking.fullName}</div>
+                            <div className="font-bold text-sm">
+                              {selectedBooking.travelers[0].fullName}
+                              <span className="ml-2 text-[10px] uppercase tracking-wider bg-muted text-muted-foreground px-1.5 py-0.5 rounded">Lead</span>
+                            </div>
+                            <div className="text-xs text-muted-foreground">{selectedBooking.travelers[0].email}</div>
+                          </div>
+                        </div>
+                        <div className="text-sm font-medium text-muted-foreground md:text-right">
+                          {selectedBooking.travelers[0].phone}
+                        </div>
+                      </div>
+                    ) : (
+                      // Fallback for older bookings without travelers array
+                      <div className="bg-background border border-border rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-2 shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
+                            1
+                          </div>
+                          <div>
+                            <div className="font-bold text-sm">
+                              {selectedBooking.customerName || selectedBooking.fullName}
+                              <span className="ml-2 text-[10px] uppercase tracking-wider bg-muted text-muted-foreground px-1.5 py-0.5 rounded">Lead</span>
+                            </div>
                             <div className="text-xs text-muted-foreground">{selectedBooking.email}</div>
                           </div>
                         </div>
@@ -254,6 +298,9 @@ export default function AdminBookingsPage() {
                         </div>
                       </div>
                     )}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-2 px-1">
+                    Total Party Size: <span className="font-semibold text-foreground">{selectedBooking.travelers?.length || 1} Person(s)</span>
                   </div>
                 </div>
 
@@ -271,6 +318,11 @@ export default function AdminBookingsPage() {
           )}
         </DialogContent>
       </Dialog>
+      
+      {/* Hidden Invoice Template for PDF Generation */}
+      {selectedBooking && (
+        <BookingInvoice booking={selectedBooking} id="booking-invoice-pdf" />
+      )}
     </div>
   );
 }

@@ -3,11 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MapPin, Clock, Users, Star, Check, X, Calendar, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PackageBookingSidebar } from "@/components/shared/PackageBookingSidebar";
+import { PackageBookingClient } from "@/components/shared/PackageBookingClient";
 import { getGlobalSettings } from "@/lib/settings-server";
 import { adminDb } from "@/lib/firebase-admin";
-import { getApplicablePrice } from "@/lib/price-utils";
-import { PackageVehicleDisplay } from "@/components/shared/PackageVehicleDisplay";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -40,14 +38,12 @@ export default async function PackageDetailsPage({ params }: { params: Promise<{
 
   const {
     title, description, days, nights, rating, reviews, destination, image,
-    highlights = [], itinerary = [], inclusions = [], seasonalPrices = [], childPrice, maxChildAge
+    highlights = [], itinerary = [], inclusions = [], termsAndConditions, maxAdults, maxChildren, maxInfants
   } = pkgData;
 
   const settings = await getGlobalSettings();
-  const globalMaxChildAge = settings?.globalMaxChildAge || 12;
-  const applicableMaxChildAge = maxChildAge || globalMaxChildAge;
 
-  const activePrice = getApplicablePrice(seasonalPrices);
+
 
   // Use a fallback image if missing
   const heroImage = image || "https://images.unsplash.com/photo-1626079973809-541dd441b83d?q=80&w=1200&auto=format&fit=crop";
@@ -63,10 +59,16 @@ export default async function PackageDetailsPage({ params }: { params: Promise<{
         </div>
       </div>
 
-      <div className="container mx-auto px-4 md:px-8 py-12 flex flex-col lg:flex-row gap-12 relative">
-        {/* Main Content */}
-        <div className="w-full lg:w-2/3">
-          <div className="flex items-center gap-2 text-primary font-medium mb-4 uppercase tracking-wider text-sm">
+      <PackageBookingClient 
+        packageSlug={slug}
+        maxAdults={maxAdults || 4}
+        maxChildren={maxChildren || 2}
+        maxInfants={maxInfants || 2}
+        gstPercentage={settings?.gstPercentage || 0}
+        vehicles={vehiclesData}
+        packageDetailsContent={
+          <>
+            <div className="flex items-center gap-2 text-primary font-medium mb-4 uppercase tracking-wider text-sm">
             <MapPin className="w-4 h-4" />
             {destination || "Unknown Destination"}
           </div>
@@ -121,39 +123,9 @@ export default async function PackageDetailsPage({ params }: { params: Promise<{
               </div>
             </div>
           )}
-
-          {/* Vehicles Display */}
-          {vehiclesData.length > 0 && (
-            <PackageVehicleDisplay vehicles={vehiclesData} />
-          )}
-
-          {/* Inclusions & Exclusions */}
-          {inclusions.length > 0 && (
-            <div className="mb-12">
-              <h3 className="text-2xl font-heading font-bold mb-6">What's Included</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-8 rounded-3xl">
-                {inclusions.map((item: any, idx: number) => (
-                  <div key={idx} className="flex items-start gap-3">
-                    {item.included ? (
-                      <Check className="w-5 h-5 text-emerald-500 shrink-0" />
-                    ) : (
-                      <X className="w-5 h-5 text-destructive shrink-0" />
-                    )}
-                    <span className={item.included ? "text-foreground/80" : "text-muted-foreground line-through"}>
-                      {item.text}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Sticky Booking Sidebar */}
-        <div className="w-full lg:w-1/3 relative">
-          <PackageBookingSidebar packageSlug={slug} seasonalPrices={seasonalPrices} childPrice={childPrice} maxChildAge={applicableMaxChildAge} />
-        </div>
-      </div>
+          </>
+        }
+      />
     </div>
   );
 }

@@ -17,6 +17,9 @@ async function createVehicleHandler(req: AuthenticatedRequest) {
     data.maxChildren = Number(data.maxChildren) || 0;
     data.maxChildAge = Number(data.maxChildAge) || 12;
     data.ac = data.ac === true || data.ac === 'true';
+    data.inclusions = Array.isArray(data.inclusions) ? data.inclusions : [];
+    data.exclusions = Array.isArray(data.exclusions) ? data.exclusions : [];
+    data.termsAndConditions = data.termsAndConditions || "";
 
     const docRef = await adminDb.collection('vehicles').add(data);
     
@@ -54,6 +57,9 @@ async function updateVehicleHandler(req: AuthenticatedRequest) {
     updateData.maxChildren = Number(data.maxChildren) || 0;
     updateData.maxChildAge = Number(data.maxChildAge) || 12;
     updateData.ac = data.ac === true || data.ac === 'true';
+    updateData.inclusions = Array.isArray(data.inclusions) ? data.inclusions : [];
+    updateData.exclusions = Array.isArray(data.exclusions) ? data.exclusions : [];
+    updateData.termsAndConditions = data.termsAndConditions || "";
 
     await adminDb.collection('vehicles').doc(id).update(updateData);
     

@@ -24,6 +24,11 @@ export default async function PackagesPage({ searchParams }: { searchParams: Pro
       if (dest && typeof dest === 'string') {
         tours = tours.filter((t: any) => t.destination?.toLowerCase() === dest.toLowerCase());
       }
+      
+      const duration = resolvedSearchParams?.duration;
+      if (duration && typeof duration === 'string') {
+        tours = tours.filter((t: any) => t.duration === duration);
+      }
     }
   } catch (error) {
     console.error("Error fetching packages:", error);

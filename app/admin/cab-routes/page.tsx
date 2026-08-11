@@ -17,7 +17,8 @@ export default function AdminCabRoutesPage() {
     subtitle: "",
     distance: "",
     duration: "",
-    itinerary: [{ location: "" }, { location: "" }]
+    itineraryString: "",
+    terms: ""
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -50,7 +51,7 @@ export default function AdminCabRoutesPage() {
 
   const handleOpenCreate = () => {
     setEditingId(null);
-    setFormData({ title: "", subtitle: "", distance: "", duration: "", itinerary: [{ location: "" }, { location: "" }] });
+    setFormData({ title: "", subtitle: "", distance: "", duration: "", itineraryString: "", terms: "" });
     setError("");
     setIsModalOpen(true);
   };
@@ -62,7 +63,8 @@ export default function AdminCabRoutesPage() {
       subtitle: route.subtitle || "",
       distance: route.distance || "",
       duration: route.duration || "",
-      itinerary: route.itinerary && route.itinerary.length > 0 ? route.itinerary : [{ location: "" }, { location: "" }]
+      itineraryString: route.itinerary && Array.isArray(route.itinerary) ? route.itinerary.map((i: any) => i.location).join(" $ ") : "",
+      terms: route.terms || ""
     });
     setError("");
     setIsModalOpen(true);
@@ -103,7 +105,9 @@ export default function AdminCabRoutesPage() {
       const token = await currentUser.getIdToken();
 
       const method = editingId ? "PUT" : "POST";
-      const payload = editingId ? { id: editingId, ...formData } : formData;
+      const payloadItinerary = formData.itineraryString.split("$").map(s => ({ location: s.trim() })).filter(i => i.location);
+      const payload = editingId ? { id: editingId, ...formData, itinerary: payloadItinerary } : { ...formData, itinerary: payloadItinerary };
+      delete (payload as any).itineraryString;
 
       const res = await fetch("/api/admin/cab-routes", {
         method,
@@ -133,23 +137,7 @@ export default function AdminCabRoutesPage() {
     r.subtitle?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleAddLocation = () => {
-    setFormData({ ...formData, itinerary: [...formData.itinerary, { location: "" }] });
-  };
 
-  const handleRemoveLocation = (index: number) => {
-    if (formData.itinerary.length > 1) {
-      const newItinerary = [...formData.itinerary];
-      newItinerary.splice(index, 1);
-      setFormData({ ...formData, itinerary: newItinerary });
-    }
-  };
-
-  const handleLocationChange = (index: number, value: string) => {
-    const newItinerary = [...formData.itinerary];
-    newItinerary[index].location = value;
-    setFormData({ ...formData, itinerary: newItinerary });
-  };
 
   return (
     <div className="space-y-8">
@@ -233,25 +221,22 @@ export default function AdminCabRoutesPage() {
               </div>
 
               <div className="space-y-2">
-                <div className="flex justify-between items-center mb-1">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Route Itinerary (Locations) <span className="text-destructive">*</span></label>
-                  <button type="button" onClick={handleAddLocation} className="text-xs text-primary hover:underline font-semibold">+ Add Stop</button>
-                </div>
-                {formData.itinerary.map((loc, idx) => (
-                  <div key={idx} className="flex gap-2">
-                    <input 
-                      type="text" required
-                      value={loc.location} onChange={e => handleLocationChange(idx, e.target.value)}
-                      className="flex-1 bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all"
-                      placeholder={`Stop ${idx + 1} (e.g. Gangtok)`}
-                    />
-                    {formData.itinerary.length > 1 && (
-                      <button type="button" onClick={() => handleRemoveLocation(idx)} className="p-2.5 text-red-500 hover:bg-red-500/10 rounded-xl transition-colors">
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    )}
-                  </div>
-                ))}
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Route Itinerary (separated by $) <span className="text-destructive">*</span></label>
+                <textarea 
+                  required
+                  value={formData.itineraryString} onChange={e => setFormData({...formData, itineraryString: e.target.value})}
+                  className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all min-h-[80px]"
+                  placeholder="e.g. Siliguri $ Darjeeling $ Gangtok"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Terms & Conditions</label>
+                <textarea 
+                  value={formData.terms} onChange={e => setFormData({...formData, terms: e.target.value})}
+                  className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all min-h-[100px]"
+                  placeholder="Enter route-specific terms and conditions here..."
+                />
               </div>
               <div className="pt-4 flex justify-end gap-3 border-t border-border mt-6">
                 <button 

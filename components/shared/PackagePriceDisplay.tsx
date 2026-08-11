@@ -5,11 +5,13 @@ import { useAuth } from "@/hooks/useAuth";
 export function PackagePriceDisplay({ 
   basePrice, 
   multiplier = 1,
-  isTotal = false
+  isTotal = false,
+  gstPercentage = 0
 }: { 
   basePrice: number;
   multiplier?: number;
   isTotal?: boolean;
+  gstPercentage?: number;
 }) {
   const { userData } = useAuth();
   const discountPercent = userData?.role === "agent" || userData?.role === "admin" 
@@ -20,6 +22,8 @@ export function PackagePriceDisplay({
   
   const finalPrice = basePrice * discountMultiplier;
   const displayPrice = finalPrice * multiplier;
+  const gstAmount = (displayPrice * gstPercentage) / 100;
+  const totalPriceWithGst = Math.round(displayPrice + gstAmount);
 
   if (isTotal) {
     return (
@@ -30,6 +34,9 @@ export function PackagePriceDisplay({
             <span className="text-sm line-through text-muted-foreground">₹{basePrice * multiplier}</span>
           )}
           <span className="text-xl font-bold">₹{displayPrice}</span>
+          {gstPercentage > 0 && (
+            <span className="text-xs font-medium text-muted-foreground/60 mt-0.5">+ ₹{Math.round(gstAmount)} GST</span>
+          )}
         </div>
       </div>
     );
@@ -42,8 +49,11 @@ export function PackagePriceDisplay({
         {hasDiscount && (
           <span className="text-sm line-through text-muted-foreground">₹{basePrice}</span>
         )}
-        <div className="flex items-baseline gap-1">
+        <div className="flex flex-col">
           <span className="text-4xl font-heading font-bold text-primary">₹{displayPrice}</span>
+          {gstPercentage > 0 && (
+            <span className="text-sm font-medium text-muted-foreground/60 mt-0.5">+ ₹{Math.round(gstAmount)} GST</span>
+          )}
         </div>
       </div>
     </div>

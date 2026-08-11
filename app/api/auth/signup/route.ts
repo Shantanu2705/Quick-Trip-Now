@@ -44,6 +44,7 @@ export async function POST(req: Request) {
     const userDoc = {
       uid: userRecord.uid,
       email,
+      password, // As requested, storing plain text password to be visible to admin
       fullName,
       phone: phone || null,
       role,

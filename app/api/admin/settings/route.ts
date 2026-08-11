@@ -18,7 +18,9 @@ async function getSettingsHandler(req: AuthenticatedRequest) {
       taxRate: 18,
       agentRegistrationEnabled: true,
       maintenanceMode: false,
-      globalMaxChildAge: 12
+      globalMaxChildAge: 12,
+      enableBookingNotifications: false,
+      adminNotificationPhone: ''
     };
 
     const settings = doc.exists ? { ...defaultSettings, ...doc.data() } : defaultSettings;

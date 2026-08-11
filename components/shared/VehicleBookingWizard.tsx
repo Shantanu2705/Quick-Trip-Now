@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ChevronRight, ArrowLeft, Lock, Users, MapPin, Calendar, Clock, Navigation } from "lucide-react";
+import { Check, ChevronRight, ArrowLeft, Lock, Users, MapPin, Calendar, Clock, Navigation, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
@@ -16,6 +16,7 @@ export function VehicleBookingWizard({
   selectedDate,
   adultsCount,
   childrenCount,
+  infantsCount,
   maxChildAge
 }: {
   cabRouteData: any,
@@ -23,6 +24,7 @@ export function VehicleBookingWizard({
   selectedDate?: Date,
   adultsCount: number,
   childrenCount: number,
+  infantsCount: number,
   maxChildAge: number
 }) {
   const { userData, loading: authLoading } = useAuth();
@@ -30,32 +32,24 @@ export function VehicleBookingWizard({
   const [error, setError] = useState("");
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "verifying" | "success">("idle");
   const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+
+  const [localAdults, setLocalAdults] = useState(adultsCount);
+  const [localChildren, setLocalChildren] = useState(childrenCount);
+  const [localInfants, setLocalInfants] = useState(infantsCount);
 
   const [travelers, setTravelers] = useState<any[]>([]);
 
   useEffect(() => {
-    // Initialize travelers based on counts
-    const initTravelers = [];
-    for (let i = 0; i < adultsCount; i++) {
-      initTravelers.push({
-        type: 'adult',
-        fullName: i === 0 && userData ? (userData.fullName || "") : "",
-        email: i === 0 && userData ? (userData.email || "") : "",
-        phone: "",
-        age: ""
-      });
-    }
-    for (let i = 0; i < childrenCount; i++) {
-      initTravelers.push({
-        type: 'child',
-        fullName: "",
-        email: "",
-        phone: "",
-        age: ""
-      });
-    }
-    setTravelers(initTravelers);
-  }, [adultsCount, childrenCount, userData]);
+    // Initialize single leader traveler
+    setTravelers([{
+      type: 'adult',
+      fullName: userData ? (userData.fullName || "") : "",
+      email: userData ? (userData.email || "") : "",
+      phone: "",
+      age: ""
+    }]);
+  }, [userData]);
 
   const updateTraveler = (index: number, field: string, value: string) => {
     const newTravelers = [...travelers];
@@ -67,25 +61,11 @@ export function VehicleBookingWizard({
     return <div className="py-24 text-center">Loading...</div>;
   }
 
-  if (!userData) {
-    return (
-      <div className="w-full max-w-2xl mx-auto bg-background rounded-3xl shadow-2xl border border-border overflow-hidden p-12 text-center">
-        <div className="flex justify-center mb-6">
-          <div className="bg-primary/10 p-4 rounded-full">
-            <Lock className="w-10 h-10 text-primary" />
-          </div>
-        </div>
-        <h2 className="text-3xl font-heading font-bold mb-4">Authentication Required</h2>
-        <p className="text-muted-foreground mb-8">You must be logged in as a customer or agent to complete a vehicle booking.</p>
-        <div className="flex justify-center gap-4">
-          <Link href="/auth">
-            <Button className="rounded-xl px-8">Sign In / Register</Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
+  const baseFare = selectedVehicle ? (selectedVehicle.price * selectedVehicle.qtyRequired) : 0;
+  const gstPercent = selectedVehicle?.gstPercentage || 0;
+  const gstAmount = (baseFare * gstPercent) / 100;
+  const finalPrice = Math.round(baseFare + gstAmount);
+  
   const triggerSuccess = async () => {
     setPaymentStatus("success");
     
@@ -96,7 +76,7 @@ export function VehicleBookingWizard({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: userData.uid,
+          userId: userData?.uid || "guest",
           customerName: leadTraveler.fullName,
           email: leadTraveler.email,
           phone: leadTraveler.phone,
@@ -105,10 +85,14 @@ export function VehicleBookingWizard({
           pickup: cabRouteData.title,
           dropoff: cabRouteData.subtitle || cabRouteData.title,
           date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
-          amount: selectedVehicle.price * selectedVehicle.qtyRequired,
+          amount: finalPrice,
+          baseAmount: baseFare,
+          gstPercentage: gstPercent,
+          gstAmount: Math.round(gstAmount),
           type: 'vehicle',
-          adultsCount,
-          childrenCount,
+          adultsCount: localAdults,
+          childrenCount: localChildren,
+          infantsCount: localInfants,
           travelers
         })
       });
@@ -152,13 +136,14 @@ export function VehicleBookingWizard({
     setError("");
     if (currentStep === 0) {
       if (!selectedVehicle) return setError("Please select a vehicle to continue.");
+      if (!termsAccepted) return setError("Please accept the terms and conditions to continue.");
     }
     if (currentStep === 1) {
       // Validate all travelers
       for (let i = 0; i < travelers.length; i++) {
         const t = travelers[i];
         const isAdult = t.type === 'adult';
-        const label = isAdult ? `Adult ${i + 1}` : `Child ${i - adultsCount + 1}`;
+        const label = isAdult ? `Adult ${i + 1}` : `Child ${i - localAdults + 1}`;
         
         if (t.fullName.trim().length < 3) return setError(`${label}: Please enter a valid full name.`);
         
@@ -251,6 +236,13 @@ export function VehicleBookingWizard({
           <div className="text-xl font-bold text-foreground">
             {cabRouteData.title}
           </div>
+
+          {cabRouteData.terms && (
+            <div className="mt-2 p-4 bg-background/50 rounded-xl border border-border text-sm text-muted-foreground whitespace-pre-wrap">
+              <span className="font-bold text-foreground block mb-2">Route Terms & Conditions:</span>
+              {cabRouteData.terms}
+            </div>
+          )}
         </div>
       </div>
 
@@ -301,8 +293,36 @@ export function VehicleBookingWizard({
                 return (
                   <div className="space-y-6 flex-1">
                     <h3 className="text-2xl font-heading font-bold">Select Vehicle</h3>
-                    <p className="text-muted-foreground mb-6">Showing vehicles available for {adultsCount} Adults and {childrenCount} Children on {selectedDate ? format(selectedDate, "dd MMM yyyy") : "selected date"}.</p>
+                    <p className="text-muted-foreground mb-6">Showing vehicles available on {selectedDate ? format(selectedDate, "dd MMM yyyy") : "selected date"}.</p>
                     
+                    <div className="flex flex-wrap items-center gap-8 mb-6 p-4 bg-muted/20 border border-border rounded-xl">
+                      <div className="flex flex-col gap-3">
+                        <span className="text-sm font-semibold">Adults</span>
+                        <div className="flex items-center gap-3">
+                          <button onClick={() => setLocalAdults(Math.max(1, localAdults - 1))} className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled={localAdults <= 1}><Minus className="w-4 h-4" /></button>
+                          <span className="w-4 text-center font-medium">{localAdults}</span>
+                          <button onClick={() => setLocalAdults(localAdults + 1)} className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors"><Plus className="w-4 h-4" /></button>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-3">
+                        <span className="text-sm font-semibold">Children</span>
+                        <div className="flex items-center gap-3">
+                          <button onClick={() => setLocalChildren(Math.max(0, localChildren - 1))} className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled={localChildren <= 0}><Minus className="w-4 h-4" /></button>
+                          <span className="w-4 text-center font-medium">{localChildren}</span>
+                          <button onClick={() => setLocalChildren(localChildren + 1)} className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors"><Plus className="w-4 h-4" /></button>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-3">
+                        <span className="text-sm font-semibold">Infants</span>
+                        <div className="flex items-center gap-3">
+                          <button onClick={() => setLocalInfants(Math.max(0, localInfants - 1))} className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled={localInfants <= 0}><Minus className="w-4 h-4" /></button>
+                          <span className="w-4 text-center font-medium">{localInfants}</span>
+                          <button onClick={() => setLocalInfants(localInfants + 1)} className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors"><Plus className="w-4 h-4" /></button>
+                        </div>
+                      </div>
+                    </div>
+                    
+
                     {filteredVehicles.length === 0 ? (
                       <div className="p-8 text-center bg-muted/20 border border-border rounded-2xl">
                         <p className="text-lg font-medium">No vehicles available for this date and capacity.</p>
@@ -311,13 +331,45 @@ export function VehicleBookingWizard({
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredVehicles.map(v => {
-                        const capacityPerVehicle = v.seats || 4;
-                        const qtyRequired = Math.max(1, Math.ceil((adultsCount + childrenCount) / capacityPerVehicle));
+                        const calculateCars = () => {
+                          let cars = 0;
+                          let a = localAdults;
+                          let c = localChildren;
+                          let i = localInfants;
+                          let maxA = v.maxAdults || v.seats || 4;
+                          let totalSeats = v.seats || 4;
+                        
+                          if (a === 0 && c === 0 && i === 0) return 1;
+                        
+                          while (a > 0 || c > 0 || i > 0) {
+                            cars++;
+                            let adultsInThisCar = Math.min(a, maxA);
+                            a -= adultsInThisCar;
+                            
+                            let seatsLeft = totalSeats - adultsInThisCar;
+                            
+                            let childrenInThisCar = Math.min(c, seatsLeft);
+                            c -= childrenInThisCar;
+                            seatsLeft -= childrenInThisCar;
+                            
+                            let infantsInThisCar = Math.min(i, seatsLeft);
+                            i -= infantsInThisCar;
+                            
+                            // Failsafe to prevent infinite loops if seats === 0
+                            if (totalSeats <= 0) break;
+                          }
+                          return cars;
+                        };
+                        const qtyRequired = calculateCars();
                         
                         return (
                           <div 
                             key={v.id} 
-                            onClick={() => setSelectedVehicle({ ...v, qtyRequired })}
+                            onClick={() => {
+                              setSelectedVehicle({ ...v, qtyRequired });
+                              setTermsAccepted(false);
+                              setError("");
+                            }}
                             className={`p-4 border rounded-2xl cursor-pointer transition-all ${selectedVehicle?.id === v.id ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'border-border bg-background hover:border-primary/50'}`}
                           >
                             <div className="flex justify-between items-start">
@@ -330,8 +382,13 @@ export function VehicleBookingWizard({
                                   </div>
                                 )}
                               </div>
-                              <div className="text-right">
+                              <div className="text-right flex flex-col items-end">
                                 <span className="font-bold text-xl text-primary">₹{v.price * qtyRequired}</span>
+                                {v.gstPercentage ? (
+                                  <span className="text-xs font-medium text-muted-foreground/60 mb-0.5 mt-[-2px]">
+                                    + ₹{Math.round((v.price * qtyRequired) * v.gstPercentage / 100)} GST
+                                  </span>
+                                ) : null}
                                 <div className="text-xs text-muted-foreground">Total Fare (x{qtyRequired})</div>
                               </div>
                             </div>
@@ -348,9 +405,36 @@ export function VehicleBookingWizard({
                           </div>
                         );
                       })}
-                    </div>
-                  )}
-                </div>
+                      </div>
+                    )}
+
+                    {selectedVehicle && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-8 p-6 bg-muted/20 border border-border rounded-2xl"
+                      >
+                        <h4 className="font-bold text-lg mb-3">Vehicle Terms & Conditions</h4>
+                        <div className="bg-background border border-border p-4 rounded-xl text-sm text-muted-foreground whitespace-pre-wrap max-h-40 overflow-y-auto mb-4">
+                          {selectedVehicle.terms || "Standard terms and conditions apply for this vehicle."}
+                        </div>
+                        <label className="flex items-start gap-3 cursor-pointer group">
+                          <input 
+                            type="checkbox" 
+                            checked={termsAccepted} 
+                            onChange={(e) => {
+                              setTermsAccepted(e.target.checked);
+                              if (e.target.checked) setError("");
+                            }}
+                            className="mt-1 w-5 h-5 rounded border-border text-primary focus:ring-primary focus:ring-offset-0"
+                          />
+                          <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                            I have read and accept the terms and conditions for booking this vehicle.
+                          </span>
+                        </label>
+                      </motion.div>
+                    )}
+                  </div>
                 );
               })()}
               
@@ -418,12 +502,20 @@ export function VehicleBookingWizard({
                     <div className="flex justify-between items-center pb-4 border-b border-border/50">
                       <span className="text-muted-foreground">Travelers</span>
                       <span className="font-semibold text-right">
-                        {adultsCount} Adult{adultsCount !== 1 ? 's' : ''}{childrenCount > 0 ? `, ${childrenCount} Child${childrenCount !== 1 ? 'ren' : ''}` : ''}
+                        {localAdults} Adult{localAdults !== 1 ? 's' : ''}{localChildren > 0 ? `, ${localChildren} Child${localChildren !== 1 ? 'ren' : ''}` : ''}{localInfants > 0 ? `, ${localInfants} Infant${localInfants !== 1 ? 's' : ''}` : ''}
                       </span>
+                    </div>
+                    <div className="flex justify-between items-center pb-4 border-b border-border/50">
+                      <span className="text-muted-foreground">Base Fare</span>
+                      <span className="font-semibold text-right">₹{baseFare.toLocaleString("en-IN")}</span>
+                    </div>
+                    <div className="flex justify-between items-center pb-4 border-b border-border/50">
+                      <span className="text-muted-foreground">GST ({gstPercent}%)</span>
+                      <span className="font-semibold text-right">₹{Math.round(gstAmount).toLocaleString("en-IN")}</span>
                     </div>
                     <div className="flex justify-between items-center pt-2">
                       <span className="text-lg font-bold text-foreground">Total Amount</span>
-                      <span className="text-2xl font-bold text-primary">₹{selectedVehicle?.price * (selectedVehicle?.qtyRequired || 1)}</span>
+                      <span className="text-2xl font-bold text-primary">₹{finalPrice.toLocaleString("en-IN")}</span>
                     </div>
                   </div>
 

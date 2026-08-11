@@ -7,7 +7,6 @@ import { Package } from "@/lib/firestore-utils";
 import { useAuth } from "@/hooks/useAuth";
 import { storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { getApplicablePrice } from "@/lib/price-utils";
 import Image from "next/image";
 
 export default function AdminPackagesPage() {
@@ -34,13 +33,12 @@ export default function AdminPackagesPage() {
     highlightsStr: "",
     rating: 5.0,
     reviews: 0,
-    childPrice: "",
-    maxChildAge: 12,
+    termsAndConditions: "",
+    maxAdults: 4,
+    maxChildren: 2,
+    maxInfants: 2,
+    gstPercentage: 0,
   });
-
-  const [seasonalPrices, setSeasonalPrices] = useState<{ startDate: string; endDate: string; price: number }[]>([
-    { startDate: "", endDate: "", price: 0 }
-  ]);
   const [itinerary, setItinerary] = useState([{ day: 1, title: "", desc: "" }]);
   const [inclusions, setInclusions] = useState([{ text: "", included: true }]);
 
@@ -97,10 +95,12 @@ export default function AdminPackagesPage() {
       highlightsStr: pkg.highlights?.join(", ") || "",
       rating: pkg.rating || 5.0,
       reviews: pkg.reviews || 0,
-      childPrice: pkg.childPrice?.toString() || "",
-      maxChildAge: pkg.maxChildAge || 12,
+      termsAndConditions: pkg.termsAndConditions || "",
+      maxAdults: pkg.maxAdults || 4,
+      maxChildren: pkg.maxChildren || 2,
+      maxInfants: pkg.maxInfants || 2,
+      gstPercentage: pkg.gstPercentage || 0,
     });
-    setSeasonalPrices(pkg.seasonalPrices && pkg.seasonalPrices.length > 0 ? pkg.seasonalPrices : [{ startDate: "", endDate: "", price: 0 }]);
     setItinerary(pkg.itinerary && pkg.itinerary.length > 0 ? pkg.itinerary : [{ day: 1, title: "", desc: "" }]);
     setInclusions(pkg.inclusions && pkg.inclusions.length > 0 ? pkg.inclusions : [{ text: "", included: true }]);
     setImagePreview(pkg.image || "");
@@ -176,25 +176,7 @@ export default function AdminPackagesPage() {
       return;
     }
 
-    if (seasonalPrices.length === 0) {
-      alert("Please add at least one seasonal pricing period.");
-      return;
-    }
-
-    for (const season of seasonalPrices) {
-      if (!season.startDate || !season.endDate || !season.price) {
-        alert("Please fill all fields for seasonal pricing.");
-        return;
-      }
-      if (new Date(season.endDate) < new Date(season.startDate)) {
-        alert("End date cannot be before start date in seasonal pricing.");
-        return;
-      }
-      if (Number(season.price) <= 0) {
-        alert("Price must be greater than zero.");
-        return;
-      }
-    }
+    if (!formData.title) missingFields.push("Package Name");
 
     setSaving(true);
     try {
@@ -229,10 +211,10 @@ export default function AdminPackagesPage() {
       const pkgData = {
         ...(editingId ? { id: editingId } : {}),
         ...formData,
-        childPrice: formData.childPrice === "" ? 0 : Number(formData.childPrice),
-        maxChildAge: Number(formData.maxChildAge),
+        maxAdults: Number(formData.maxAdults),
+        maxChildren: Number(formData.maxChildren),
+        maxInfants: Number(formData.maxInfants),
         image: imageUrl,
-        seasonalPrices: seasonalPrices.map(s => ({ ...s, price: Number(s.price) })),
         highlights: formData.highlightsStr.split(",").map(s => s.trim()).filter(Boolean),
         itinerary,
         inclusions
@@ -270,9 +252,8 @@ export default function AdminPackagesPage() {
     setFormData({
       title: "", description: "", image: "", duration: "", days: 3, nights: 2,
       category: "Shared Tour", destination: "", status: "Active", isFeatured: false, highlightsStr: "",
-      rating: 5.0, reviews: 0, childPrice: "", maxChildAge: 12
+      rating: 5.0, reviews: 0, termsAndConditions: "", maxAdults: 4, maxChildren: 2, maxInfants: 2, gstPercentage: 0
     });
-    setSeasonalPrices([{ startDate: "", endDate: "", price: 0 }]);
     setItinerary([{ day: 1, title: "", desc: "" }]);
     setInclusions([{ text: "", included: true }]);
     setImageFile(null);
@@ -323,6 +304,17 @@ export default function AdminPackagesPage() {
                   <input type="text" value={formData.duration} onChange={e => setFormData({...formData, duration: e.target.value})} className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary" placeholder="e.g. 3 Days / 2 Nights" />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium mb-1">Status</label>
+                  <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className="w-full bg-muted/50 border border-border rounded-xl py-2 px-3 focus:outline-none focus:border-primary">
+                    <option value="Active">Active</option>
+                    <option value="Draft">Draft</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">GST Percentage (%)</label>
+                  <input type="number" value={formData.gstPercentage} onChange={(e) => setFormData({ ...formData, gstPercentage: Number(e.target.value) })} className="w-full bg-muted/50 border border-border rounded-xl py-2 px-3 focus:outline-none focus:border-primary" placeholder="e.g. 5" />
+                </div>
+                <div>
                   <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Category</label>
                   <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary">
                     <option>Shared Tour</option>
@@ -355,13 +347,17 @@ export default function AdminPackagesPage() {
                 </div>
 
                 <div className="flex gap-4">
-                  <div className="w-1/2">
-                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Child Price (Flat Rate)</label>
-                    <input type="number" min="0" value={formData.childPrice} onChange={e => setFormData({...formData, childPrice: e.target.value})} className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary" placeholder="e.g. 5000" />
+                  <div className="w-1/3">
+                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Max Adults</label>
+                    <input type="number" min="1" value={formData.maxAdults} onChange={e => setFormData({...formData, maxAdults: Number(e.target.value)})} className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary" />
                   </div>
-                  <div className="w-1/2">
-                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Max Child Age</label>
-                    <input type="number" min="1" max="18" value={formData.maxChildAge} onChange={e => setFormData({...formData, maxChildAge: Number(e.target.value)})} className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary" />
+                  <div className="w-1/3">
+                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Max Children</label>
+                    <input type="number" min="0" value={formData.maxChildren} onChange={e => setFormData({...formData, maxChildren: Number(e.target.value)})} className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary" />
+                  </div>
+                  <div className="w-1/3">
+                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Max Infants</label>
+                    <input type="number" min="0" value={formData.maxInfants} onChange={e => setFormData({...formData, maxInfants: Number(e.target.value)})} className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary" />
                   </div>
                 </div>
                 
@@ -415,34 +411,16 @@ export default function AdminPackagesPage() {
                 </div>
               </div>
 
-              {/* Seasonal Pricing */}
+              {/* Terms and Conditions */}
               <div className="border-t border-border pt-4">
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-bold flex items-center gap-2"><Calendar className="w-5 h-5 text-primary"/> Seasonal Pricing <span className="text-destructive">*</span></h3>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setSeasonalPrices([...seasonalPrices, { startDate: "", endDate: "", price: 0 }])}>+ Add Period</Button>
-                </div>
-                <div className="space-y-3">
-                  {seasonalPrices.map((season, index) => (
-                    <div key={index} className="flex flex-wrap md:flex-nowrap gap-3 items-end bg-muted/10 p-3 rounded-xl border border-border/50">
-                      <div className="w-full md:w-1/3">
-                        <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Start Date <span className="text-destructive">*</span></label>
-                        <input type="date" value={season.startDate} onChange={e => { const newP = [...seasonalPrices]; newP[index].startDate = e.target.value; setSeasonalPrices(newP); }} className="w-full bg-background border border-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-primary" />
-                      </div>
-                      <div className="w-full md:w-1/3">
-                        <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">End Date <span className="text-destructive">*</span></label>
-                        <input type="date" value={season.endDate} onChange={e => { const newP = [...seasonalPrices]; newP[index].endDate = e.target.value; setSeasonalPrices(newP); }} className="w-full bg-background border border-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-primary" />
-                      </div>
-                      <div className="w-full md:w-1/3">
-                        <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Package Price (₹) <span className="text-destructive">*</span></label>
-                        <input type="number" min="1" value={season.price || ''} onChange={e => { const newP = [...seasonalPrices]; newP[index].price = Number(e.target.value); setSeasonalPrices(newP); }} className="w-full bg-background border border-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-primary" />
-                      </div>
-                      <button type="button" onClick={() => setSeasonalPrices(seasonalPrices.filter((_, i) => i !== index))} className="p-2.5 text-destructive hover:bg-destructive/10 rounded-lg shrink-0 mb-0.5"><Trash2 className="w-4 h-4" /></button>
-                    </div>
-                  ))}
-                  {seasonalPrices.length === 0 && (
-                    <div className="text-sm text-destructive font-medium">Please add at least one pricing period.</div>
-                  )}
-                </div>
+                <h3 className="font-bold mb-2">Terms & Conditions</h3>
+                <textarea 
+                  rows={4} 
+                  value={formData.termsAndConditions} 
+                  onChange={e => setFormData({...formData, termsAndConditions: e.target.value})} 
+                  placeholder="Enter specific terms and conditions for this package..."
+                  className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary" 
+                />
               </div>
 
               {/* Itinerary */}
@@ -504,7 +482,6 @@ export default function AdminPackagesPage() {
                 <th className="px-6 py-4 font-semibold tracking-wider">Package Name</th>
                 <th className="px-6 py-4 font-semibold tracking-wider">Destination</th>
                 <th className="px-6 py-4 font-semibold tracking-wider">Category</th>
-                <th className="px-6 py-4 font-semibold tracking-wider">Price (Today)</th>
                 <th className="px-6 py-4 font-semibold tracking-wider">Status</th>
                 <th className="px-6 py-4 font-semibold tracking-wider text-right">Actions</th>
               </tr>
@@ -524,7 +501,6 @@ export default function AdminPackagesPage() {
                   </td>
                   <td className="px-6 py-4 text-muted-foreground">{pkg.destination}</td>
                   <td className="px-6 py-4 text-muted-foreground">{pkg.category}</td>
-                  <td className="px-6 py-4 font-bold text-primary">₹{getApplicablePrice(pkg.seasonalPrices)}</td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400`}>
                       {pkg.status || 'Active'}

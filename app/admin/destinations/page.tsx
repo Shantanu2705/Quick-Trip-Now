@@ -22,10 +22,12 @@ export default function AdminDestinationsPage() {
     image: "",
     description: "",
     isPopular: false,
+    isUpcoming: false,
     history: "",
     touristPlaces: "",
     bestTimeToVisit: "",
-    mainAttractionsStr: ""
+    mainAttractionsStr: "",
+    durationsStr: ""
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
@@ -34,6 +36,7 @@ export default function AdminDestinationsPage() {
   const [error, setError] = useState("");
 
   const popularCount = destinations.filter(d => d.isPopular && d.id !== editingId).length;
+  const upcomingCount = destinations.filter(d => d.isUpcoming && d.id !== editingId).length;
 
   const fetchDestinations = async () => {
     setLoading(true);
@@ -63,7 +66,7 @@ export default function AdminDestinationsPage() {
 
   const handleOpenCreate = () => {
     setEditingId(null);
-    setFormData({ name: "", slug: "", image: "", description: "", isPopular: false, history: "", touristPlaces: "", bestTimeToVisit: "", mainAttractionsStr: "" });
+    setFormData({ name: "", slug: "", image: "", description: "", isPopular: false, isUpcoming: false, history: "", touristPlaces: "", bestTimeToVisit: "", mainAttractionsStr: "", durationsStr: "" });
     setImageFile(null);
     setImagePreview("");
     setError("");
@@ -78,10 +81,12 @@ export default function AdminDestinationsPage() {
       image: dest.image,
       description: dest.description || "",
       isPopular: dest.isPopular || false,
+      isUpcoming: dest.isUpcoming || false,
       history: dest.history || "",
       touristPlaces: dest.touristPlaces || "",
       bestTimeToVisit: dest.bestTimeToVisit || "",
-      mainAttractionsStr: dest.mainAttractions ? dest.mainAttractions.join(", ") : ""
+      mainAttractionsStr: dest.mainAttractions ? dest.mainAttractions.join(", ") : "",
+      durationsStr: dest.durations ? dest.durations.join(", ") : ""
     });
     setImageFile(null);
     setImagePreview(dest.image || "");
@@ -184,9 +189,10 @@ export default function AdminDestinationsPage() {
       const processedData = {
         ...formData,
         mainAttractions: formData.mainAttractionsStr.split(",").map(s => s.trim()).filter(Boolean),
+        durations: formData.durationsStr.split(",").map(s => s.trim()).filter(Boolean),
         image: imageUrl
       };
-      const { mainAttractionsStr, ...finalData } = processedData;
+      const { mainAttractionsStr, durationsStr, ...finalData } = processedData;
 
       const method = editingId ? "PUT" : "POST";
       const payload = editingId ? { id: editingId, ...finalData } : finalData;
@@ -376,9 +382,18 @@ export default function AdminDestinationsPage() {
                     placeholder="e.g. Tsomgo Lake, Nathula Pass, MG Marg"
                   />
                 </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Durations Available (Comma Separated)</label>
+                  <input 
+                    type="text" 
+                    value={formData.durationsStr} onChange={e => setFormData({...formData, durationsStr: e.target.value})}
+                    className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all"
+                    placeholder="e.g. 2 Days / 1 Night, 3 Days / 2 Nights"
+                  />
+                </div>
               </div>
 
-              <div className="md:col-span-2">
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label className={`flex items-center gap-3 text-sm font-semibold cursor-pointer p-4 rounded-xl border transition-all ${
                   popularCount >= 4 && !formData.isPopular
                     ? "bg-muted/50 border-border/50 text-muted-foreground cursor-not-allowed opacity-70"
@@ -396,12 +411,40 @@ export default function AdminDestinationsPage() {
                   />
                   <div>
                     <div className="flex items-center gap-2">
-                      Show in "Popular Destinations" on Landing Page
+                      Show in "Service at your Doorstep"
                       {formData.isPopular && <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] uppercase font-bold tracking-wider">Active</span>}
                     </div>
                     {popularCount >= 4 && !formData.isPopular && (
                       <div className="text-xs text-amber-600 mt-1 font-normal">
-                        Maximum of 4 popular destinations reached. Uncheck another first.
+                        Maximum of 4 reached.
+                      </div>
+                    )}
+                  </div>
+                </label>
+
+                <label className={`flex items-center gap-3 text-sm font-semibold cursor-pointer p-4 rounded-xl border transition-all ${
+                  upcomingCount >= 4 && !formData.isUpcoming
+                    ? "bg-muted/50 border-border/50 text-muted-foreground cursor-not-allowed opacity-70"
+                    : "bg-primary/5 border-primary/20 text-foreground hover:bg-primary/10"
+                }`}>
+                  <input 
+                    type="checkbox" 
+                    checked={formData.isUpcoming} 
+                    disabled={upcomingCount >= 4 && !formData.isUpcoming}
+                    onChange={e => {
+                      if (upcomingCount >= 4 && e.target.checked) return;
+                      setFormData({...formData, isUpcoming: e.target.checked});
+                    }} 
+                    className="w-5 h-5 rounded border-border text-primary focus:ring-primary disabled:opacity-50" 
+                  />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      Show in "Upcoming Services"
+                      {formData.isUpcoming && <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] uppercase font-bold tracking-wider">Active</span>}
+                    </div>
+                    {upcomingCount >= 4 && !formData.isUpcoming && (
+                      <div className="text-xs text-amber-600 mt-1 font-normal">
+                        Maximum of 4 reached.
                       </div>
                     )}
                   </div>
@@ -471,15 +514,23 @@ export default function AdminDestinationsPage() {
                       <span className="font-mono text-xs bg-muted px-2 py-1 rounded text-muted-foreground">{dest.slug}</span>
                     </td>
                     <td className="px-6 py-4">
-                      {dest.isPopular ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-                          Popular
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
-                          Standard
-                        </span>
-                      )}
+                      <div className="flex gap-2">
+                        {dest.isPopular ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+                            Ready
+                          </span>
+                        ) : null}
+                        {dest.isUpcoming ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                            Upcoming
+                          </span>
+                        ) : null}
+                        {!dest.isPopular && !dest.isUpcoming && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-bold bg-muted text-muted-foreground">
+                            Standard
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
                       <button onClick={() => handleOpenEdit(dest)} className="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors" title="Edit">
