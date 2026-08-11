@@ -40,22 +40,17 @@ export function Footer({ phone = "+91 98765 43210", email = "support@quicktripno
               Experience the breathtaking beauty of Sikkim and beyond. Curated luxury travel experiences designed exclusively for you.
             </p>
             
-            <div className="mt-4">
-              <h4 className="font-heading font-medium text-lg mb-4">Subscribe to our Newsletter</h4>
-              <form className="flex gap-2 max-w-md">
-                <input 
-                  type="email" 
-                  placeholder="Enter your email" 
-                  className="bg-secondary-foreground/10 border border-secondary-foreground/20 rounded-lg px-4 py-3 flex-1 text-secondary-foreground placeholder:text-secondary-foreground/60 focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-                  required
-                />
-                <button 
-                  type="submit"
-                  className="bg-accent text-accent-foreground px-6 py-3 rounded-lg font-medium hover:bg-accent/90 transition-colors flex items-center gap-2"
-                >
-                  Subscribe
-                </button>
-              </form>
+            <div className="mt-4 p-5 rounded-2xl border border-secondary-foreground/10 bg-secondary-foreground/5 w-fit hover:border-accent/30 transition-colors group">
+              <p className="text-secondary-foreground/60 text-sm mb-1 uppercase tracking-wider font-semibold">A proud venture of</p>
+              <a 
+                href="https://www.swastiktripline.com/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="font-heading font-bold text-xl md:text-2xl hover:text-accent transition-colors flex items-center gap-2"
+              >
+                Swastik Tripline
+                <ArrowRight className="w-5 h-5 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300 text-accent" />
+              </a>
             </div>
           </div>
 
