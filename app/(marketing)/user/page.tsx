@@ -24,6 +24,7 @@ export default function UserDashboard() {
     }
 
     const fetchBookings = async () => {
+      if (!db) return;
       try {
         const q = query(
           collection(db, "bookings"),
