@@ -34,7 +34,7 @@ export default function UserDashboard() {
         const fetchedBookings = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
-        }));
+        })) as any[];
         
         // Sort by createdAt descending
         fetchedBookings.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -46,7 +46,7 @@ export default function UserDashboard() {
           where("targetUserId", "==", user.uid)
         );
         const cSnap = await getDocs(cQ);
-        const fetchedCoupons = cSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const fetchedCoupons = cSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
         
         const eligibleCoupon = fetchedCoupons.find(c => 
           c.isActive && 
