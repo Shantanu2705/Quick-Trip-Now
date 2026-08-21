@@ -12,7 +12,10 @@ export async function getGlobalSettings() {
       taxRate: 18,
       agentRegistrationEnabled: true,
       maintenanceMode: false,
-      globalMaxChildAge: 12
+      globalMaxChildAge: 12,
+      heroTitle: 'Explore <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Majestic</span> Sikkim',
+      heroSubtitle: 'Experience the world\'s most breathtaking landscapes with curated luxury travel packages and premium services.',
+      heroImage: '/images/hero_bg.png'
     };
 
     return doc.exists ? { ...defaultSettings, ...doc.data() } : defaultSettings;

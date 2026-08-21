@@ -16,7 +16,10 @@ export default function AdminSettingsPage() {
     maintenanceMode: false,
     globalMaxChildAge: 12,
     enableBookingNotifications: false,
-    adminNotificationPhone: ""
+    adminNotificationPhone: "",
+    heroTitle: "",
+    heroSubtitle: "",
+    heroImage: ""
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -143,6 +146,41 @@ export default function AdminSettingsPage() {
                   className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all"
                 />
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border-border/50 shadow-sm overflow-hidden">
+          <div className="h-1 w-full bg-purple-500" />
+          <CardHeader>
+            <CardTitle>Homepage Hero Section</CardTitle>
+            <CardDescription>Customize the main image and text on the homepage.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-foreground">Hero Title (HTML allowed for styling)</label>
+              <input 
+                type="text" 
+                value={settings.heroTitle} onChange={(e) => setSettings({...settings, heroTitle: e.target.value})}
+                className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all"
+                placeholder='e.g. Explore <span className="text-primary">Majestic</span> Sikkim'
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-foreground">Hero Subtitle</label>
+              <textarea 
+                value={settings.heroSubtitle} onChange={(e) => setSettings({...settings, heroSubtitle: e.target.value})}
+                className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all min-h-[100px] resize-y"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-foreground">Hero Background Image URL</label>
+              <input 
+                type="text" 
+                value={settings.heroImage} onChange={(e) => setSettings({...settings, heroImage: e.target.value})}
+                className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all"
+                placeholder="/images/hero_bg.png or https://..."
+              />
             </div>
           </CardContent>
         </Card>

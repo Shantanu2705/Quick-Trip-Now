@@ -20,7 +20,10 @@ async function getSettingsHandler(req: AuthenticatedRequest) {
       maintenanceMode: false,
       globalMaxChildAge: 12,
       enableBookingNotifications: false,
-      adminNotificationPhone: ''
+      adminNotificationPhone: '',
+      heroTitle: 'Explore <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Majestic</span> Sikkim',
+      heroSubtitle: 'Experience the world\'s most breathtaking landscapes with curated luxury travel packages and premium services.',
+      heroImage: '/images/hero_bg.png'
     };
 
     const settings = doc.exists ? { ...defaultSettings, ...doc.data() } : defaultSettings;
