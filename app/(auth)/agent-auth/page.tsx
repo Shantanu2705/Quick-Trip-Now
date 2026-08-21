@@ -32,7 +32,7 @@ export default function AgentAuthPage() {
 
   const setupRecaptcha = () => {
     if (!(window as any).recaptchaVerifier) {
-      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth!, 'recaptcha-container', {
         size: 'invisible'
       });
     }
