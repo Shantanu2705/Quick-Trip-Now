@@ -33,11 +33,16 @@ export default function AuthPage() {
   const [confirmationResult, setConfirmationResult] = useState<any>(null);
 
   const setupRecaptcha = () => {
-    if (!(window as any).recaptchaVerifier) {
-      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth!, 'recaptcha-container', {
-        size: 'invisible'
-      });
+    if ((window as any).recaptchaVerifier) {
+      return;
     }
+    const container = document.getElementById('recaptcha-container');
+    if (container) {
+      container.innerHTML = '';
+    }
+    (window as any).recaptchaVerifier = new RecaptchaVerifier(auth!, 'recaptcha-container', {
+      size: 'invisible'
+    });
   };
 
   const handleSendOtp = async (e: React.FormEvent) => {
@@ -58,10 +63,6 @@ export default function AuthPage() {
       setShowOtpInput(true);
     } catch (err: any) {
       setError(err.message || "Failed to send OTP. Please check your phone number.");
-      if ((window as any).recaptchaVerifier) {
-        (window as any).recaptchaVerifier.clear();
-        (window as any).recaptchaVerifier = null;
-      }
     } finally {
       setLoading(false);
     }
