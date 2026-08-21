@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ChevronRight, ArrowLeft, Lock, Users, MapPin, Calendar, Clock, Navigation, Plus, Minus } from "lucide-react";
+import { Check, ChevronRight, ArrowLeft, Lock, Users, MapPin, Calendar, Clock, Navigation, Plus, Minus, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
@@ -34,6 +34,11 @@ export function VehicleBookingWizard({
   const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{code: string, discount: number} | null>(null);
+  const [couponError, setCouponError] = useState("");
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
+
   const [localAdults, setLocalAdults] = useState(adultsCount);
   const [localChildren, setLocalChildren] = useState(childrenCount);
   const [localInfants, setLocalInfants] = useState(infantsCount);
@@ -57,14 +62,58 @@ export function VehicleBookingWizard({
     setTravelers(newTravelers);
   };
 
+  useEffect(() => {
+    const savedState = sessionStorage.getItem("vehicle_booking_wizard_state");
+    if (savedState) {
+      try {
+        const parsed = JSON.parse(savedState);
+        if (parsed.travelers) setTravelers(parsed.travelers);
+        if (parsed.selectedVehicle) setSelectedVehicle(parsed.selectedVehicle);
+        if (parsed.termsAccepted !== undefined) setTermsAccepted(parsed.termsAccepted);
+        if (parsed.localAdults !== undefined) setLocalAdults(parsed.localAdults);
+        if (parsed.localChildren !== undefined) setLocalChildren(parsed.localChildren);
+        if (parsed.localInfants !== undefined) setLocalInfants(parsed.localInfants);
+        setCurrentStep(2);
+        sessionStorage.removeItem("vehicle_booking_wizard_state");
+      } catch (e) {}
+    }
+  }, []);
+
   if (authLoading) {
     return <div className="py-24 text-center">Loading...</div>;
   }
 
   const baseFare = selectedVehicle ? (selectedVehicle.price * selectedVehicle.qtyRequired) : 0;
+  const couponDiscountAmount = appliedCoupon ? (baseFare * appliedCoupon.discount) / 100 : 0;
+  const priceAfterCoupon = baseFare - couponDiscountAmount;
+  
   const gstPercent = selectedVehicle?.gstPercentage || 0;
-  const gstAmount = (baseFare * gstPercent) / 100;
-  const finalPrice = Math.round(baseFare + gstAmount);
+  const gstAmount = (priceAfterCoupon * gstPercent) / 100;
+  const finalPrice = Math.round(priceAfterCoupon + gstAmount);
+
+  const applyCoupon = async () => {
+    if (!couponCode || !userData) return;
+    setValidatingCoupon(true);
+    setCouponError("");
+    try {
+      const res = await fetch("/api/validate-coupon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: couponCode, userId: userData.uid })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAppliedCoupon({ code: couponCode.toUpperCase(), discount: data.discountPercentage });
+      } else {
+        setCouponError(data.message);
+        setAppliedCoupon(null);
+      }
+    } catch (e) {
+      setCouponError("Failed to validate coupon");
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
   
   const triggerSuccess = async () => {
     setPaymentStatus("success");
@@ -93,7 +142,8 @@ export function VehicleBookingWizard({
           adultsCount: localAdults,
           childrenCount: localChildren,
           infantsCount: localInfants,
-          travelers
+          travelers,
+          couponCode: appliedCoupon?.code
         })
       });
     } catch (err) {
@@ -162,6 +212,19 @@ export function VehicleBookingWizard({
     }
     
     if (currentStep === STEPS.length - 1) {
+      if (!userData) {
+        sessionStorage.setItem("vehicle_booking_wizard_state", JSON.stringify({
+          travelers,
+          selectedVehicle,
+          termsAccepted,
+          localAdults,
+          localChildren,
+          localInfants
+        }));
+        localStorage.setItem("redirect_after_login", window.location.href);
+        window.location.href = "/auth";
+        return;
+      }
       setError("");
       handleRazorpayPayment();
       return;
@@ -513,6 +576,56 @@ export function VehicleBookingWizard({
                       <span className="text-muted-foreground">GST ({gstPercent}%)</span>
                       <span className="font-semibold text-right">₹{Math.round(gstAmount).toLocaleString("en-IN")}</span>
                     </div>
+
+                    {userData && (
+                      <div className="py-4 border-b border-border/50">
+                        {!appliedCoupon ? (
+                          <div className="space-y-2">
+                            <span className="text-sm font-semibold text-muted-foreground block">Have a coupon code?</span>
+                            <div className="flex gap-2">
+                              <input 
+                                type="text"
+                                placeholder="Enter code"
+                                value={couponCode}
+                                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                                className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm uppercase outline-none focus:border-primary"
+                              />
+                              <Button 
+                                variant="secondary" 
+                                size="sm" 
+                                onClick={applyCoupon}
+                                disabled={validatingCoupon || !couponCode}
+                              >
+                                {validatingCoupon ? "Checking..." : "Apply"}
+                              </Button>
+                            </div>
+                            {couponError && <p className="text-xs text-destructive mt-1">{couponError}</p>}
+                          </div>
+                        ) : (
+                          <div className="flex justify-between items-center bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                                <Ticket className="w-4 h-4" /> Coupon Applied
+                              </span>
+                              <span className="text-xs text-emerald-600/80 font-mono">{appliedCoupon.code}</span>
+                            </div>
+                            <div className="flex flex-col items-end">
+                              <span className="font-bold text-emerald-700 dark:text-emerald-400">-{appliedCoupon.discount}%</span>
+                              <button 
+                                onClick={() => {
+                                  setAppliedCoupon(null);
+                                  setCouponCode("");
+                                }}
+                                className="text-xs text-muted-foreground hover:text-destructive underline mt-1"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <div className="flex justify-between items-center pt-2">
                       <span className="text-lg font-bold text-foreground">Total Amount</span>
                       <span className="text-2xl font-bold text-primary">₹{finalPrice.toLocaleString("en-IN")}</span>
@@ -568,7 +681,7 @@ export function VehicleBookingWizard({
             disabled={paymentStatus !== "idle" || (currentStep === 0 && !selectedVehicle)}
             className="rounded-xl px-8 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all"
           >
-            {paymentStatus === "verifying" ? "Processing..." : (currentStep === STEPS.length - 1 ? "Pay with Razorpay" : "Continue")} 
+            {paymentStatus === "verifying" ? "Processing..." : (currentStep === STEPS.length - 1 ? (!userData ? "Login to Pay" : "Pay with Razorpay") : "Continue")} 
             {paymentStatus === "idle" && <ChevronRight className="w-4 h-4 ml-2" />}
           </Button>
         </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ChevronRight, ArrowLeft, Lock, User as UserIcon, Car, Users } from "lucide-react";
+import { Check, ChevronRight, ArrowLeft, Lock, User as UserIcon, Car, Users, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
@@ -33,10 +33,15 @@ export function BookingWizard({
   vehiclesRequired?: number;
 }) {
   const { userData, loading: authLoading } = useAuth();
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(() => selectedVehicleId ? 1 : 0);
   const [error, setError] = useState("");
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "verifying" | "success">("idle");
   const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
+  
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{code: string, discount: number} | null>(null);
+  const [couponError, setCouponError] = useState("");
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
 
   // Initialize single leader traveler
   const [travelers, setTravelers] = useState(() => {
@@ -57,6 +62,20 @@ export function BookingWizard({
   const discountMultiplier = hasDiscount ? (100 - discountPercent) / 100 : 1;
 
   useEffect(() => {
+    const savedState = sessionStorage.getItem("booking_wizard_state");
+    if (savedState) {
+      try {
+        const parsed = JSON.parse(savedState);
+        if (parsed.travelers) setTravelers(parsed.travelers);
+        if (parsed.specialRequests) setSpecialRequests(parsed.specialRequests);
+        if (parsed.selectedVehicle) setSelectedVehicle(parsed.selectedVehicle);
+        setCurrentStep(2);
+        sessionStorage.removeItem("booking_wizard_state");
+      } catch (e) {}
+    }
+  }, []);
+
+  useEffect(() => {
     if (selectedVehicleId && availableVehicles && availableVehicles.length > 0 && !selectedVehicle) {
       const v = availableVehicles.find(v => v.id === selectedVehicleId);
       if (v) {
@@ -70,9 +89,37 @@ export function BookingWizard({
   const safeInfants = infantsCount || 0;
   const totalBasePrice = selectedVehicle ? ((selectedVehicle.price || selectedVehicle.pricePerDay || 0) * (selectedVehicle.qtyRequired || 1)) : 0;
   const discountedBasePrice = hasDiscount ? totalBasePrice * discountMultiplier : totalBasePrice;
+  
+  const couponDiscountAmount = appliedCoupon ? (discountedBasePrice * appliedCoupon.discount) / 100 : 0;
+  const priceAfterCoupon = discountedBasePrice - couponDiscountAmount;
+  
   const gstPercent = packageData?.gstPercentage || 0;
-  const gstAmount = (discountedBasePrice * gstPercent) / 100;
-  const finalPrice = Math.round(discountedBasePrice + gstAmount);
+  const gstAmount = (priceAfterCoupon * gstPercent) / 100;
+  const finalPrice = Math.round(priceAfterCoupon + gstAmount);
+
+  const applyCoupon = async () => {
+    if (!couponCode || !userData) return;
+    setValidatingCoupon(true);
+    setCouponError("");
+    try {
+      const res = await fetch("/api/validate-coupon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: couponCode, userId: userData.uid })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAppliedCoupon({ code: couponCode.toUpperCase(), discount: data.discountPercentage });
+      } else {
+        setCouponError(data.message);
+        setAppliedCoupon(null);
+      }
+    } catch (e) {
+      setCouponError("Failed to validate coupon");
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
 
   useEffect(() => {
     if (userData && travelers.length > 0 && !travelers[0].fullName) {
@@ -124,7 +171,8 @@ export function BookingWizard({
           discountPercentage: discountPercent,
           type: 'tour',
           vehicleName: selectedVehicle?.name,
-          vehicleQty: selectedVehicle?.qtyRequired
+          vehicleQty: selectedVehicle?.qtyRequired,
+          couponCode: appliedCoupon?.code
         })
       });
     } catch (err) {
@@ -156,7 +204,7 @@ export function BookingWizard({
       const data = await fetch("/api/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: finalPrice }), 
+        body: JSON.stringify({ amount: finalPrice, couponCode: appliedCoupon?.code, userId: userData?.uid }), 
       }).then((t) => t.json());
 
       if (data.error) {
@@ -232,6 +280,16 @@ export function BookingWizard({
     }
     
     if (currentStep === STEPS.length - 1) {
+      if (!userData) {
+        sessionStorage.setItem("booking_wizard_state", JSON.stringify({
+          travelers,
+          specialRequests,
+          selectedVehicle
+        }));
+        localStorage.setItem("redirect_after_login", window.location.href);
+        window.location.href = "/auth";
+        return;
+      }
       handlePayment();
       return;
     }
@@ -486,6 +544,55 @@ export function BookingWizard({
                     <span className="font-semibold text-right">₹{Math.round(gstAmount).toLocaleString("en-IN")}</span>
                   </div>
 
+                  {userData && (
+                    <div className="py-4 border-b border-border/50">
+                      {!appliedCoupon ? (
+                        <div className="space-y-2">
+                          <span className="text-sm font-semibold text-muted-foreground block">Have a coupon code?</span>
+                          <div className="flex gap-2">
+                            <input 
+                              type="text"
+                              placeholder="Enter code"
+                              value={couponCode}
+                              onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                              className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm uppercase outline-none focus:border-primary"
+                            />
+                            <Button 
+                              variant="secondary" 
+                              size="sm" 
+                              onClick={applyCoupon}
+                              disabled={validatingCoupon || !couponCode}
+                            >
+                              {validatingCoupon ? "Checking..." : "Apply"}
+                            </Button>
+                          </div>
+                          {couponError && <p className="text-xs text-destructive mt-1">{couponError}</p>}
+                        </div>
+                      ) : (
+                        <div className="flex justify-between items-center bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                              <Ticket className="w-4 h-4" /> Coupon Applied
+                            </span>
+                            <span className="text-xs text-emerald-600/80 font-mono">{appliedCoupon.code}</span>
+                          </div>
+                          <div className="flex flex-col items-end">
+                            <span className="font-bold text-emerald-700 dark:text-emerald-400">-{appliedCoupon.discount}%</span>
+                            <button 
+                              onClick={() => {
+                                setAppliedCoupon(null);
+                                setCouponCode("");
+                              }}
+                              className="text-xs text-muted-foreground hover:text-destructive underline mt-1"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="flex justify-between items-center pt-2">
                     <span className="text-foreground font-bold text-lg">Total Amount</span>
                     <span className="text-3xl font-bold font-heading text-primary">₹{finalPrice.toLocaleString("en-IN")}</span>
@@ -543,7 +650,7 @@ export function BookingWizard({
           disabled={paymentStatus !== "idle"}
           className="rounded-xl px-8 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all"
         >
-          {paymentStatus === "verifying" ? "Processing..." : (currentStep === STEPS.length - 1 ? `Pay ₹${finalPrice.toLocaleString("en-IN")}` : "Continue")} 
+          {paymentStatus === "verifying" ? "Processing..." : (currentStep === STEPS.length - 1 ? (!userData ? "Login to Pay" : `Pay ₹${finalPrice.toLocaleString("en-IN")}`) : "Continue")} 
           {paymentStatus === "idle" && currentStep !== STEPS.length - 1 && <ChevronRight className="w-4 h-4 ml-2" />}
         </Button>
       </div>

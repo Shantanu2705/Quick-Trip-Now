@@ -24,17 +24,22 @@ export function PackagesGrid({ tours, globalMaxChildAge = 12 }: { tours: any[], 
   
   const totalTravelers = adults + children + infants;
 
+  const queryString = searchParams?.toString();
+
   return (
     <div className="w-full">
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {tours.map((tour) => {
+          const hrefBase = `/package/${tour.slug}`;
+          const hrefWithParams = queryString ? `${hrefBase}?${queryString}` : hrefBase;
+
           return (
             <div
               key={tour.id}
               className="group bg-background rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-border/50 transition-all duration-300 flex flex-col"
             >
-              <Link href={`/package/${tour.slug}`} className="relative h-64 overflow-hidden block">
+              <Link href={hrefWithParams} className="relative h-64 overflow-hidden block">
                 <Image
                   src={tour.image || "https://images.unsplash.com/photo-1626079973809-541dd441b83d?q=80&w=800&auto=format&fit=crop"}
                   alt={tour.title}
@@ -55,7 +60,7 @@ export function PackagesGrid({ tours, globalMaxChildAge = 12 }: { tours: any[], 
                   </div>
                 </div>
                 
-                <Link href={`/package/${tour.slug}`}>
+                <Link href={hrefWithParams}>
                   <h3 className="text-xl font-heading font-bold text-foreground mb-4 group-hover:text-primary transition-colors">
                     {tour.title}
                   </h3>
@@ -79,7 +84,7 @@ export function PackagesGrid({ tours, globalMaxChildAge = 12 }: { tours: any[], 
                     <span className="text-xs text-primary uppercase font-bold tracking-wider">Dynamic Pricing</span>
                     <span className="text-sm text-muted-foreground font-medium">Based on Vehicle</span>
                   </div>
-                  <Link href={`/package/${tour.slug}`}>
+                  <Link href={hrefWithParams}>
                     <Button className="rounded-xl font-medium px-6">
                       View Details
                     </Button>

@@ -56,6 +56,12 @@ service cloud.firestore {
       allow read, write: if false; // Admin only
     }
     
+    // Coupons
+    match /coupons/{document=**} {
+      allow read: if isAuthenticated() && resource.data.targetUserId == request.auth.uid;
+      allow write: if false; // Admin SDK only
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;

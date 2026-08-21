@@ -48,7 +48,7 @@ export function FeaturedTours() {
               transition={{ delay: 0.1 }}
               className="text-3xl md:text-5xl font-heading font-bold text-foreground"
             >
-              Featured Tours & Packages
+              Top Packages
             </motion.h2>
           </div>
           <motion.div

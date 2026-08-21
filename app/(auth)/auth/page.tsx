@@ -43,7 +43,13 @@ export default function AuthPage() {
         }
       }
       setLoginSession();
-      router.push("/");
+      const redirectUrl = localStorage.getItem("redirect_after_login");
+      if (redirectUrl) {
+        localStorage.removeItem("redirect_after_login");
+        router.push(redirectUrl);
+      } else {
+        router.push("/");
+      }
     } catch (err: any) {
       auth?.signOut();
       let msg = err.message || "Failed to login. Account may not be approved.";
@@ -78,10 +84,8 @@ export default function AuthPage() {
           throw new Error(data.message || "Signup failed");
         }
         
-        // After backend signup, we can sign in client-side to get the token (though they are pending)
-        // Wait, if pending, they can't login. We show a message instead of logging in.
-        setError("Signup successful! Please wait for admin approval.");
-        setIsLogin(true); // Switch to login screen
+        const userCred = await signInWithEmailAndPassword(auth, email, password);
+        await handleSuccess(userCred.user, name, true);
       }
     } catch (err: any) {
       let msg = err.message || "An error occurred";

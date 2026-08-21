@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 import { sendBookingNotification } from "@/lib/notification-service";
 
 export async function POST(req: NextRequest) {
@@ -17,6 +18,18 @@ export async function POST(req: NextRequest) {
     };
 
     const docRef = await adminDb.collection("bookings").add(bookingData);
+
+    if (data.couponCode && data.userId && data.userId !== "guest") {
+      const userRef = adminDb.collection("users").doc(data.userId);
+      await userRef.update({
+        usedCoupons: FieldValue.arrayUnion(data.couponCode)
+      });
+      // Optionally deactivate the coupon if you want it strictly one-time globally
+      // but the rule was "used once per user", so tracking on user is enough.
+      // However, if the coupon is single-use overall, we'd do:
+      // const couponQ = await adminDb.collection('coupons').where('code', '==', data.couponCode).get();
+      // if (!couponQ.empty) await couponQ.docs[0].ref.update({ isActive: false });
+    }
 
     // Send notification
     await sendBookingNotification({ id: docRef.id, ...bookingData }, 'direct');

@@ -19,13 +19,13 @@ import { format } from "date-fns";
 import { getDestinations, getVehicles, getCabRoutes, Destination, Vehicle, CabRoute } from "@/lib/firestore-utils";
 
 const TABS = [
-  { id: "tours", label: "Tours and Packages", icon: Compass },
   { id: "cabs", label: "Private Transfers", icon: Car },
+  { id: "tours", label: "Tours and Packages", icon: Compass },
 ];
 
 export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAge?: number }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("tours");
+  const [activeTab, setActiveTab] = useState("cabs");
   const [date, setDate] = useState<Date>();
   const [adults, setAdults] = useState<number>(2);
   const [children, setChildren] = useState<number>(0);

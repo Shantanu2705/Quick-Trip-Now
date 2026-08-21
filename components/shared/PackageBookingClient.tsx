@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { Users, Car, Check, X, Calendar as CalendarIcon, Info } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -28,12 +28,15 @@ export function PackageBookingClient({
   packageDetailsContent: React.ReactNode;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // State
-  const [adults, setAdults] = useState(2);
-  const [children, setChildren] = useState(0);
-  const [infants, setInfants] = useState(0);
-  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [adults, setAdults] = useState(() => parseInt(searchParams?.get("adults") || "2", 10) || 2);
+  const [children, setChildren] = useState(() => parseInt(searchParams?.get("children") || "0", 10) || 0);
+  const [infants, setInfants] = useState(() => parseInt(searchParams?.get("infants") || "0", 10) || 0);
+  
+  const dateParam = searchParams?.get("date");
+  const [date, setDate] = useState<Date | undefined>(dateParam ? new Date(dateParam) : undefined);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>("");
 
   const totalTravelers = adults + children + infants;

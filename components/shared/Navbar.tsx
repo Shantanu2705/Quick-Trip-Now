@@ -94,18 +94,32 @@ export function Navbar() {
                     <LayoutDashboard className="w-5 h-5" />
                   </Link>
                 )}
+                {userData?.role === 'user' && (
+                  <Link href="/user" className="p-2.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-full transition-colors" title="My Bookings">
+                    <UserIcon className="w-5 h-5" />
+                  </Link>
+                )}
                 <button onClick={signOut} className="p-2.5 bg-destructive/10 text-destructive hover:bg-destructive/20 rounded-full transition-colors" title="Logout">
                   <LogOut className="w-5 h-5" />
                 </button>
               </div>
             ) : (
-                <Link
-                  href="/agent-auth"
-                  className="bg-transparent border border-primary text-primary hover:bg-primary/10 px-5 py-2.5 rounded-full font-semibold text-sm flex items-center gap-2 transition-colors shadow-sm"
-                >
-                  <ShieldCheck className="w-4 h-4" />
-                  Agent Login
-                </Link>
+                <div className="flex items-center gap-3">
+                  <Link
+                    href="/auth"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 px-5 py-2.5 rounded-full font-semibold text-sm flex items-center gap-2 transition-colors shadow-sm"
+                  >
+                    <UserIcon className="w-4 h-4" />
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/agent-auth"
+                    className="bg-transparent border border-primary text-primary hover:bg-primary/10 px-5 py-2.5 rounded-full font-semibold text-sm flex items-center gap-2 transition-colors shadow-sm"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    Agent Login
+                  </Link>
+                </div>
             )}
           </div>
 
@@ -179,6 +193,16 @@ export function Navbar() {
                       Admin Dashboard
                     </Link>
                   )}
+                  {userData?.role === 'user' && (
+                    <Link
+                      href="/user"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="bg-primary/10 text-primary hover:bg-primary/20 px-4 py-3 rounded-lg font-medium text-base flex items-center justify-center gap-2"
+                    >
+                      <UserIcon className="w-5 h-5" />
+                      My Bookings
+                    </Link>
+                  )}
                   <button
                     onClick={() => { signOut(); setIsMobileMenuOpen(false); }}
                     className="bg-destructive/10 text-destructive hover:bg-destructive/20 px-4 py-3 rounded-lg font-medium text-base flex items-center justify-center gap-2"
@@ -188,14 +212,24 @@ export function Navbar() {
                   </button>
                 </div>
               ) : (
-                  <Link
-                    href="/agent-auth"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="bg-transparent border border-primary text-primary hover:bg-primary/10 px-4 py-3 rounded-lg font-medium text-base flex items-center justify-center gap-2 mt-2"
-                  >
-                    <ShieldCheck className="w-5 h-5" />
-                    Agent Login
-                  </Link>
+                  <div className="flex flex-col gap-2 mt-2">
+                    <Link
+                      href="/auth"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-3 rounded-lg font-medium text-base flex items-center justify-center gap-2"
+                    >
+                      <UserIcon className="w-5 h-5" />
+                      Sign In
+                    </Link>
+                    <Link
+                      href="/agent-auth"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="bg-transparent border border-primary text-primary hover:bg-primary/10 px-4 py-3 rounded-lg font-medium text-base flex items-center justify-center gap-2"
+                    >
+                      <ShieldCheck className="w-5 h-5" />
+                      Agent Login
+                    </Link>
+                  </div>
               )}
             </div>
           </motion.div>

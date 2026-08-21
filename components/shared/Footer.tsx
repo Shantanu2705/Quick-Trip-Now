@@ -41,15 +41,18 @@ export function Footer({ phone = "+91 98765 43210", email = "support@quicktripno
             </p>
             
             <div className="mt-4 p-5 rounded-2xl border border-secondary-foreground/10 bg-secondary-foreground/5 w-fit hover:border-accent/30 transition-colors group">
-              <p className="text-secondary-foreground/60 text-sm mb-1 uppercase tracking-wider font-semibold">A proud venture of</p>
+              <p className="text-secondary-foreground/60 text-sm mb-2 uppercase tracking-wider font-semibold">Powered and Managed by:</p>
               <a 
                 href="https://www.swastiktripline.com/" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="font-heading font-bold text-xl md:text-2xl hover:text-accent transition-colors flex items-center gap-2"
+                className="block hover:opacity-80 transition-opacity"
               >
-                Swastik Tripline
-                <ArrowRight className="w-5 h-5 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300 text-accent" />
+                <img 
+                  src="/images/swastik-logo.png" 
+                  alt="Swastik Tripline" 
+                  className="h-10 w-auto object-contain" 
+                />
               </a>
             </div>
           </div>

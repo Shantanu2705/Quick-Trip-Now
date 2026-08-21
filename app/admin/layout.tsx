@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LayoutDashboard, Package, CalendarDays, MapPin, Car, Users, Settings, LogOut, MessageSquare, ShieldCheck, Route } from "lucide-react";
+import { LayoutDashboard, Package, CalendarDays, MapPin, Car, Users, Settings, LogOut, MessageSquare, ShieldCheck, Route, Ticket } from "lucide-react";
 import { Logo } from "@/components/shared/Logo";
 import { AdminGuard } from "@/components/shared/AdminGuard";
 import { LogoutButton } from "@/components/shared/LogoutButton";
@@ -13,6 +13,7 @@ const SIDEBAR_LINKS = [
   { label: "Cab Routes", href: "/admin/cab-routes", icon: Route },
   { label: "Customers", href: "/admin/customers", icon: Users },
   { label: "Agent Approvals", href: "/admin/users", icon: ShieldCheck },
+  { label: "Coupons", href: "/admin/coupons", icon: Ticket },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 

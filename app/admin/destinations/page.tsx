@@ -411,7 +411,7 @@ export default function AdminDestinationsPage() {
                   />
                   <div>
                     <div className="flex items-center gap-2">
-                      Show in "Service at your Doorstep"
+                      Show in "Go With Us"
                       {formData.isPopular && <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] uppercase font-bold tracking-wider">Active</span>}
                     </div>
                     {popularCount >= 4 && !formData.isPopular && (

@@ -47,7 +47,7 @@ export function PopularDestinations() {
               transition={{ delay: 0.1 }}
               className="text-3xl md:text-5xl font-heading font-bold text-foreground"
             >
-              Service at your Doorstep
+              Go With Us
             </motion.h2>
           </div>
           <motion.div
