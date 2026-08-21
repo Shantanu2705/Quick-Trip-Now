@@ -16,6 +16,7 @@ export interface UserData {
   fullName?: string;
   discountPercentage?: number;
   phone?: string;
+  usedCoupons?: string[];
 }
 
 export function useAuth() {
