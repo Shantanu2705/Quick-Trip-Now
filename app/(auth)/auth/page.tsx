@@ -3,13 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, AlertCircle } from "lucide-react";
+import { Mail, Lock, User, AlertCircle, Phone, KeyRound } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import {
   signInWithPopup,
   GoogleAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,6 +25,70 @@ export default function AuthPage() {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [otp, setOtp] = useState("");
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [confirmationResult, setConfirmationResult] = useState<any>(null);
+
+  const setupRecaptcha = () => {
+    if (!(window as any).recaptchaVerifier) {
+      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible'
+      });
+    }
+  };
+
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!auth) {
+      setError("Firebase not configured");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      setupRecaptcha();
+      const appVerifier = (window as any).recaptchaVerifier;
+      // Make sure phone number starts with + if they forgot it (very basic check)
+      const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : '+' + phoneNumber;
+      const result = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+      setConfirmationResult(result);
+      setShowOtpInput(true);
+    } catch (err: any) {
+      setError(err.message || "Failed to send OTP. Please check your phone number.");
+      if ((window as any).recaptchaVerifier) {
+        (window as any).recaptchaVerifier.clear();
+        (window as any).recaptchaVerifier = null;
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!confirmationResult) return;
+    setError("");
+    setLoading(true);
+    try {
+      const result = await confirmationResult.confirm(otp);
+      
+      // Sync user with Firestore
+      const token = await result.user.getIdToken();
+      await fetch("/api/auth/oauth", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      await handleSuccess(result.user, undefined, false);
+    } catch (err: any) {
+      setError(err.message || "Invalid OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSuccess = async (user: any, nameToSave?: string, isNewUser?: boolean) => {
     try {
@@ -129,6 +195,7 @@ export default function AuthPage() {
       className="w-full max-w-md bg-background/80 backdrop-blur-2xl border border-border p-8 rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] relative overflow-hidden"
     >
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-blue-400 to-primary" />
+      <div id="recaptcha-container"></div>
 
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">
@@ -148,62 +215,115 @@ export default function AuthPage() {
         </div>
       )}
 
-      <form onSubmit={handleEmailAuth} className="space-y-4">
-        {!isLogin && (
+      {authMethod === 'email' ? (
+        <form onSubmit={handleEmailAuth} className="space-y-4">
+          {!isLogin && (
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider ml-1">Full Name</label>
+              <div className="relative">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/60" />
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="w-full bg-background border border-border rounded-xl py-3 pl-12 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                  placeholder="John Doe"
+                />
+              </div>
+            </div>
+          )}
+
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider ml-1">Full Name</label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider ml-1">Email Address</label>
             <div className="relative">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/60" />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/60" />
               <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full bg-background border border-border rounded-xl py-3 pl-12 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                placeholder="John Doe"
+                placeholder="you@example.com"
               />
             </div>
           </div>
-        )}
 
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider ml-1">Email Address</label>
-          <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/60" />
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full bg-background border border-border rounded-xl py-3 pl-12 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-              placeholder="you@example.com"
-            />
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider ml-1">Password</label>
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/60" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full bg-background border border-border rounded-xl py-3 pl-12 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                placeholder="••••••••"
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider ml-1">Password</label>
-          <div className="relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/60" />
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full bg-background border border-border rounded-xl py-3 pl-12 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-              placeholder="••••••••"
-            />
-          </div>
-        </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl py-3.5 transition-all shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5 active:translate-y-0 mt-2 disabled:opacity-70 disabled:pointer-events-none"
+          >
+            {loading ? "Processing..." : isLogin ? "Sign In" : "Sign Up"}
+          </button>
+        </form>
+      ) : (
+        <form onSubmit={showOtpInput ? handleVerifyOtp : handleSendOtp} className="space-y-4">
+          {!showOtpInput ? (
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider ml-1">Phone Number</label>
+              <div className="relative">
+                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/60" />
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  required
+                  className="w-full bg-background border border-border rounded-xl py-3 pl-12 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                  placeholder="+1234567890"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider ml-1">Enter 6-Digit OTP</label>
+              <div className="relative">
+                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/60" />
+                <input
+                  type="text"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  required
+                  className="w-full bg-background border border-border rounded-xl py-3 pl-12 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all tracking-widest text-lg"
+                  placeholder="••••••"
+                  maxLength={6}
+                />
+              </div>
+            </div>
+          )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl py-3.5 transition-all shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5 active:translate-y-0 mt-2 disabled:opacity-70 disabled:pointer-events-none"
-        >
-          {loading ? "Processing..." : isLogin ? "Sign In" : "Sign Up"}
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl py-3.5 transition-all shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5 active:translate-y-0 mt-2 disabled:opacity-70 disabled:pointer-events-none"
+          >
+            {loading ? "Processing..." : showOtpInput ? "Verify OTP" : "Send OTP"}
+          </button>
+          
+          {showOtpInput && (
+             <div className="text-center mt-2">
+               <button type="button" onClick={() => setShowOtpInput(false)} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                 Use a different number
+               </button>
+             </div>
+          )}
+        </form>
+      )}
 
       <div className="my-6 flex items-center gap-4">
         <div className="h-px bg-border flex-1" />
@@ -226,8 +346,20 @@ export default function AuthPage() {
           {isLogin ? "Sign in with Google" : "Sign up with Google"}
         </button>
 
-
-      </div>
+        <button
+          onClick={() => {
+            setAuthMethod(authMethod === 'email' ? 'phone' : 'email');
+            setError("");
+          }}
+          type="button"
+          className="flex items-center justify-center gap-2 bg-background border border-border text-foreground rounded-xl py-3 font-semibold hover:bg-muted transition-colors shadow-sm text-sm"
+        >
+          {authMethod === 'email' ? (
+            <><Phone className="w-5 h-5 text-primary" /> Continue with Phone Number</>
+          ) : (
+            <><Mail className="w-5 h-5 text-primary" /> Continue with Email</>
+          )}
+        </button>      </div>
 
       <div className="mt-8 text-center">
         <p className="text-muted-foreground text-sm">

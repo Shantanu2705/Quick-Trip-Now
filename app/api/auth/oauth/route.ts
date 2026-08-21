@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
 
     const token = authHeader.split('Bearer ')[1];
     const decodedToken = await adminAuth.verifyIdToken(token);
-    const { uid, email, name, picture } = decodedToken;
+    const { uid, email, name, picture, phone_number } = decodedToken;
 
     let role = 'user';
     
@@ -33,7 +33,8 @@ export async function POST(req: NextRequest) {
       await adminDb.collection('users').doc(uid).set({
         uid,
         email: email || '',
-        fullName: name || 'User',
+        phone: phone_number || '',
+        fullName: name || (phone_number ? 'User' : 'User'),
         photoURL: picture || '',
         role,
         status: role === 'agent' ? 'pending' : 'approved',
