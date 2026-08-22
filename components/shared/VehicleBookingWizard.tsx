@@ -154,7 +154,7 @@ export function VehicleBookingWizard({
       const leadTraveler = travelers[0];
       const message = `*New Vehicle Booking Request*\n\n*Vehicle Type:* ${selectedVehicle.name}\n*Route:* ${cabRouteData.title}\n*Date & Time:* ${selectedDate ? format(selectedDate, "PPP") : ""}\n\n*Lead Customer Details*\n*Name:* ${leadTraveler.fullName}\n*Email:* ${leadTraveler.email}\n*Phone:* ${leadTraveler.phone}\n\n*Status:* Payment Confirmed via Razorpay`;
       const encodedMessage = encodeURIComponent(message);
-      window.open(`https://wa.me/919429694567?text=${encodedMessage}`, '_blank');
+      window.open(`https://wa.me/917047399677?text=${encodedMessage}`, '_blank');
     }, 1500);
   };
 
@@ -529,7 +529,7 @@ export function VehicleBookingWizard({
                                 </div>
                                 <div className="space-y-2">
                                   <label className="text-sm font-medium text-foreground">Phone Number</label>
-                                  <input type="tel" placeholder="9876543210" value={traveler.phone} onChange={(e) => updateTraveler(idx, "phone", e.target.value)} className="w-full bg-background border border-input rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all" />
+                                  <input type="tel" placeholder="7047399677" value={traveler.phone} onChange={(e) => updateTraveler(idx, "phone", e.target.value)} className="w-full bg-background border border-input rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all" />
                                 </div>
                               </>
                             ) : (

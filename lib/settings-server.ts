@@ -7,8 +7,8 @@ export async function getGlobalSettings() {
     
     const defaultSettings = {
       siteName: 'Quick Trip Now',
-      contactEmail: 'support@quicktripnow.com',
-      contactPhone: '+91 98765 43210',
+      contactEmail: 'quicktripnow1@gmail.com',
+      contactPhone: '+91 7047399677',
       taxRate: 18,
       agentRegistrationEnabled: true,
       maintenanceMode: false,

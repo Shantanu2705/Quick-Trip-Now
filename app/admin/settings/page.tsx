@@ -285,7 +285,7 @@ export default function AdminSettingsPage() {
                 <label className="text-sm font-semibold text-foreground">Notification Phone Number</label>
                 <input 
                   type="text"
-                  placeholder="e.g. +919876543210 or whatsapp:+919876543210"
+                  placeholder="e.g. +917047399677 or whatsapp:+917047399677"
                   value={settings.adminNotificationPhone} 
                   onChange={(e) => setSettings({...settings, adminNotificationPhone: e.target.value})}
                   className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all"

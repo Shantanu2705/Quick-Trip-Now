@@ -39,8 +39,8 @@ export function BookingInvoice({ booking, id }: BookingInvoiceProps) {
             <Logo variant="bare" className="h-12 w-48 mb-4 origin-left" />
             <div className="text-slate-500 text-sm mt-4">
               <p>QuickTripNow Travel Services</p>
-              <p>123 Business Avenue, Tech Park</p>
-              <p>support@quicktripnow.com | +91 98765 43210</p>
+              <p>Bagdogra, Bhujiyapani, Darjeeling, West Bengal, India, Pin: 734017.</p>
+              <p>quicktripnow1@gmail.com | +91 7047399677</p>
               <p>GSTIN: 22AAAAA0000A1Z5</p>
             </div>
           </div>

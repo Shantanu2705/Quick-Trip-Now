@@ -39,7 +39,7 @@ export default function AdminCabRoutesPage() {
         setRoutes(data.data);
       }
     } catch (err) {
-      console.error("Error fetching cab routes:", err);
+      console.error("Error fetching private transfers:", err);
     } finally {
       setLoading(false);
     }
@@ -71,7 +71,7 @@ export default function AdminCabRoutesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this cab route?")) return;
+    if (!confirm("Are you sure you want to delete this private transfer?")) return;
     try {
       const authModule = await import("@/lib/firebase");
       const currentUser = authModule.auth?.currentUser;
@@ -89,7 +89,7 @@ export default function AdminCabRoutesPage() {
         alert(data.message);
       }
     } catch (err) {
-      console.error("Error deleting cab route:", err);
+      console.error("Error deleting private transfer:", err);
     }
   };
 
@@ -123,7 +123,7 @@ export default function AdminCabRoutesPage() {
         setIsModalOpen(false);
         fetchRoutes();
       } else {
-        setError(data.message || "Failed to save cab route");
+        setError(data.message || "Failed to save private transfer");
       }
     } catch (err: any) {
       setError(err.message || "An error occurred");
@@ -143,8 +143,8 @@ export default function AdminCabRoutesPage() {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-heading font-bold text-foreground mb-2">Cab Routes</h1>
-          <p className="text-muted-foreground">Manage cab routes and options for vehicle bookings.</p>
+          <h1 className="text-3xl font-heading font-bold text-foreground mb-2">Private Transfers</h1>
+          <p className="text-muted-foreground">Manage private transfers and options for vehicle bookings.</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
@@ -171,7 +171,7 @@ export default function AdminCabRoutesPage() {
             </button>
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
               <Route className="w-6 h-6 text-primary" />
-              {editingId ? "Edit Cab Route" : "Add New Cab Route"}
+              {editingId ? "Edit Private Transfer" : "Add New Private Transfer"}
             </h2>
             
             {error && (
@@ -262,7 +262,7 @@ export default function AdminCabRoutesPage() {
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <CardTitle className="flex items-center gap-2">
             <Route className="w-5 h-5 text-primary" />
-            All Cab Routes
+            All Private Transfers
           </CardTitle>
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

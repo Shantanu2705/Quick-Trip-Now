@@ -24,38 +24,24 @@ export default function UserDashboard() {
     }
 
     const fetchBookings = async () => {
-      if (!db) return;
       try {
-        const q = query(
-          collection(db, "bookings"),
-          where("userId", "==", user.uid)
-        );
-        const querySnapshot = await getDocs(q);
-        const fetchedBookings = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as any[];
+        const token = await user.getIdToken();
+        const res = await fetch("/api/user/dashboard", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
         
-        // Sort by createdAt descending
-        fetchedBookings.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        
-        setBookings(fetchedBookings);
-
-        const cQ = query(
-          collection(db, "coupons"),
-          where("targetUserId", "==", user.uid)
-        );
-        const cSnap = await getDocs(cQ);
-        const fetchedCoupons = cSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
-        
-        const eligibleCoupon = fetchedCoupons.find(c => 
-          c.isActive && 
-          fetchedBookings.length >= (c.minBookingsRequired || 2) && 
-          !(userData?.usedCoupons || []).includes(c.code)
-        );
-        
-        if (eligibleCoupon) setPopupCoupon(eligibleCoupon);
-
+        if (data.success) {
+          setBookings(data.bookings);
+          
+          const eligibleCoupon = data.coupons.find((c: any) => 
+            c.isActive && 
+            data.bookings.length >= (c.minBookingsRequired || 2) && 
+            !(userData?.usedCoupons || []).includes(c.code)
+          );
+          
+          if (eligibleCoupon) setPopupCoupon(eligibleCoupon);
+        }
       } catch (error) {
         console.error("Error fetching bookings:", error);
       } finally {

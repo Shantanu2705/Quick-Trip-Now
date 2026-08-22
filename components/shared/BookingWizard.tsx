@@ -469,7 +469,7 @@ export function BookingWizard({
                             </div>
                             <div className="space-y-2">
                               <label className="text-sm font-medium text-foreground">Phone Number</label>
-                              <input type="tel" placeholder="9876543210" value={traveler.phone} onChange={(e) => updateTraveler(idx, "phone", e.target.value)} className="w-full bg-background border border-input rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all" />
+                              <input type="tel" placeholder="7047399677" value={traveler.phone} onChange={(e) => updateTraveler(idx, "phone", e.target.value)} className="w-full bg-background border border-input rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all" />
                             </div>
                           </>
                         ) : (

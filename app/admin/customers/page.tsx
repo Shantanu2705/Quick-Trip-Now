@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User, CheckCircle, XCircle, Ban, AlertCircle, Search, RefreshCw, Trash2 } from "lucide-react";
+import { User, CheckCircle, XCircle, Ban, AlertCircle, Search, RefreshCw, Trash2, Edit2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -67,6 +67,42 @@ export default function AdminCustomersPage() {
       }
     } catch (error) {
       console.error("Error updating status:", error);
+    }
+  };
+
+  const handleUpdatePassword = async (uid: string) => {
+    const newPassword = window.prompt("Enter the new password for this user (min 6 characters):");
+    if (!newPassword) return;
+    
+    if (newPassword.length < 6) {
+      alert("Password must be at least 6 characters long.");
+      return;
+    }
+
+    try {
+      const authModule = await import("@/lib/firebase");
+      const currentUser = authModule.auth?.currentUser;
+      if (!currentUser) return;
+      const token = await currentUser.getIdToken();
+
+      const res = await fetch(`/api/admin/users/${uid}/password`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ newPassword })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("Password updated successfully!");
+        fetchUsers();
+      } else {
+        alert(data.message || "Failed to update password");
+      }
+    } catch (error) {
+      console.error("Error updating password:", error);
+      alert("An error occurred while updating the password.");
     }
   };
 
@@ -234,6 +270,7 @@ export default function AdminCustomersPage() {
               <thead className="text-xs text-muted-foreground uppercase bg-muted/30 border-y border-border">
                 <tr>
                   <th className="px-4 py-3">User</th>
+                  <th className="px-4 py-3">Password</th>
                   <th className="px-4 py-3">Role</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Joined</th>
@@ -247,6 +284,18 @@ export default function AdminCustomersPage() {
                       <div className="font-medium text-foreground">{user.fullName || "N/A"}</div>
                       <div className="text-muted-foreground">{user.email}</div>
                       <div className="text-xs text-muted-foreground">{user.phone}</div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-2">
+                        {user.password ? (
+                          <span className="font-mono text-xs bg-muted/50 px-2 py-1 rounded">{user.password}</span>
+                        ) : (
+                          <span className="text-muted-foreground text-xs italic">Hidden</span>
+                        )}
+                        <button onClick={() => handleUpdatePassword(user.uid)} className="text-muted-foreground hover:text-foreground transition-colors p-1" title="Edit Password">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                     <td className="px-4 py-4 capitalize">{user.role}</td>
                     <td className="px-4 py-4">
@@ -290,7 +339,7 @@ export default function AdminCustomersPage() {
                 ))}
                 {filteredUsers.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                       No customers found.
                     </td>
                   </tr>

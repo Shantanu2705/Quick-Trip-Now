@@ -15,9 +15,9 @@ async function createCabRouteHandler(req: AuthenticatedRequest) {
 
     const docRef = await adminDb.collection('cab_routes').add(data);
     
-    return NextResponse.json({ success: true, message: 'Cab route created', data: { id: docRef.id, ...data } });
+    return NextResponse.json({ success: true, message: 'Private transfer created', data: { id: docRef.id, ...data } });
   } catch (error: any) {
-    return NextResponse.json({ success: false, message: 'Failed to create cab route', error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, message: 'Failed to create private transfer', error: error.message }, { status: 500 });
   }
 }
 
@@ -28,7 +28,7 @@ async function getCabRoutesHandler(req: AuthenticatedRequest) {
 
     return NextResponse.json({ success: true, data: routes });
   } catch (error: any) {
-    return NextResponse.json({ success: false, message: 'Failed to fetch cab routes', error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, message: 'Failed to fetch private transfers', error: error.message }, { status: 500 });
   }
 }
 
@@ -37,7 +37,7 @@ async function updateCabRouteHandler(req: AuthenticatedRequest) {
     const data = await req.json();
     const { id, ...updateData } = data;
     
-    if (!id) return NextResponse.json({ success: false, message: 'Cab Route ID required' }, { status: 400 });
+    if (!id) return NextResponse.json({ success: false, message: 'Private Transfer ID required' }, { status: 400 });
 
     if (!data.title || !data.subtitle || !data.distance || !data.duration || !data.itinerary || !Array.isArray(data.itinerary) || data.itinerary.length === 0) {
       return NextResponse.json({ success: false, message: 'Missing required fields' }, { status: 400 });
@@ -47,9 +47,9 @@ async function updateCabRouteHandler(req: AuthenticatedRequest) {
 
     await adminDb.collection('cab_routes').doc(id).update(updateData);
     
-    return NextResponse.json({ success: true, message: 'Cab route updated' });
+    return NextResponse.json({ success: true, message: 'Private transfer updated' });
   } catch (error: any) {
-    return NextResponse.json({ success: false, message: 'Failed to update cab route', error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, message: 'Failed to update private transfer', error: error.message }, { status: 500 });
   }
 }
 
@@ -62,9 +62,9 @@ async function deleteCabRouteHandler(req: AuthenticatedRequest) {
 
     await adminDb.collection('cab_routes').doc(id).delete();
     
-    return NextResponse.json({ success: true, message: 'Cab route deleted' });
+    return NextResponse.json({ success: true, message: 'Private transfer deleted' });
   } catch (error: any) {
-    return NextResponse.json({ success: false, message: 'Failed to delete cab route', error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, message: 'Failed to delete private transfer', error: error.message }, { status: 500 });
   }
 }
 

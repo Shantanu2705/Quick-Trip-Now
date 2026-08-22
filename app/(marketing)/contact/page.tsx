@@ -6,8 +6,8 @@ export const dynamic = "force-dynamic";
 
 export default async function ContactPage() {
   const settings = await getGlobalSettings();
-  const phone = settings?.contactPhone || "+91 98765 43210";
-  const email = settings?.contactEmail || "support@quicktripnow.com";
+  const phone = settings?.contactPhone || "+91 7047399677";
+  const email = settings?.contactEmail || "quicktripnow1@gmail.com";
 
   return (
     <div className="bg-background min-h-screen pt-32 pb-24">
@@ -31,9 +31,9 @@ export default async function ContactPage() {
               <div>
                 <h3 className="font-bold text-lg mb-1">Our Office</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  123 Travel Boulevard,<br />
-                  MG Marg, Gangtok,<br />
-                  Sikkim 737101, India
+                  Bagdogra, Bhujiyapani,<br />
+                  Darjeeling, West Bengal,<br />
+                  India, Pin: 734017
                 </p>
               </div>
             </div>

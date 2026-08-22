@@ -28,32 +28,43 @@ interface FooterProps {
   email?: string;
 }
 
-export function Footer({ phone = "+91 98765 43210", email = "support@quicktripnow.com" }: FooterProps) {
+export function Footer({ phone = "+91 7047399677", email = "quicktripnow1@gmail.com" }: FooterProps) {
   return (
     <footer className="bg-secondary text-secondary-foreground pt-20 pb-10">
       <div className="container mx-auto px-4 md:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 lg:gap-8 mb-16">
-          {/* Brand & Newsletter */}
-          <div className="lg:col-span-2 flex flex-col gap-6">
-            <Logo className="text-secondary-foreground [&>span>span]:text-accent" />
-            <p className="text-secondary-foreground/80 leading-relaxed max-w-sm">
-              Experience the breathtaking beauty of Sikkim and beyond. Curated luxury travel experiences designed exclusively for you.
-            </p>
-            
-            <div className="mt-4 p-5 rounded-2xl border border-secondary-foreground/10 bg-secondary-foreground/5 w-fit hover:border-accent/30 transition-colors group">
-              <p className="text-secondary-foreground/60 text-sm mb-2 uppercase tracking-wider font-semibold">Powered and Managed by:</p>
+          {/* Brand & Managed By */}
+          <div className="lg:col-span-2 flex flex-col gap-10">
+            {/* Powered & Managed by */}
+            <div className="flex flex-col gap-4">
+              <h4 className="font-heading font-medium text-2xl tracking-wide text-secondary-foreground">Powered & Managed by</h4>
               <a 
                 href="https://www.swastiktripline.com/" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="block hover:opacity-80 transition-opacity"
+                className="block w-fit bg-white p-2 rounded-sm hover:opacity-90 transition-opacity"
               >
                 <img 
                   src="/images/swastik-logo.png" 
                   alt="Swastik Tripline" 
-                  className="h-10 w-auto object-contain" 
+                  className="h-16 md:h-20 w-auto object-contain" 
                 />
               </a>
+            </div>
+
+            {/* About Us */}
+            <div className="flex flex-col gap-4">
+              <h4 className="font-heading font-medium text-2xl tracking-wide text-secondary-foreground">About Us</h4>
+              <p className="text-secondary-foreground/90 text-lg leading-relaxed max-w-sm">
+                We aim at providing the best travel experience to our customers.
+              </p>
+              <div className="bg-white p-3 rounded-sm w-fit mt-2">
+                <img 
+                  src="/images/msme-logo.png" 
+                  alt="MSME UDYAM-WB-06-0019827" 
+                  className="h-20 md:h-24 w-auto object-contain"
+                />
+              </div>
             </div>
           </div>
 
@@ -104,7 +115,7 @@ export function Footer({ phone = "+91 98765 43210", email = "support@quicktripno
               </li>
               <li className="flex items-start gap-3 text-secondary-foreground/80 mt-2">
                 <div className="bg-secondary-foreground/10 p-2 rounded-full shrink-0"><MapPin className="w-4 h-4" /></div>
-                <span className="leading-relaxed">M.G Marg, Gangtok,<br/>Sikkim, 737101, India</span>
+                <span className="leading-relaxed">Bagdogra, Bhujiyapani, Darjeeling,<br/>West Bengal, India, Pin: 734017</span>
               </li>
             </ul>
           </div>
