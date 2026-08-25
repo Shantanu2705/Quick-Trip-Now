@@ -17,7 +17,7 @@ async function sendCouponNotificationHandler(req: AuthenticatedRequest) {
 
     // 1. Fetch all users
     const usersSnapshot = await adminDb.collection('users').where('role', '==', 'user').get();
-    let eligibleUserIds = usersSnapshot.docs.map(doc => doc.id);
+    let eligibleUserIds = usersSnapshot.docs.map((doc: any) => doc.id);
 
     // 2. If minTrips > 0, filter by bookings
     const minTripsNum = Number(minTrips) || 0;
@@ -25,7 +25,7 @@ async function sendCouponNotificationHandler(req: AuthenticatedRequest) {
       const bookingsSnapshot = await adminDb.collection('bookings').get();
       const bookingCounts: Record<string, number> = {};
       
-      bookingsSnapshot.docs.forEach(doc => {
+      bookingsSnapshot.docs.forEach((doc: any) => {
         const data = doc.data();
         if (data.userId) {
           bookingCounts[data.userId] = (bookingCounts[data.userId] || 0) + 1;
