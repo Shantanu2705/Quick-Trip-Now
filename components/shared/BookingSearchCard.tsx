@@ -16,7 +16,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { getDestinations, getVehicles, getCabRoutes, Destination, Vehicle, CabRoute } from "@/lib/firestore-utils";
+import { getDestinations, getVehicles, getCabRoutes, getPackages, getTransferPackages, Destination, Vehicle, CabRoute, Package, TransferPackage } from "@/lib/firestore-utils";
 
 const TABS = [
   { id: "cabs", label: "Private Transfers", icon: Car },
@@ -37,18 +37,25 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [cabRoutes, setCabRoutes] = useState<CabRoute[]>([]);
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [transferPackages, setTransferPackages] = useState<TransferPackage[]>([]);
+  const [selectedPackageId, setSelectedPackageId] = useState("");
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [dests, vechs, routes] = await Promise.all([
+        const [dests, vechs, routes, pkgs, tpkgs] = await Promise.all([
           getDestinations(),
           getVehicles(),
-          getCabRoutes()
+          getCabRoutes(),
+          getPackages(),
+          getTransferPackages()
         ]);
         setDestinations(dests);
         setVehicles(vechs);
         setCabRoutes(routes);
+        setPackages(pkgs);
+        setTransferPackages(tpkgs);
       } catch (err) {
         console.error("Failed to load options", err);
       }
@@ -321,31 +328,67 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
               transition={{ duration: 0.3 }}
               className="flex flex-col md:flex-row items-center w-full gap-2"
             >
+              {/* Select Package Field (Dropdown) */}
+              <div className="flex-1 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-4">
+                <div className="bg-primary/10 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                  <Palmtree className="w-6 h-6 text-primary" />
+                </div>
+                <div className="flex flex-col flex-1">
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Select Package</span>
+                  <Select value={selectedPackageId} onValueChange={(val) => {
+                    setSelectedPackageId(val);
+                    setCabRouteId(""); // Reset transfer when package changes
+                  }}>
+                    <SelectTrigger className="border-none shadow-none p-0 h-auto focus:ring-0 bg-transparent text-left text-base font-semibold w-full">
+                      <SelectValue placeholder="Which package?">
+                        {selectedPackageId && transferPackages.find(p => p.id === selectedPackageId) ? (
+                          <span className="font-semibold text-base text-foreground">{transferPackages.find(p => p.id === selectedPackageId)!.title}</span>
+                        ) : undefined}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="min-w-[320px] p-2">
+                      {transferPackages.length > 0 ? (
+                        transferPackages.map((pkg) => (
+                          <SelectItem key={pkg.id} value={pkg.id} className="py-3 px-4 rounded-xl mb-1 cursor-pointer hover:bg-muted/50 transition-colors">
+                            <div className="flex flex-col gap-1">
+                              <span className="font-semibold text-base text-foreground">{pkg.title}</span>
+                              {pkg.description && <span className="text-[13px] text-muted-foreground whitespace-normal">{pkg.description}</span>}
+                            </div>
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="loading" disabled className="py-3 px-4">
+                          <span className="text-muted-foreground text-sm">Loading packages...</span>
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="hidden md:block w-px h-12 bg-border" />
+
               {/* Select Cab Route Field (Dropdown) */}
               <div className="flex-1 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-4">
                 <div className="bg-primary/10 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
                   <MapPin className="w-6 h-6 text-primary" />
                 </div>
                 <div className="flex flex-col flex-1">
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Select Package</span>
-                  <Select value={cabRouteId} onValueChange={(val) => val && setCabRouteId(val)}>
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Select Transfer</span>
+                  <Select disabled={!selectedPackageId} value={cabRouteId} onValueChange={(val) => val && setCabRouteId(val)}>
                     <SelectTrigger className="border-none shadow-none p-0 h-auto focus:ring-0 bg-transparent text-left text-base font-semibold w-full">
-                      <SelectValue placeholder="Where are you going?">
+                      <SelectValue placeholder={!selectedPackageId ? "Select a package first" : "Which transfer?"}>
                         {cabRouteId && cabRoutes.find(r => r.id === cabRouteId) ? (
                           <div className="flex flex-col gap-1">
                             <span className="font-semibold text-base text-foreground">{cabRoutes.find(r => r.id === cabRouteId)!.title}</span>
-                            {cabRoutes.find(r => r.id === cabRouteId)!.subtitle && (
-                              <span className="text-[13px] text-muted-foreground font-normal leading-tight">
-                                {cabRoutes.find(r => r.id === cabRouteId)!.subtitle}
-                              </span>
-                            )}
                           </div>
                         ) : undefined}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent className="min-w-[320px] p-2">
-                      {cabRoutes.length > 0 ? (
-                        cabRoutes.map((route) => (
+                      {cabRoutes.filter(r => r.packageId === selectedPackageId).length > 0 ? (
+                        cabRoutes.filter(r => r.packageId === selectedPackageId).map((route) => (
                           <SelectItem key={route.id} value={route.id} className="py-3 px-4 rounded-xl mb-1 cursor-pointer hover:bg-muted/50 transition-colors">
                             <div className="flex flex-col gap-1">
                               <span className="font-semibold text-base text-foreground">{route.title}</span>
@@ -354,8 +397,8 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                           </SelectItem>
                         ))
                       ) : (
-                        <SelectItem value="loading" disabled className="py-3 px-4">
-                          <span className="text-muted-foreground text-sm">Loading routes...</span>
+                        <SelectItem value="none" disabled className="py-3 px-4">
+                          <span className="text-muted-foreground text-sm">No transfers found for this package.</span>
                         </SelectItem>
                       )}
                     </SelectContent>

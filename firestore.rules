@@ -22,6 +22,11 @@ service cloud.firestore {
       allow write: if false; // Only admins can write (handled via admin SDK)
     }
 
+    match /transfer_packages/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /destinations/{document=**} {
       allow read: if true;
       allow write: if false;
@@ -58,8 +63,15 @@ service cloud.firestore {
     
     // Coupons
     match /coupons/{document=**} {
-      allow read: if isAuthenticated() && resource.data.targetUserId == request.auth.uid;
+      allow read: if isAuthenticated(); // Global coupons, anyone can read if logged in
       allow write: if false; // Admin SDK only
+    }
+
+    // Notifications
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
+      allow create, delete: if false;
     }
 
     // Default deny

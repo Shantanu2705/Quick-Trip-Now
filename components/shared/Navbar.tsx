@@ -8,6 +8,7 @@ import { Menu, X, User as UserIcon, Headset, ShieldCheck, LogOut, LayoutDashboar
 import { Logo } from "./Logo";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { NotificationBell } from "./NotificationBell";
 
 const NAV_LINKS = [
   { label: "Home", href: "/" },
@@ -89,13 +90,14 @@ export function Navbar() {
                     {userData?.fullName || user.email}
                   </span>
                 </div>
+                <NotificationBell isSolid={isSolid} />
                 {userData?.role === 'admin' && (
                   <Link href="/admin" className="p-2.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-full transition-colors" title="Dashboard">
                     <LayoutDashboard className="w-5 h-5" />
                   </Link>
                 )}
-                {userData?.role === 'user' && (
-                  <Link href="/user" className="p-2.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-full transition-colors" title="My Bookings">
+                {userData?.role !== 'admin' && (
+                  <Link href="/dashboard" className="p-2.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-full transition-colors" title="Dashboard">
                     <UserIcon className="w-5 h-5" />
                   </Link>
                 )}
@@ -193,14 +195,14 @@ export function Navbar() {
                       Admin Dashboard
                     </Link>
                   )}
-                  {userData?.role === 'user' && (
+                  {userData?.role !== 'admin' && (
                     <Link
-                      href="/user"
+                      href="/dashboard"
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="bg-primary/10 text-primary hover:bg-primary/20 px-4 py-3 rounded-lg font-medium text-base flex items-center justify-center gap-2"
                     >
                       <UserIcon className="w-5 h-5" />
-                      My Bookings
+                      Dashboard
                     </Link>
                   )}
                   <button

@@ -40,7 +40,12 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
       }
       
       const vehiclesSnap = await adminDb.collection("vehicles").get();
-      const allVehicles = vehiclesSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+      let allVehicles = vehiclesSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+      
+      if (packageData.allowedVehicles && packageData.allowedVehicles.length > 0) {
+        allVehicles = allVehicles.filter((v: any) => packageData.allowedVehicles.includes(v.id));
+      }
+      
       availableVehicles = allVehicles;
     } catch (error) {
       console.error("Error fetching package data:", error);
@@ -59,7 +64,19 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
       }
       
       const vehiclesSnap = await adminDb.collection("vehicles").get();
-      const allVehicles = vehiclesSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+      let allVehicles = vehiclesSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+
+      if (cabRouteData && cabRouteData.packageId) {
+        const pkgSnap = await adminDb.collection("transfer_packages").doc(cabRouteData.packageId).get();
+        if (pkgSnap.exists) {
+          packageData = { id: pkgSnap.id, ...pkgSnap.data() };
+        }
+      }
+
+      if (cabRouteData && cabRouteData.allowedVehicles && cabRouteData.allowedVehicles.length > 0) {
+        allVehicles = allVehicles.filter((v: any) => cabRouteData.allowedVehicles.includes(v.id));
+      }
+
       availableVehicles = allVehicles;
     } catch (error) {
       console.error("Error fetching cab data:", error);
@@ -67,6 +84,26 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
 
     if (!cabRouteData) return notFound();
     maxChildAge = globalMaxChildAge;
+  }
+
+  // Apply seasonal pricing overrides based on selectedDate
+  if (parsedDate && availableVehicles.length > 0) {
+    const selectedTime = parsedDate.getTime();
+    availableVehicles = availableVehicles.map(v => {
+      if (v.seasonalPrices && v.seasonalPrices.length > 0) {
+        const activeSeason = v.seasonalPrices.find((sp: any) => {
+          // Normalize dates to ignore time of day for exact matching
+          const start = new Date(sp.startDate).setHours(0,0,0,0);
+          const end = new Date(sp.endDate).setHours(23,59,59,999);
+          const current = new Date(parsedDate).setHours(12,0,0,0); // Use middle of day to avoid timezone edge cases
+          return current >= start && current <= end;
+        });
+        if (activeSeason) {
+          return { ...v, price: activeSeason.price, pricePerDay: activeSeason.price };
+        }
+      }
+      return v;
+    });
   }
 
   return (
@@ -84,6 +121,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
         {isVehicle ? (
           <VehicleBookingWizard 
             cabRouteData={cabRouteData} 
+            packageData={packageData}
             availableVehicles={availableVehicles}
             selectedDate={parsedDate}
             adultsCount={adultsCount}

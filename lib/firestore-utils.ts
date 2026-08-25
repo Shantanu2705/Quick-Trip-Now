@@ -38,47 +38,53 @@ export interface CabRoute {
   id: string;
   title: string;
   subtitle: string;
-  itinerary?: { location: string }[];
-  distance?: string;
-  duration?: string;
+  packageId?: string;
+  allowedVehicles?: string[];
+  terms?: string;
   createdAt?: any;
 }
 
 export interface Package {
   id: string;
   title: string;
-  slug: string;
-  image: string; // Featured image
-  images?: string[]; // Gallery images
-  description?: string;
+  description: string;
+  image: string;
+  destination: string;
   duration: string;
-  days?: number;
-  nights?: number;
+  days: number;
+  nights: number;
   category: string;
-  childPrice?: number;
-  maxChildAge?: number;
-  gstPercentage?: number;
-  seasonalPrices?: { startDate: string; endDate: string; price: number }[];
+  status: string;
+  isFeatured: boolean;
+  highlights: string[];
+  itinerary: any[];
+  inclusions: any[];
   rating: number;
   reviews: number;
-  destinationId?: string;
-  destination?: string;
-  status?: string;
-  isFeatured?: boolean;
-  highlights?: string[];
-  itinerary?: { day: number; title: string; desc: string }[];
-  inclusions?: { text: string; included: boolean }[];
-  termsAndConditions?: string;
-  maxAdults?: number;
-  maxChildren?: number;
-  maxInfants?: number;
+  termsAndConditions: string;
+  maxAdults: number;
+  maxChildren: number;
+  maxInfants: number;
+  gstPercentage: number;
+  allowedVehicles?: string[]; // Array of vehicle IDs
+}
+
+export interface TransferPackage {
+  id: string;
+  title: string;
+  description: string;
 }
 
 export async function getPackages() {
   if (!db) return [];
-  const q = collection(db!, "packages");
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Package));
+  const snapshot = await getDocs(collection(db, 'packages'));
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Package));
+}
+
+export async function getTransferPackages() {
+  if (!db) return [];
+  const snapshot = await getDocs(collection(db, 'transfer_packages'));
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TransferPackage));
 }
 
 export async function getDestinations() {

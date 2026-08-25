@@ -10,6 +10,7 @@ const SIDEBAR_LINKS = [
   { label: "Packages", href: "/admin/packages", icon: Package },
   { label: "Destinations", href: "/admin/destinations", icon: MapPin },
   { label: "Vehicles", href: "/admin/vehicles", icon: Car },
+  { label: "Transfer Packages", href: "/admin/transfer-packages", icon: Package },
   { label: "Private Transfers", href: "/admin/cab-routes", icon: Route },
   { label: "Customers", href: "/admin/customers", icon: Users },
   { label: "Agent Approvals", href: "/admin/users", icon: ShieldCheck },

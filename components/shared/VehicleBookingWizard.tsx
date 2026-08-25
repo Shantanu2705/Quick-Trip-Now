@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ChevronRight, ArrowLeft, Lock, Users, MapPin, Calendar, Clock, Navigation, Plus, Minus, Ticket } from "lucide-react";
+import { Check, ChevronRight, ArrowLeft, Lock, Users, MapPin, Calendar, Clock, Navigation, Plus, Minus, Ticket, Palmtree } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
@@ -12,6 +12,7 @@ const STEPS = ["Select Vehicle", "Travel Details", "Payment"];
 
 export function VehicleBookingWizard({
   cabRouteData,
+  packageData,
   availableVehicles,
   selectedDate,
   adultsCount,
@@ -20,6 +21,7 @@ export function VehicleBookingWizard({
   maxChildAge
 }: {
   cabRouteData: any,
+  packageData?: any,
   availableVehicles: any[],
   selectedDate?: Date,
   adultsCount: number,
@@ -296,8 +298,16 @@ export function VehicleBookingWizard({
           </div>
 
           {/* Line 3: Title */}
-          <div className="text-xl font-bold text-foreground">
-            {cabRouteData.title}
+          <div className="flex flex-col">
+            <div className="text-xl font-bold text-foreground">
+              {cabRouteData.title}
+            </div>
+            {packageData && (
+              <div className="text-sm text-primary font-semibold mt-1 flex items-center gap-1.5">
+                <Palmtree className="w-4 h-4" />
+                Associated Package: {packageData.title}
+              </div>
+            )}
           </div>
 
           {cabRouteData.terms && (

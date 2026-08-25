@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Plus, Trash2, Tag, Percent, Users, CheckCircle2, XCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, Trash2, Tag, Percent, CheckCircle2, XCircle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function AdminCouponsPage() {
   const [coupons, setCoupons] = useState<any[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState("");
@@ -15,21 +14,22 @@ export default function AdminCouponsPage() {
   const [newCoupon, setNewCoupon] = useState({
     code: "",
     discountPercentage: "",
-    targetUserId: "",
-    minBookingsRequired: "2",
   });
+
+  const [sendModal, setSendModal] = useState<{ isOpen: boolean; coupon: any; minTrips: string }>({
+    isOpen: false,
+    coupon: null,
+    minTrips: "1",
+  });
+  const [sending, setSending] = useState(false);
+  const [sendResult, setSendResult] = useState("");
 
   const fetchData = async () => {
     try {
-      const [couponsRes, usersRes] = await Promise.all([
-        fetch("/api/admin/coupons"),
-        fetch("/api/admin/users?role=user")
-      ]);
+      const couponsRes = await fetch("/api/admin/coupons");
       const couponsData = await couponsRes.json();
-      const usersData = await usersRes.json();
       
       if (couponsData.success) setCoupons(couponsData.data);
-      if (usersData.success) setUsers(usersData.data);
     } catch (err) {
       console.error("Error fetching data:", err);
     } finally {
@@ -45,28 +45,23 @@ export default function AdminCouponsPage() {
     e.preventDefault();
     setError("");
     
-    if (!newCoupon.code || !newCoupon.discountPercentage || !newCoupon.targetUserId) {
+    if (!newCoupon.code || !newCoupon.discountPercentage) {
       setError("Please fill in all required fields.");
       return;
     }
-
-    const selectedUser = users.find(u => u.uid === newCoupon.targetUserId);
 
     try {
       const res = await fetch("/api/admin/coupons", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...newCoupon,
-          targetUserName: selectedUser?.fullName || selectedUser?.email || "User"
-        })
+        body: JSON.stringify(newCoupon)
       });
       const data = await res.json();
       
       if (data.success) {
         setCoupons([data.data, ...coupons]);
         setIsCreating(false);
-        setNewCoupon({ code: "", discountPercentage: "", targetUserId: "", minBookingsRequired: "2" });
+        setNewCoupon({ code: "", discountPercentage: "" });
       } else {
         setError(data.message || "Failed to create coupon");
       }
@@ -102,14 +97,45 @@ export default function AdminCouponsPage() {
     }
   };
 
+  const handleSendCoupon = async () => {
+    if (!sendModal.coupon) return;
+    setSending(true);
+    setSendResult("");
+    try {
+      const res = await fetch("/api/admin/coupons/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          couponCode: sendModal.coupon.code,
+          minTrips: sendModal.minTrips,
+          discountPercentage: sendModal.coupon.discountPercentage
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSendResult(`Success: ${data.message}`);
+        setTimeout(() => {
+          setSendModal({ isOpen: false, coupon: null, minTrips: "1" });
+          setSendResult("");
+        }, 3000);
+      } else {
+        setSendResult(`Error: ${data.message}`);
+      }
+    } catch (error: any) {
+      setSendResult(`Error: ${error.message}`);
+    } finally {
+      setSending(false);
+    }
+  };
+
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-heading font-bold text-foreground">Coupons</h1>
-          <p className="text-muted-foreground mt-1">Manage user-specific discount coupons.</p>
+          <p className="text-muted-foreground mt-1">Manage global discount coupons.</p>
         </div>
         <Button onClick={() => setIsCreating(!isCreating)} className="rounded-xl px-6">
           <Plus className="w-4 h-4 mr-2" />
@@ -119,7 +145,7 @@ export default function AdminCouponsPage() {
 
       {isCreating && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-background p-6 rounded-2xl border border-border shadow-sm">
-          <h2 className="text-xl font-bold mb-4">Create New Coupon</h2>
+          <h2 className="text-xl font-bold mb-4">Create New Global Coupon</h2>
           {error && <div className="mb-4 p-3 bg-destructive/10 text-destructive rounded-lg text-sm">{error}</div>}
           
           <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -155,39 +181,6 @@ export default function AdminCouponsPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-semibold">Target User</label>
-              <div className="relative">
-                <Users className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <select
-                  value={newCoupon.targetUserId}
-                  onChange={(e) => setNewCoupon({ ...newCoupon, targetUserId: e.target.value })}
-                  className="w-full pl-10 pr-4 py-2 bg-muted/50 border border-border rounded-xl focus:ring-2 focus:ring-primary/20 outline-none appearance-none"
-                  required
-                >
-                  <option value="">Select a user...</option>
-                  {users.map(user => (
-                    <option key={user.uid} value={user.uid}>
-                      {user.fullName || user.email} ({user.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-semibold">Minimum Bookings Required</label>
-              <input
-                type="number"
-                min="0"
-                value={newCoupon.minBookingsRequired}
-                onChange={(e) => setNewCoupon({ ...newCoupon, minBookingsRequired: e.target.value })}
-                className="w-full px-4 py-2 bg-muted/50 border border-border rounded-xl focus:ring-2 focus:ring-primary/20 outline-none"
-                required
-              />
-              <p className="text-xs text-muted-foreground">User must have this many past bookings to use it.</p>
-            </div>
-
             <div className="md:col-span-2 pt-2">
               <Button type="submit" className="rounded-xl px-8 w-full md:w-auto">Generate Coupon</Button>
             </div>
@@ -202,8 +195,6 @@ export default function AdminCouponsPage() {
               <tr>
                 <th className="px-6 py-4 font-semibold">Code</th>
                 <th className="px-6 py-4 font-semibold">Discount</th>
-                <th className="px-6 py-4 font-semibold">Assigned To</th>
-                <th className="px-6 py-4 font-semibold">Min Bookings</th>
                 <th className="px-6 py-4 font-semibold">Status</th>
                 <th className="px-6 py-4 font-semibold text-right">Actions</th>
               </tr>
@@ -220,13 +211,6 @@ export default function AdminCouponsPage() {
                     {coupon.discountPercentage}% OFF
                   </td>
                   <td className="px-6 py-4">
-                    <div className="font-medium">{coupon.targetUserName}</div>
-                    <div className="text-xs text-muted-foreground truncate max-w-[150px]">{coupon.targetUserId}</div>
-                  </td>
-                  <td className="px-6 py-4 font-medium">
-                    {coupon.minBookingsRequired}
-                  </td>
-                  <td className="px-6 py-4">
                     <button 
                       onClick={() => toggleStatus(coupon.id, coupon.isActive)}
                       className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider transition-colors ${
@@ -240,18 +224,27 @@ export default function AdminCouponsPage() {
                     </button>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button 
-                      onClick={() => handleDelete(coupon.id)}
-                      className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex justify-end gap-2">
+                      <button 
+                        onClick={() => setSendModal({ isOpen: true, coupon, minTrips: "1" })}
+                        className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors flex items-center gap-1 font-semibold text-xs"
+                        title="Send to Users"
+                      >
+                        <Send className="w-4 h-4" /> Send
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(coupon.id)}
+                        className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
               {coupons.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
+                  <td colSpan={4} className="px-6 py-8 text-center text-muted-foreground">
                     No coupons found.
                   </td>
                 </tr>
@@ -260,6 +253,56 @@ export default function AdminCouponsPage() {
           </table>
         </div>
       </div>
+
+      <AnimatePresence>
+        {sendModal.isOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              className="bg-card w-full max-w-md p-6 rounded-2xl border border-border shadow-lg"
+            >
+              <h3 className="text-xl font-bold mb-2">Send Coupon: {sendModal.coupon?.code}</h3>
+              <p className="text-sm text-muted-foreground mb-4">Send this coupon to users who have completed a minimum number of trips.</p>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-semibold block mb-1">Minimum Trips Completed</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={sendModal.minTrips}
+                    onChange={(e) => setSendModal({ ...sendModal, minTrips: e.target.value })}
+                    className="w-full px-4 py-2 bg-muted/50 border border-border rounded-xl focus:ring-2 focus:ring-primary/20 outline-none"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">E.g., 1 means users with at least 1 trip will receive this coupon via in-app notification.</p>
+                </div>
+
+                {sendResult && (
+                  <div className={`p-3 rounded-lg text-sm font-medium ${sendResult.startsWith('Error') ? 'bg-destructive/10 text-destructive' : 'bg-emerald-100 text-emerald-700'}`}>
+                    {sendResult}
+                  </div>
+                )}
+
+                <div className="flex gap-3 justify-end mt-6">
+                  <Button variant="outline" onClick={() => { setSendModal({ isOpen: false, coupon: null, minTrips: "1" }); setSendResult(""); }} disabled={sending}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSendCoupon} disabled={sending}>
+                    {sending ? 'Sending...' : 'Send Now'}
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -28,8 +28,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'This coupon is no longer active.' }, { status: 400 });
     }
 
-    // 3. Check target user
-    if (coupon.targetUserId !== userId) {
+    // 3. Check target user (if explicitly set for old coupons)
+    if (coupon.targetUserId && coupon.targetUserId !== userId) {
       return NextResponse.json({ success: false, message: 'This coupon is not valid for your account.' }, { status: 400 });
     }
 
@@ -42,17 +42,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 5. Check minimum bookings
-    const minBookings = coupon.minBookingsRequired || 2;
-    if (minBookings > 0) {
-      const bookingsSnapshot = await adminDb.collection('bookings').where('userId', '==', userId).get();
-      if (bookingsSnapshot.size < minBookings) {
-        return NextResponse.json({ 
-          success: false, 
-          message: `This coupon requires at least ${minBookings} completed bookings.` 
-        }, { status: 400 });
-      }
-    }
+    // 5. Min bookings check removed (handled when sending notifications)
 
     return NextResponse.json({ 
       success: true, 

@@ -28,9 +28,9 @@ async function listCouponsHandler(req: AuthenticatedRequest) {
 async function createCouponHandler(req: AuthenticatedRequest) {
   try {
     const body = await req.json();
-    const { code, discountPercentage, targetUserId, targetUserName, minBookingsRequired } = body;
+    const { code, discountPercentage } = body;
 
-    if (!code || !discountPercentage || !targetUserId) {
+    if (!code || !discountPercentage) {
       return NextResponse.json({ success: false, message: 'Missing required fields' }, { status: 400 });
     }
 
@@ -47,9 +47,6 @@ async function createCouponHandler(req: AuthenticatedRequest) {
     const coupon = {
       code: code.toUpperCase(),
       discountPercentage: Number(discountPercentage),
-      targetUserId,
-      targetUserName: targetUserName || "User",
-      minBookingsRequired: Number(minBookingsRequired) || 2,
       isActive: true,
       createdAt: new Date().toISOString()
     };

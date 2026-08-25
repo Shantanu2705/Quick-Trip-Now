@@ -19,6 +19,7 @@ export default function AdminVehiclesPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [unavailableDateInput, setUnavailableDateInput] = useState("");
+  const [seasonalInput, setSeasonalInput] = useState({ startDate: "", endDate: "", price: 0 });
 
   const [formData, setFormData] = useState({
     name: "",
@@ -32,6 +33,7 @@ export default function AdminVehiclesPage() {
     ac: true,
     status: "Active",
     unavailableDates: [] as string[],
+    seasonalPrices: [] as { startDate: string, endDate: string, price: number }[],
     termsAndConditions: "",
     gstPercentage: 0,
   });
@@ -76,6 +78,7 @@ export default function AdminVehiclesPage() {
       ac: v.ac !== undefined ? v.ac : true,
       status: v.status || "Active",
       unavailableDates: v.unavailableDates || [],
+      seasonalPrices: v.seasonalPrices || [],
       termsAndConditions: v.termsAndConditions || "",
       gstPercentage: v.gstPercentage || 0,
     });
@@ -206,7 +209,7 @@ export default function AdminVehiclesPage() {
     setImageFile(null);
     setImagePreview("");
     setFormData({
-      name: "", type: "", image: "", price: 0, seats: 4, maxAdults: 4, maxChildren: 0, maxChildAge: 12, ac: true, status: "Active", unavailableDates: [], termsAndConditions: "", gstPercentage: 0
+      name: "", type: "SUV", image: "", price: 0, seats: 4, maxAdults: 4, maxChildren: 0, maxChildAge: 12, ac: true, status: "Active", unavailableDates: [], seasonalPrices: [], termsAndConditions: "", gstPercentage: 0
     });
     setInclusions([{ text: "", included: true }]);
     setUnavailableDateInput("");
@@ -228,6 +231,42 @@ export default function AdminVehiclesPage() {
       ...formData,
       unavailableDates: formData.unavailableDates.filter(d => d !== date)
     });
+  };
+
+  const handleAddSeasonalPrice = () => {
+    if (!seasonalInput.startDate || !seasonalInput.endDate || seasonalInput.price <= 0) return;
+    
+    // Check for overlap
+    const newStart = new Date(seasonalInput.startDate).getTime();
+    const newEnd = new Date(seasonalInput.endDate).getTime();
+    
+    if (newEnd < newStart) {
+      alert("End date cannot be before start date");
+      return;
+    }
+
+    const hasOverlap = formData.seasonalPrices.some(season => {
+      const existingStart = new Date(season.startDate).getTime();
+      const existingEnd = new Date(season.endDate).getTime();
+      return (newStart <= existingEnd && newEnd >= existingStart);
+    });
+
+    if (hasOverlap) {
+      alert("This date range overlaps with an existing seasonal price. No overlaps allowed.");
+      return;
+    }
+
+    setFormData({
+      ...formData,
+      seasonalPrices: [...formData.seasonalPrices, { ...seasonalInput }].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+    });
+    setSeasonalInput({ startDate: "", endDate: "", price: 0 });
+  };
+
+  const handleRemoveSeasonalPrice = (index: number) => {
+    const newPrices = [...formData.seasonalPrices];
+    newPrices.splice(index, 1);
+    setFormData({ ...formData, seasonalPrices: newPrices });
   };
 
   return (
@@ -350,6 +389,55 @@ export default function AdminVehiclesPage() {
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground">No unavailable dates set. This vehicle is available every day.</p>
+                  )}
+                </div>
+
+                <div className="md:col-span-2 bg-muted/10 p-4 rounded-xl border border-border/50">
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Seasonal Pricing</label>
+                  <p className="text-xs text-muted-foreground mb-3">Set custom prices for specific date ranges. Overlaps are not permitted.</p>
+                  <div className="flex flex-col md:flex-row items-center gap-2 mb-3">
+                    <div className="flex-1 flex gap-2 w-full">
+                      <input 
+                        type="date" 
+                        value={seasonalInput.startDate} 
+                        onChange={e => setSeasonalInput({...seasonalInput, startDate: e.target.value})}
+                        className="bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary flex-1"
+                        placeholder="Start Date"
+                      />
+                      <input 
+                        type="date" 
+                        value={seasonalInput.endDate} 
+                        onChange={e => setSeasonalInput({...seasonalInput, endDate: e.target.value})}
+                        className="bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary flex-1"
+                        placeholder="End Date"
+                      />
+                    </div>
+                    <div className="flex gap-2 w-full md:w-auto">
+                      <input 
+                        type="number" 
+                        min="1"
+                        placeholder="Price (₹)"
+                        value={seasonalInput.price || ""} 
+                        onChange={e => setSeasonalInput({...seasonalInput, price: Number(e.target.value)})}
+                        className="bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary w-full md:w-32"
+                      />
+                      <Button type="button" onClick={handleAddSeasonalPrice} variant="secondary" className="rounded-xl whitespace-nowrap">Add</Button>
+                    </div>
+                  </div>
+                  {formData.seasonalPrices && formData.seasonalPrices.length > 0 ? (
+                    <div className="flex flex-col gap-2">
+                      {formData.seasonalPrices.map((season, idx) => (
+                        <div key={idx} className="bg-primary/10 text-primary text-sm px-4 py-2 rounded-lg flex items-center justify-between border border-primary/20">
+                          <div>
+                            <span className="font-semibold">{season.startDate}</span> to <span className="font-semibold">{season.endDate}</span> : 
+                            <span className="font-bold ml-2">₹{season.price}</span>
+                          </div>
+                          <button type="button" onClick={() => handleRemoveSeasonalPrice(idx)} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">No seasonal prices set. Base price applies year-round.</p>
                   )}
                 </div>
 

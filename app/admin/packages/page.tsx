@@ -12,6 +12,7 @@ import Image from "next/image";
 export default function AdminPackagesPage() {
   const { user } = useAuth();
   const [packages, setPackages] = useState<Package[]>([]);
+  const [availableVehicles, setAvailableVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -38,6 +39,7 @@ export default function AdminPackagesPage() {
     maxChildren: 2,
     maxInfants: 2,
     gstPercentage: 0,
+    allowedVehicles: [] as string[],
   });
   const [itinerary, setItinerary] = useState([{ day: 1, title: "", desc: "" }]);
   const [inclusions, setInclusions] = useState([{ text: "", included: true }]);
@@ -45,28 +47,31 @@ export default function AdminPackagesPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
 
-  const fetchPackages = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
       if (!user) return;
       const token = await user.getIdToken();
       
-      const res = await fetch("/api/admin/packages", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.success) {
-        setPackages(data.data);
-      }
+      const [packagesRes, vehiclesRes] = await Promise.all([
+        fetch("/api/admin/packages", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("/api/admin/vehicles", { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+      
+      const pkgData = await packagesRes.json();
+      const vehData = await vehiclesRes.json();
+      
+      if (pkgData.success) setPackages(pkgData.data);
+      if (vehData.success) setAvailableVehicles(vehData.data);
     } catch (error) {
-      console.error("Error fetching packages:", error);
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchPackages();
+    fetchData();
   }, [user]);
 
   useEffect(() => {
@@ -100,6 +105,7 @@ export default function AdminPackagesPage() {
       maxChildren: pkg.maxChildren || 2,
       maxInfants: pkg.maxInfants || 2,
       gstPercentage: pkg.gstPercentage || 0,
+      allowedVehicles: pkg.allowedVehicles || [],
     });
     setItinerary(pkg.itinerary && pkg.itinerary.length > 0 ? pkg.itinerary : [{ day: 1, title: "", desc: "" }]);
     setInclusions(pkg.inclusions && pkg.inclusions.length > 0 ? pkg.inclusions : [{ text: "", included: true }]);
@@ -120,7 +126,7 @@ export default function AdminPackagesPage() {
       });
       const data = await res.json();
       if (data.success) {
-        fetchPackages();
+        fetchData();
       } else {
         alert(data.message);
       }
@@ -162,8 +168,8 @@ export default function AdminPackagesPage() {
     // Form Validation
     const missingFields = [];
     if (!formData.title) missingFields.push("Package Name");
-    if (!formData.destination || formData.destination.trim() === "") missingFields.push(`Destination (You typed: '${formData.destination}')`);
-    if (!formData.duration) missingFields.push("Duration Text (e.g. 3 Days / 2 Nights)");
+    if (!formData.destination || formData.destination.trim() === "") missingFields.push(`Destination`);
+    if (!formData.duration) missingFields.push("Duration Text");
     if (!formData.description) missingFields.push("Description");
 
     if (missingFields.length > 0) {
@@ -175,8 +181,6 @@ export default function AdminPackagesPage() {
       alert("Please upload a cover image.");
       return;
     }
-
-    if (!formData.title) missingFields.push("Package Name");
 
     setSaving(true);
     try {
@@ -198,7 +202,6 @@ export default function AdminPackagesPage() {
         });
       };
 
-      // Convert image to Base64 to store in Firestore
       if (imageFile) {
         if (imageFile.size > 700 * 1024) {
           alert("Image is too large for Firestore. Please upload an image smaller than 700KB, or use a URL.");
@@ -234,7 +237,7 @@ export default function AdminPackagesPage() {
       const data = await res.json();
       if (data.success) {
         handleCloseModal();
-        fetchPackages();
+        fetchData();
       } else {
         alert(data.message);
       }
@@ -252,12 +255,22 @@ export default function AdminPackagesPage() {
     setFormData({
       title: "", description: "", image: "", duration: "", days: 3, nights: 2,
       category: "Shared Tour", destination: "", status: "Active", isFeatured: false, highlightsStr: "",
-      rating: 5.0, reviews: 0, termsAndConditions: "", maxAdults: 4, maxChildren: 2, maxInfants: 2, gstPercentage: 0
+      rating: 5.0, reviews: 0, termsAndConditions: "", maxAdults: 4, maxChildren: 2, maxInfants: 2, gstPercentage: 0, allowedVehicles: []
     });
     setItinerary([{ day: 1, title: "", desc: "" }]);
     setInclusions([{ text: "", included: true }]);
     setImageFile(null);
     setImagePreview("");
+  };
+
+  const toggleVehicle = (vehicleId: string) => {
+    setFormData(prev => {
+      if (prev.allowedVehicles.includes(vehicleId)) {
+        return { ...prev, allowedVehicles: prev.allowedVehicles.filter(id => id !== vehicleId) };
+      } else {
+        return { ...prev, allowedVehicles: [...prev.allowedVehicles, vehicleId] };
+      }
+    });
   };
 
   return (
@@ -408,6 +421,25 @@ export default function AdminPackagesPage() {
                 <div className="md:col-span-2">
                   <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Highlights (Comma separated)</label>
                   <input type="text" value={formData.highlightsStr} onChange={e => setFormData({...formData, highlightsStr: e.target.value})} className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary" placeholder="Mountain View, Breakfast, Free WiFi" />
+                </div>
+                
+                {/* Available Vehicles Selection */}
+                <div className="md:col-span-2 bg-muted/10 p-4 rounded-xl border border-border/50">
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Allowed Vehicles</label>
+                  <p className="text-xs text-muted-foreground mb-3">Select the vehicles that can be booked with this package. (If none selected, all are allowed).</p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {availableVehicles.map(veh => (
+                      <label key={veh.id} className="flex items-center gap-2 text-sm p-2 bg-background border border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
+                        <input 
+                          type="checkbox" 
+                          checked={formData.allowedVehicles.includes(veh.id)}
+                          onChange={() => toggleVehicle(veh.id)}
+                          className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                        />
+                        <span className="truncate">{veh.name}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
 

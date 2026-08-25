@@ -8,6 +8,9 @@ import { useAuth } from "@/hooks/useAuth";
 export default function AdminCabRoutesPage() {
   const { user } = useAuth();
   const [routes, setRoutes] = useState<any[]>([]);
+  const [transferPackages, setTransferPackages] = useState<any[]>([]);
+  const [availableVehicles, setAvailableVehicles] = useState<any[]>([]);
+  
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -15,15 +18,14 @@ export default function AdminCabRoutesPage() {
   const [formData, setFormData] = useState({
     title: "",
     subtitle: "",
-    distance: "",
-    duration: "",
-    itineraryString: "",
-    terms: ""
+    packageId: "",
+    terms: "",
+    allowedVehicles: [] as string[],
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const fetchRoutes = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
       const authModule = await import("@/lib/firebase");
@@ -31,27 +33,34 @@ export default function AdminCabRoutesPage() {
       if (!currentUser) return;
       const token = await currentUser.getIdToken();
       
-      const res = await fetch("/api/admin/cab-routes", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.success) {
-        setRoutes(data.data);
-      }
+      const [routesRes, tpRes, vehRes] = await Promise.all([
+        fetch("/api/admin/cab-routes", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("/api/admin/transfer-packages", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("/api/admin/vehicles", { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+      
+      const routesData = await routesRes.json();
+      const tpData = await tpRes.json();
+      const vehData = await vehRes.json();
+      
+      if (routesData.success) setRoutes(routesData.data);
+      if (tpData.success) setTransferPackages(tpData.data);
+      if (vehData.success) setAvailableVehicles(vehData.data);
+      
     } catch (err) {
-      console.error("Error fetching private transfers:", err);
+      console.error("Error fetching data:", err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchRoutes();
+    fetchData();
   }, [user]);
 
   const handleOpenCreate = () => {
     setEditingId(null);
-    setFormData({ title: "", subtitle: "", distance: "", duration: "", itineraryString: "", terms: "" });
+    setFormData({ title: "", subtitle: "", packageId: "", terms: "", allowedVehicles: [] });
     setError("");
     setIsModalOpen(true);
   };
@@ -61,10 +70,9 @@ export default function AdminCabRoutesPage() {
     setFormData({
       title: route.title || "",
       subtitle: route.subtitle || "",
-      distance: route.distance || "",
-      duration: route.duration || "",
-      itineraryString: route.itinerary && Array.isArray(route.itinerary) ? route.itinerary.map((i: any) => i.location).join(" $ ") : "",
-      terms: route.terms || ""
+      packageId: route.packageId || "",
+      terms: route.terms || "",
+      allowedVehicles: route.allowedVehicles || [],
     });
     setError("");
     setIsModalOpen(true);
@@ -84,7 +92,7 @@ export default function AdminCabRoutesPage() {
       });
       const data = await res.json();
       if (data.success) {
-        fetchRoutes();
+        fetchData();
       } else {
         alert(data.message);
       }
@@ -98,6 +106,12 @@ export default function AdminCabRoutesPage() {
     setSaving(true);
     setError("");
     
+    if (!formData.packageId) {
+      setError("Please select an associated transfer package");
+      setSaving(false);
+      return;
+    }
+    
     try {
       const authModule = await import("@/lib/firebase");
       const currentUser = authModule.auth?.currentUser;
@@ -105,9 +119,7 @@ export default function AdminCabRoutesPage() {
       const token = await currentUser.getIdToken();
 
       const method = editingId ? "PUT" : "POST";
-      const payloadItinerary = formData.itineraryString.split("$").map(s => ({ location: s.trim() })).filter(i => i.location);
-      const payload = editingId ? { id: editingId, ...formData, itinerary: payloadItinerary } : { ...formData, itinerary: payloadItinerary };
-      delete (payload as any).itineraryString;
+      const payload = editingId ? { id: editingId, ...formData } : { ...formData };
 
       const res = await fetch("/api/admin/cab-routes", {
         method,
@@ -121,7 +133,7 @@ export default function AdminCabRoutesPage() {
       const data = await res.json();
       if (data.success) {
         setIsModalOpen(false);
-        fetchRoutes();
+        fetchData();
       } else {
         setError(data.message || "Failed to save private transfer");
       }
@@ -132,19 +144,27 @@ export default function AdminCabRoutesPage() {
     }
   };
 
+  const toggleVehicle = (vehicleId: string) => {
+    setFormData(prev => {
+      if (prev.allowedVehicles.includes(vehicleId)) {
+        return { ...prev, allowedVehicles: prev.allowedVehicles.filter(id => id !== vehicleId) };
+      } else {
+        return { ...prev, allowedVehicles: [...prev.allowedVehicles, vehicleId] };
+      }
+    });
+  };
+
   const filteredRoutes = routes.filter((r) => 
     r.title?.toLowerCase().includes(search.toLowerCase()) || 
     r.subtitle?.toLowerCase().includes(search.toLowerCase())
   );
-
-
 
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-heading font-bold text-foreground mb-2">Private Transfers</h1>
-          <p className="text-muted-foreground">Manage private transfers and options for vehicle bookings.</p>
+          <p className="text-muted-foreground">Manage private transfers and link them to transfer packages.</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
@@ -154,7 +174,7 @@ export default function AdminCabRoutesPage() {
             <Plus className="w-5 h-5" />
             <span>Add Route</span>
           </button>
-          <button onClick={fetchRoutes} className="p-2 bg-secondary text-secondary-foreground rounded-full hover:bg-secondary/80 transition-all shadow-sm">
+          <button onClick={fetchData} className="p-2 bg-secondary text-secondary-foreground rounded-full hover:bg-secondary/80 transition-all shadow-sm">
             <RefreshCw className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
           </button>
         </div>
@@ -162,7 +182,7 @@ export default function AdminCabRoutesPage() {
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-background border border-border rounded-2xl shadow-xl w-full max-w-lg p-6 relative my-8 max-h-[90vh] overflow-y-auto">
+          <div className="bg-background border border-border rounded-2xl shadow-xl w-full max-w-2xl p-6 relative my-8 max-h-[90vh] overflow-y-auto">
             <button 
               onClick={() => setIsModalOpen(false)}
               className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
@@ -182,52 +202,59 @@ export default function AdminCabRoutesPage() {
 
             <form onSubmit={handleSave} className="space-y-5">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Title <span className="text-destructive">*</span></label>
-                <input 
-                  type="text" required 
-                  value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})}
-                  className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all"
-                  placeholder="e.g. Bagdogra Airport to Gangtok"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Subtitle</label>
-                <input 
-                  type="text" 
-                  value={formData.subtitle} onChange={e => setFormData({...formData, subtitle: e.target.value})}
-                  className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all"
-                  placeholder="e.g. Bagdogra Airport | NJP | Siliguri to Gangtok"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Approx Distance <span className="text-destructive">*</span></label>
-                <input 
-                  type="text" required
-                  value={formData.distance} onChange={e => setFormData({...formData, distance: e.target.value})}
-                  className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all"
-                  placeholder="e.g. Approx 130 Kms"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Approx Duration <span className="text-destructive">*</span></label>
-                <input 
-                  type="text" required
-                  value={formData.duration} onChange={e => setFormData({...formData, duration: e.target.value})}
-                  className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all"
-                  placeholder="e.g. 4.5 Hours Journey"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Route Itinerary (separated by $) <span className="text-destructive">*</span></label>
-                <textarea 
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Associated Transfer Package <span className="text-destructive">*</span></label>
+                <select 
                   required
-                  value={formData.itineraryString} onChange={e => setFormData({...formData, itineraryString: e.target.value})}
-                  className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all min-h-[80px]"
-                  placeholder="e.g. Siliguri $ Darjeeling $ Gangtok"
-                />
+                  value={formData.packageId}
+                  onChange={e => setFormData({...formData, packageId: e.target.value})}
+                  className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all"
+                >
+                  <option value="">Select a package</option>
+                  {transferPackages.map(pkg => (
+                    <option key={pkg.id} value={pkg.id}>{pkg.title}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Title <span className="text-destructive">*</span></label>
+                  <input 
+                    type="text" required 
+                    value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})}
+                    className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all"
+                    placeholder="e.g. Bagdogra Airport to Gangtok"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Subtitle</label>
+                  <input 
+                    type="text" 
+                    value={formData.subtitle} onChange={e => setFormData({...formData, subtitle: e.target.value})}
+                    className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all"
+                    placeholder="e.g. Drop-off only"
+                  />
+                </div>
+              </div>
+
+              {/* Available Vehicles Selection */}
+              <div className="bg-muted/10 p-4 rounded-xl border border-border/50">
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Allowed Vehicles</label>
+                <p className="text-xs text-muted-foreground mb-3">Select the vehicles that can be booked for this specific route. (If none selected, all are allowed).</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {availableVehicles.map(veh => (
+                    <label key={veh.id} className="flex items-center gap-2 text-sm p-2 bg-background border border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
+                      <input 
+                        type="checkbox" 
+                        checked={formData.allowedVehicles.includes(veh.id)}
+                        onChange={() => toggleVehicle(veh.id)}
+                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                      />
+                      <span className="truncate">{veh.name}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -280,31 +307,43 @@ export default function AdminCabRoutesPage() {
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-muted-foreground uppercase bg-muted/30 border-y border-border/50">
                 <tr>
-                  <th className="px-6 py-4 font-semibold tracking-wider">Title</th>
-                  <th className="px-6 py-4 font-semibold tracking-wider">Subtitle</th>
+                  <th className="px-6 py-4 font-semibold tracking-wider">Transfer Title</th>
+                  <th className="px-6 py-4 font-semibold tracking-wider">Transfer Package</th>
                   <th className="px-6 py-4 font-semibold tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredRoutes.map((route) => (
-                  <tr key={route.id} className="border-b border-border/50 last:border-0 hover:bg-muted/10 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-foreground">{route.title}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-muted-foreground">{route.subtitle}</div>
-                      <div className="text-xs text-muted-foreground mt-1">{route.distance} • {route.duration}</div>
-                    </td>
-                    <td className="px-6 py-4 text-right space-x-2">
-                      <button onClick={() => handleOpenEdit(route)} className="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors" title="Edit">
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleDelete(route.id)} className="p-2 hover:bg-red-500/10 rounded-lg text-red-500 transition-colors" title="Delete">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {filteredRoutes.map((route) => {
+                  const pkg = transferPackages.find(p => p.id === route.packageId);
+                  return (
+                    <tr key={route.id} className="border-b border-border/50 last:border-0 hover:bg-muted/10 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-foreground">{route.title}</div>
+                        <div className="text-xs text-muted-foreground mt-1">{route.subtitle}</div>
+                        {route.allowedVehicles && route.allowedVehicles.length > 0 && (
+                          <div className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full inline-block mt-2">
+                            {route.allowedVehicles.length} Vehicles Allowed
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {pkg ? (
+                          <div className="text-sm font-medium">{pkg.title}</div>
+                        ) : (
+                          <div className="text-sm text-red-500">Unlinked</div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right space-x-2">
+                        <button onClick={() => handleOpenEdit(route)} className="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors" title="Edit">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(route.id)} className="p-2 hover:bg-red-500/10 rounded-lg text-red-500 transition-colors" title="Delete">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {filteredRoutes.length === 0 && !loading && (
                   <tr>
                     <td colSpan={3} className="px-6 py-12 text-center text-muted-foreground">
