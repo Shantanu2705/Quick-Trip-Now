@@ -46,6 +46,7 @@ export interface CabRoute {
 
 export interface Package {
   id: string;
+  slug?: string;
   title: string;
   description: string;
   image: string;
