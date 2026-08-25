@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, Package, MapPin, Car, FileText } from "lucide-react";
+import { CalendarDays, Package, MapPin, Car, FileText, User } from "lucide-react";
 import { format } from "date-fns";
 
 export default function UserBookingsPage() {
