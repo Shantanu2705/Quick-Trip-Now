@@ -11,8 +11,8 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
   const { type, package: packageSlug, date, adults, children, infants, route, vehicleId, vehiclesRequired } = await searchParams;
   const isVehicle = type === "cabs";
 
-  let packageData = null;
-  let cabRouteData = null;
+  let packageData: any = null;
+  let cabRouteData: any = null;
   let availableVehicles: any[] = [];
   let basePrice = 0;
   let childPrice = 0;
