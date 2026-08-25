@@ -336,7 +336,7 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                 <div className="flex flex-col flex-1">
                   <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Select Package</span>
                   <Select value={selectedPackageId} onValueChange={(val) => {
-                    setSelectedPackageId(val);
+                    setSelectedPackageId(val || "");
                     setCabRouteId(""); // Reset transfer when package changes
                   }}>
                     <SelectTrigger className="border-none shadow-none p-0 h-auto focus:ring-0 bg-transparent text-left text-base font-semibold w-full">
