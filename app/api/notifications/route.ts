@@ -18,7 +18,7 @@ async function getNotificationsHandler(req: AuthenticatedRequest) {
       .where('userId', '==', userId)
       .get();
       
-    let notifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    let notifications = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
 
     // Sort by created date descending in memory
     notifications.sort((a: any, b: any) => {
