@@ -8,6 +8,9 @@ async function userBookingsHandler(req: AuthenticatedRequest) {
       return NextResponse.json({ success: false, message: 'Firebase Admin not configured' }, { status: 500 });
     }
 
+    if (!req.user) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
     const userId = req.user.uid;
     
     // Fetch bookings for this specific user

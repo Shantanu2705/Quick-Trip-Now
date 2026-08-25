@@ -4,6 +4,9 @@ import { withAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
 
 async function getUserProfileHandler(req: AuthenticatedRequest) {
   try {
+    if (!req.user) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
     const userId = req.user.uid;
     const userDoc = await adminDb.collection('users').doc(userId).get();
     
@@ -22,6 +25,9 @@ async function getUserProfileHandler(req: AuthenticatedRequest) {
 
 async function updateUserProfileHandler(req: AuthenticatedRequest) {
   try {
+    if (!req.user) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
     const userId = req.user.uid;
     const data = await req.json();
     
