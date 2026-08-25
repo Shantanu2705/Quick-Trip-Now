@@ -40,6 +40,7 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
   const [packages, setPackages] = useState<Package[]>([]);
   const [transferPackages, setTransferPackages] = useState<TransferPackage[]>([]);
   const [selectedPackageId, setSelectedPackageId] = useState("");
+  const [selectedToursPackageId, setSelectedToursPackageId] = useState("");
 
   useEffect(() => {
     async function loadData() {
@@ -64,23 +65,29 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
   }, []);
 
   const handleExplore = () => {
+    if (!selectedToursPackageId) {
+      setGuestError("Please select a package");
+      return;
+    }
+    if (!date) {
+      setGuestError("Please select a date");
+      return;
+    }
     if (adults < 1) {
       setGuestError("Need at least 1 adult");
       return;
     }
-    if (!duration) {
-      setGuestError("Please select a duration");
-      return;
-    }
+    
+    const selectedPkg = packages.find(p => p.id === selectedToursPackageId);
+    if (!selectedPkg) return;
+
     const params = new URLSearchParams();
-    if (destination) params.set("destination", destination);
-    if (duration) params.set("duration", duration);
-    if (date) params.set("date", date.toISOString());
+    params.set("date", date.toISOString());
     params.set("adults", adults.toString());
     params.set("children", children.toString());
     params.set("infants", infants.toString());
     
-    router.push(`/packages?${params.toString()}`);
+    router.push(`/package/${selectedPkg.slug || selectedPkg.id}?${params.toString()}`);
   };
 
   const selectedDestObj = destinations.find(d => d.name === destination);
@@ -163,7 +170,10 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                 </div>
                 <div className="flex flex-col flex-1 relative">
                   <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Destination</span>
-                  <Select value={destination} onValueChange={(val) => setDestination(val || "")}>
+                  <Select value={destination} onValueChange={(val) => {
+                    setDestination(val || "");
+                    setSelectedToursPackageId("");
+                  }}>
                     <SelectTrigger className="border-none shadow-none p-0 h-auto focus:ring-0 bg-transparent text-left text-base font-semibold w-full">
                       <SelectValue placeholder="Where to next?" />
                     </SelectTrigger>
@@ -180,24 +190,52 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
               {/* Divider */}
               <div className="hidden md:block w-px h-12 bg-border" />
 
-              {/* Duration Field (Dropdown) */}
+              {/* Select Package Field (Dropdown) */}
               <div className="flex-1 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-4">
                 <div className="bg-primary/10 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                  <Clock className="w-6 h-6 text-primary" />
+                  <Compass className="w-6 h-6 text-primary" />
                 </div>
                 <div className="flex flex-col flex-1 relative">
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Duration</span>
-                  <Select value={duration} onValueChange={(val) => setDuration(val || "")} disabled={!destination}>
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Package</span>
+                  <Select value={selectedToursPackageId} onValueChange={(val) => setSelectedToursPackageId(val || "")} disabled={!destination}>
                     <SelectTrigger className="border-none shadow-none p-0 h-auto focus:ring-0 bg-transparent text-left text-base font-semibold w-full">
-                      <SelectValue placeholder="Select duration" />
+                      <SelectValue placeholder={!destination ? "Select destination first" : "Select package"}>
+                        {selectedToursPackageId && packages.find(p => p.id === selectedToursPackageId) ? (
+                          <div className="flex flex-col gap-1">
+                            <span className="font-semibold text-base text-foreground">{packages.find(p => p.id === selectedToursPackageId)!.title}</span>
+                            {(() => {
+                              const p = packages.find(pkg => pkg.id === selectedToursPackageId)!;
+                              if (p.days || p.nights || p.duration) {
+                                return (
+                                  <span className="text-[13px] text-muted-foreground whitespace-normal font-normal">
+                                    {p.days || p.nights ? `${p.days || 0} Days / ${p.nights || 0} Nights` : p.duration}
+                                  </span>
+                                );
+                              }
+                              return null;
+                            })()}
+                          </div>
+                        ) : undefined}
+                      </SelectValue>
                     </SelectTrigger>
-                    <SelectContent>
-                      {availableDurations.length > 0 ? (
-                        availableDurations.map(dur => (
-                          <SelectItem key={dur} value={dur}>{dur}</SelectItem>
+                    <SelectContent className="min-w-[320px] p-2">
+                      {packages.filter(p => p.destination === destination).length > 0 ? (
+                        packages.filter(p => p.destination === destination).map((pkg) => (
+                          <SelectItem key={pkg.id} value={pkg.id} className="py-3 px-4 rounded-xl mb-1 cursor-pointer hover:bg-muted/50 transition-colors">
+                            <div className="flex flex-col gap-1">
+                              <span className="font-semibold text-base text-foreground">{pkg.title}</span>
+                              {(pkg.days || pkg.nights || pkg.duration) ? (
+                                <span className="text-[13px] text-muted-foreground whitespace-normal font-normal">
+                                  {pkg.days || pkg.nights ? `${pkg.days || 0} Days / ${pkg.nights || 0} Nights` : pkg.duration}
+                                </span>
+                              ) : null}
+                            </div>
+                          </SelectItem>
                         ))
                       ) : (
-                        <SelectItem value="none" disabled>No durations configured</SelectItem>
+                        <SelectItem value="none" disabled className="py-3 px-4">
+                          <span className="text-muted-foreground text-sm">No packages found for this destination.</span>
+                        </SelectItem>
                       )}
                     </SelectContent>
                   </Select>
@@ -312,7 +350,7 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                   onClick={handleExplore}
                   className="w-full md:w-[160px] h-[64px] bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl flex items-center justify-center gap-3 font-semibold transition-all shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 text-lg">
                   <Search className="w-5 h-5" />
-                  <span>Explore</span>
+                  <span>Book Tour</span>
                 </button>
               </div>
             </motion.div>

@@ -46,6 +46,19 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
         allVehicles = allVehicles.filter((v: any) => packageData.allowedVehicles.includes(v.id));
       }
       
+      if (packageData.vehiclePrices || packageData.vehicleSeasonalPrices) {
+        allVehicles = allVehicles.map((v: any) => {
+          const updatedV = { ...v };
+          if (packageData.vehiclePrices && packageData.vehiclePrices[v.id] !== undefined) {
+            updatedV.price = packageData.vehiclePrices[v.id];
+          }
+          if (packageData.vehicleSeasonalPrices && packageData.vehicleSeasonalPrices[v.id]) {
+            updatedV.seasonalPrices = packageData.vehicleSeasonalPrices[v.id];
+          }
+          return updatedV;
+        });
+      }
+      
       availableVehicles = allVehicles;
     } catch (error) {
       console.error("Error fetching package data:", error);
@@ -75,6 +88,19 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
 
       if (cabRouteData && cabRouteData.allowedVehicles && cabRouteData.allowedVehicles.length > 0) {
         allVehicles = allVehicles.filter((v: any) => cabRouteData.allowedVehicles.includes(v.id));
+      }
+
+      if (cabRouteData && (cabRouteData.vehiclePrices || cabRouteData.vehicleSeasonalPrices)) {
+        allVehicles = allVehicles.map((v: any) => {
+          const updatedV = { ...v };
+          if (cabRouteData.vehiclePrices && cabRouteData.vehiclePrices[v.id] !== undefined) {
+            updatedV.price = cabRouteData.vehiclePrices[v.id];
+          }
+          if (cabRouteData.vehicleSeasonalPrices && cabRouteData.vehicleSeasonalPrices[v.id]) {
+            updatedV.seasonalPrices = cabRouteData.vehicleSeasonalPrices[v.id];
+          }
+          return updatedV;
+        });
       }
 
       availableVehicles = allVehicles;

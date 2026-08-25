@@ -40,6 +40,8 @@ export interface CabRoute {
   subtitle: string;
   packageId?: string;
   allowedVehicles?: string[];
+  vehiclePrices?: Record<string, number>;
+  vehicleSeasonalPrices?: Record<string, { startDate: string; endDate: string; price: number }[]>;
   terms?: string;
   createdAt?: any;
 }
@@ -68,6 +70,8 @@ export interface Package {
   maxInfants: number;
   gstPercentage: number;
   allowedVehicles?: string[]; // Array of vehicle IDs
+  vehiclePrices?: Record<string, number>; // Vehicle ID to Price mapping
+  vehicleSeasonalPrices?: Record<string, { startDate: string; endDate: string; price: number }[]>;
 }
 
 export interface TransferPackage {

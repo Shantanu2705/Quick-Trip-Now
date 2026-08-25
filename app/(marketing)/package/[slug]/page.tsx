@@ -28,6 +28,23 @@ export default async function PackageDetailsPage({ params }: { params: Promise<{
   try {
     const vSnapshot = await adminDb.collection("vehicles").get();
     vehiclesData = vSnapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+
+    if (pkgData && pkgData.allowedVehicles && pkgData.allowedVehicles.length > 0) {
+      vehiclesData = vehiclesData.filter((v: any) => pkgData.allowedVehicles.includes(v.id));
+    }
+    
+    if (pkgData && (pkgData.vehiclePrices || pkgData.vehicleSeasonalPrices)) {
+      vehiclesData = vehiclesData.map((v: any) => {
+        const updatedV = { ...v };
+        if (pkgData.vehiclePrices && pkgData.vehiclePrices[v.id] !== undefined) {
+          updatedV.price = pkgData.vehiclePrices[v.id];
+        }
+        if (pkgData.vehicleSeasonalPrices && pkgData.vehicleSeasonalPrices[v.id]) {
+          updatedV.seasonalPrices = pkgData.vehicleSeasonalPrices[v.id];
+        }
+        return updatedV;
+      });
+    }
   } catch (error) {
     console.error("Error fetching vehicles:", error);
   }

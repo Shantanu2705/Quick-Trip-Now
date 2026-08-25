@@ -6,8 +6,8 @@ async function createCabRouteHandler(req: AuthenticatedRequest) {
   try {
     const data = await req.json();
     
-    if (!data.title || !data.subtitle || !data.distance || !data.duration || !data.itinerary || !Array.isArray(data.itinerary) || data.itinerary.length === 0) {
-      return NextResponse.json({ success: false, message: 'Missing required fields' }, { status: 400 });
+    if (!data.title || !data.packageId) {
+      return NextResponse.json({ success: false, message: 'Missing required fields: title or packageId' }, { status: 400 });
     }
 
     data.createdAt = new Date().toISOString();
@@ -39,8 +39,8 @@ async function updateCabRouteHandler(req: AuthenticatedRequest) {
     
     if (!id) return NextResponse.json({ success: false, message: 'Private Transfer ID required' }, { status: 400 });
 
-    if (!data.title || !data.subtitle || !data.distance || !data.duration || !data.itinerary || !Array.isArray(data.itinerary) || data.itinerary.length === 0) {
-      return NextResponse.json({ success: false, message: 'Missing required fields' }, { status: 400 });
+    if (!updateData.title || !updateData.packageId) {
+      return NextResponse.json({ success: false, message: 'Missing required fields: title or packageId' }, { status: 400 });
     }
 
     updateData.updatedAt = new Date().toISOString();

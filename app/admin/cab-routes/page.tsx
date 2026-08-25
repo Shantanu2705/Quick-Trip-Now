@@ -21,6 +21,8 @@ export default function AdminCabRoutesPage() {
     packageId: "",
     terms: "",
     allowedVehicles: [] as string[],
+    vehiclePrices: {} as Record<string, number>,
+    vehicleSeasonalPrices: {} as Record<string, { startDate: string; endDate: string; price: number }[]>,
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -60,7 +62,7 @@ export default function AdminCabRoutesPage() {
 
   const handleOpenCreate = () => {
     setEditingId(null);
-    setFormData({ title: "", subtitle: "", packageId: "", terms: "", allowedVehicles: [] });
+    setFormData({ title: "", subtitle: "", packageId: "", terms: "", allowedVehicles: [], vehiclePrices: {}, vehicleSeasonalPrices: {} });
     setError("");
     setIsModalOpen(true);
   };
@@ -73,6 +75,8 @@ export default function AdminCabRoutesPage() {
       packageId: route.packageId || "",
       terms: route.terms || "",
       allowedVehicles: route.allowedVehicles || [],
+      vehiclePrices: route.vehiclePrices || {},
+      vehicleSeasonalPrices: route.vehicleSeasonalPrices || {},
     });
     setError("");
     setIsModalOpen(true);
@@ -244,15 +248,114 @@ export default function AdminCabRoutesPage() {
                 <p className="text-xs text-muted-foreground mb-3">Select the vehicles that can be booked for this specific route. (If none selected, all are allowed).</p>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {availableVehicles.map(veh => (
-                    <label key={veh.id} className="flex items-center gap-2 text-sm p-2 bg-background border border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
-                      <input 
-                        type="checkbox" 
-                        checked={formData.allowedVehicles.includes(veh.id)}
-                        onChange={() => toggleVehicle(veh.id)}
-                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-                      />
-                      <span className="truncate">{veh.name}</span>
-                    </label>
+                    <div key={veh.id} className="flex flex-col gap-2 p-2 bg-background border border-border rounded-lg hover:border-primary/50 transition-colors">
+                      <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          checked={formData.allowedVehicles.includes(veh.id)}
+                          onChange={() => toggleVehicle(veh.id)}
+                          className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                        />
+                        <span className="truncate">{veh.name}</span>
+                      </label>
+                      {formData.allowedVehicles.includes(veh.id) && (
+                        <div className="flex flex-col gap-3 mt-2 pt-2 border-t border-border/50">
+                          <div>
+                            <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 block">Flat Price</label>
+                            <input
+                              type="number"
+                              placeholder={`Default: ₹${veh.price || veh.pricePerDay || 0}`}
+                              value={formData.vehiclePrices[veh.id] || ''}
+                              onChange={(e) => setFormData({
+                                ...formData,
+                                vehiclePrices: {
+                                  ...formData.vehiclePrices,
+                                  [veh.id]: Number(e.target.value)
+                                }
+                              })}
+                              className="w-full bg-muted/30 border border-border rounded-lg py-1.5 px-3 text-xs focus:outline-none focus:border-primary"
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">Seasonal Prices</span>
+                            {(formData.vehicleSeasonalPrices[veh.id] || []).map((sp, idx) => (
+                              <div key={idx} className="flex flex-col gap-1.5 bg-muted/50 p-2 rounded-md border border-border/50">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-[10px] font-medium">Season {idx + 1}</span>
+                                  <button 
+                                    type="button" 
+                                    onClick={() => {
+                                      const newSp = [...(formData.vehicleSeasonalPrices[veh.id] || [])];
+                                      newSp.splice(idx, 1);
+                                      setFormData({
+                                        ...formData,
+                                        vehicleSeasonalPrices: {
+                                          ...formData.vehicleSeasonalPrices,
+                                          [veh.id]: newSp
+                                        }
+                                      });
+                                    }}
+                                    className="text-destructive hover:text-destructive/80 text-[10px]"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                                <div className="flex gap-2">
+                                  <input 
+                                    type="date" 
+                                    value={sp.startDate}
+                                    onChange={(e) => {
+                                      const newSp = [...(formData.vehicleSeasonalPrices[veh.id] || [])];
+                                      newSp[idx].startDate = e.target.value;
+                                      setFormData({ ...formData, vehicleSeasonalPrices: { ...formData.vehicleSeasonalPrices, [veh.id]: newSp } });
+                                    }}
+                                    className="w-1/2 bg-background border border-border rounded py-1 px-2 text-[10px]"
+                                  />
+                                  <input 
+                                    type="date" 
+                                    value={sp.endDate}
+                                    onChange={(e) => {
+                                      const newSp = [...(formData.vehicleSeasonalPrices[veh.id] || [])];
+                                      newSp[idx].endDate = e.target.value;
+                                      setFormData({ ...formData, vehicleSeasonalPrices: { ...formData.vehicleSeasonalPrices, [veh.id]: newSp } });
+                                    }}
+                                    className="w-1/2 bg-background border border-border rounded py-1 px-2 text-[10px]"
+                                  />
+                                </div>
+                                <input 
+                                  type="number" 
+                                  placeholder="Price"
+                                  value={sp.price || ''}
+                                  onChange={(e) => {
+                                    const newSp = [...(formData.vehicleSeasonalPrices[veh.id] || [])];
+                                    newSp[idx].price = Number(e.target.value);
+                                    setFormData({ ...formData, vehicleSeasonalPrices: { ...formData.vehicleSeasonalPrices, [veh.id]: newSp } });
+                                  }}
+                                  className="w-full bg-background border border-border rounded py-1 px-2 text-[10px]"
+                                />
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newSp = [...(formData.vehicleSeasonalPrices[veh.id] || []), { startDate: '', endDate: '', price: 0 }];
+                                setFormData({
+                                  ...formData,
+                                  vehicleSeasonalPrices: {
+                                    ...formData.vehicleSeasonalPrices,
+                                    [veh.id]: newSp
+                                  }
+                                });
+                              }}
+                              className="text-[10px] text-primary hover:underline font-medium block"
+                            >
+                              + Add Seasonal Price
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>
