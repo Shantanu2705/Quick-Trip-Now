@@ -32,7 +32,7 @@ async function sendCouponNotificationHandler(req: AuthenticatedRequest) {
         }
       });
 
-      eligibleUserIds = eligibleUserIds.filter(uid => (bookingCounts[uid] || 0) >= minTripsNum);
+      eligibleUserIds = eligibleUserIds.filter((uid: any) => (bookingCounts[uid] || 0) >= minTripsNum);
     }
 
     // 3. Create notifications
