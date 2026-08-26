@@ -17,13 +17,14 @@ export default function AdminCabRoutesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
-    subtitle: "",
+    destination: "",
     packageId: "",
     terms: "",
     allowedVehicles: [] as string[],
     vehiclePrices: {} as Record<string, number>,
     vehicleSeasonalPrices: {} as Record<string, { startDate: string; endDate: string; price: number }[]>,
   });
+  const [inclusions, setInclusions] = useState([{ text: "", included: true }]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -62,7 +63,8 @@ export default function AdminCabRoutesPage() {
 
   const handleOpenCreate = () => {
     setEditingId(null);
-    setFormData({ title: "", subtitle: "", packageId: "", terms: "", allowedVehicles: [], vehiclePrices: {}, vehicleSeasonalPrices: {} });
+    setFormData({ title: "", destination: "", packageId: "", terms: "", allowedVehicles: [], vehiclePrices: {}, vehicleSeasonalPrices: {} });
+    setInclusions([{ text: "", included: true }]);
     setError("");
     setIsModalOpen(true);
   };
@@ -71,13 +73,14 @@ export default function AdminCabRoutesPage() {
     setEditingId(route.id);
     setFormData({
       title: route.title || "",
-      subtitle: route.subtitle || "",
+      destination: route.destination || route.subtitle || "",
       packageId: route.packageId || "",
       terms: route.terms || "",
       allowedVehicles: route.allowedVehicles || [],
       vehiclePrices: route.vehiclePrices || {},
       vehicleSeasonalPrices: route.vehicleSeasonalPrices || {},
     });
+    setInclusions(route.inclusions && route.inclusions.length > 0 ? route.inclusions : [{ text: "", included: true }]);
     setError("");
     setIsModalOpen(true);
   };
@@ -123,7 +126,7 @@ export default function AdminCabRoutesPage() {
       const token = await currentUser.getIdToken();
 
       const method = editingId ? "PUT" : "POST";
-      const payload = editingId ? { id: editingId, ...formData } : { ...formData };
+      const payload = editingId ? { id: editingId, ...formData, inclusions } : { ...formData, inclusions };
 
       const res = await fetch("/api/admin/cab-routes", {
         method,
@@ -160,7 +163,7 @@ export default function AdminCabRoutesPage() {
 
   const filteredRoutes = routes.filter((r) => 
     r.title?.toLowerCase().includes(search.toLowerCase()) || 
-    r.subtitle?.toLowerCase().includes(search.toLowerCase())
+    (r.destination || r.subtitle)?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -232,12 +235,12 @@ export default function AdminCabRoutesPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Subtitle</label>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Destination <span className="text-destructive">*</span></label>
                   <input 
-                    type="text" 
-                    value={formData.subtitle} onChange={e => setFormData({...formData, subtitle: e.target.value})}
+                    type="text" required
+                    value={formData.destination} onChange={e => setFormData({...formData, destination: e.target.value})}
                     className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all"
-                    placeholder="e.g. Drop-off only"
+                    placeholder="e.g. Gangtok"
                   />
                 </div>
               </div>
@@ -260,22 +263,7 @@ export default function AdminCabRoutesPage() {
                       </label>
                       {formData.allowedVehicles.includes(veh.id) && (
                         <div className="flex flex-col gap-3 mt-2 pt-2 border-t border-border/50">
-                          <div>
-                            <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 block">Flat Price</label>
-                            <input
-                              type="number"
-                              placeholder={`Default: ₹${veh.price || veh.pricePerDay || 0}`}
-                              value={formData.vehiclePrices[veh.id] || ''}
-                              onChange={(e) => setFormData({
-                                ...formData,
-                                vehiclePrices: {
-                                  ...formData.vehiclePrices,
-                                  [veh.id]: Number(e.target.value)
-                                }
-                              })}
-                              className="w-full bg-muted/30 border border-border rounded-lg py-1.5 px-3 text-xs focus:outline-none focus:border-primary"
-                            />
-                          </div>
+
                           
                           <div className="space-y-2">
                             <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">Seasonal Prices</span>
@@ -368,6 +356,26 @@ export default function AdminCabRoutesPage() {
                   placeholder="Enter route-specific terms and conditions here..."
                 />
               </div>
+
+              {/* Inclusions */}
+              <div className="border-t border-border/50 pt-4 mt-2">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="font-bold text-sm">Inclusions / Exclusions</h3>
+                  <button type="button" className="text-xs font-semibold text-primary hover:underline" onClick={() => setInclusions([...inclusions, { text: "", included: true }])}>+ Add Item</button>
+                </div>
+                <div className="space-y-2">
+                  {inclusions.map((item, index) => (
+                    <div key={index} className="flex gap-2 items-center bg-muted/10 p-2 rounded-xl border border-border/50">
+                      <select value={item.included ? "true" : "false"} onChange={e => { const newInc = [...inclusions]; newInc[index].included = e.target.value === "true"; setInclusions(newInc); }} className="bg-background border border-border rounded-lg py-2 px-2 text-sm focus:outline-none">
+                        <option value="true">Included</option>
+                        <option value="false">Excluded</option>
+                      </select>
+                      <input type="text" placeholder="e.g. Tolls and taxes" value={item.text} onChange={e => { const newInc = [...inclusions]; newInc[index].text = e.target.value; setInclusions(newInc); }} className="flex-1 bg-background border border-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-primary" />
+                      <button type="button" onClick={() => setInclusions(inclusions.filter((_, i) => i !== index))} className="p-2 text-destructive hover:bg-destructive/10 rounded-lg"><Trash2 className="w-4 h-4" /></button>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div className="pt-4 flex justify-end gap-3 border-t border-border mt-6">
                 <button 
                   type="button" 
@@ -422,7 +430,7 @@ export default function AdminCabRoutesPage() {
                     <tr key={route.id} className="border-b border-border/50 last:border-0 hover:bg-muted/10 transition-colors">
                       <td className="px-6 py-4">
                         <div className="font-medium text-foreground">{route.title}</div>
-                        <div className="text-xs text-muted-foreground mt-1">{route.subtitle}</div>
+                        <div className="text-xs text-muted-foreground mt-1">{route.destination || route.subtitle}</div>
                         {route.allowedVehicles && route.allowedVehicles.length > 0 && (
                           <div className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full inline-block mt-2">
                             {route.allowedVehicles.length} Vehicles Allowed

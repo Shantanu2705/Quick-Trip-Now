@@ -430,7 +430,7 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                           <SelectItem key={route.id} value={route.id} className="py-3 px-4 rounded-xl mb-1 cursor-pointer hover:bg-muted/50 transition-colors">
                             <div className="flex flex-col gap-1">
                               <span className="font-semibold text-base text-foreground">{route.title}</span>
-                              {route.subtitle && <span className="text-[13px] text-muted-foreground">{route.subtitle}</span>}
+                              {(route.destination || route.subtitle) && <span className="text-[13px] text-muted-foreground">{route.destination || route.subtitle}</span>}
                             </div>
                           </SelectItem>
                         ))

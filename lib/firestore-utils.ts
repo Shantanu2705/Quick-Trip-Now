@@ -37,12 +37,13 @@ export interface Vehicle {
 export interface CabRoute {
   id: string;
   title: string;
-  subtitle: string;
+  destination: string;
   packageId?: string;
   allowedVehicles?: string[];
   vehiclePrices?: Record<string, number>;
   vehicleSeasonalPrices?: Record<string, { startDate: string; endDate: string; price: number }[]>;
   terms?: string;
+  inclusions?: { text: string; included: boolean }[];
   createdAt?: any;
 }
 
