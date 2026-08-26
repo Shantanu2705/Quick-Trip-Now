@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CalendarDays, User, LogOut } from "lucide-react";
+import { CalendarDays, User, LogOut, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { LogoutButton } from "@/components/shared/LogoutButton";
 import { Logo } from "@/components/shared/Logo";
@@ -60,7 +60,11 @@ export default function DashboardLayout({
           })}
         </nav>
 
-        <div className="p-4 border-t border-border">
+        <div className="p-4 border-t border-border flex flex-col gap-2">
+          <Link href="/" className="flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all font-medium">
+            <ArrowLeft className="w-5 h-5" />
+            Back to Website
+          </Link>
           <LogoutButton />
         </div>
       </aside>
