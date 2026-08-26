@@ -16,6 +16,8 @@ export const metadata: Metadata = {
   description: "Experience the world's most luxurious and breathtaking destinations with Quick Trip Now.",
 };
 
+import NextTopLoader from 'nextjs-toploader';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -24,6 +26,17 @@ export default function RootLayout({
   return (
     <html lang="en" className={`dark ${fontSans.variable} ${fontHeading.variable}`}>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased selection:bg-primary/20">
+        <NextTopLoader
+          color="#0ea5e9"
+          initialPosition={0.08}
+          crawlSpeed={200}
+          height={3}
+          crawl={true}
+          showSpinner={false}
+          easing="ease"
+          speed={200}
+          shadow="0 0 10px #0ea5e9,0 0 5px #0ea5e9"
+        />
         {children}
       </body>
     </html>
