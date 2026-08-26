@@ -394,19 +394,11 @@ export default function AdminDestinationsPage() {
               </div>
 
               <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <label className={`flex items-center gap-3 text-sm font-semibold cursor-pointer p-4 rounded-xl border transition-all ${
-                  popularCount >= 4 && !formData.isPopular
-                    ? "bg-muted/50 border-border/50 text-muted-foreground cursor-not-allowed opacity-70"
-                    : "bg-primary/5 border-primary/20 text-foreground hover:bg-primary/10"
-                }`}>
+                <label className="flex items-center gap-3 text-sm font-semibold cursor-pointer p-4 rounded-xl border transition-all bg-primary/5 border-primary/20 text-foreground hover:bg-primary/10">
                   <input 
                     type="checkbox" 
                     checked={formData.isPopular} 
-                    disabled={popularCount >= 4 && !formData.isPopular}
-                    onChange={e => {
-                      if (popularCount >= 4 && e.target.checked) return;
-                      setFormData({...formData, isPopular: e.target.checked});
-                    }} 
+                    onChange={e => setFormData({...formData, isPopular: e.target.checked})} 
                     className="w-5 h-5 rounded border-border text-primary focus:ring-primary disabled:opacity-50" 
                   />
                   <div>
@@ -414,11 +406,6 @@ export default function AdminDestinationsPage() {
                       Show in "Go With Us"
                       {formData.isPopular && <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] uppercase font-bold tracking-wider">Active</span>}
                     </div>
-                    {popularCount >= 4 && !formData.isPopular && (
-                      <div className="text-xs text-amber-600 mt-1 font-normal">
-                        Maximum of 4 reached.
-                      </div>
-                    )}
                   </div>
                 </label>
 

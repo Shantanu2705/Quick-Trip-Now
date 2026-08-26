@@ -15,8 +15,8 @@ export function PopularDestinations() {
     async function fetchDestinations() {
       try {
         const data = await getDestinations();
-        // Filter popular destinations and limit to 4 just in case
-        const popular = data.filter(d => d.isPopular).slice(0, 4);
+        // Filter popular destinations
+        const popular = data.filter(d => d.isPopular);
         setDestinations(popular);
       } catch (error) {
         console.error("Error fetching destinations:", error);
