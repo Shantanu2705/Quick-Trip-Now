@@ -44,6 +44,7 @@ export interface CabRoute {
   vehicleSeasonalPrices?: Record<string, { startDate: string; endDate: string; price: number }[]>;
   terms?: string;
   inclusions?: { text: string; included: boolean }[];
+  gstPercentage?: number;
   createdAt?: any;
 }
 

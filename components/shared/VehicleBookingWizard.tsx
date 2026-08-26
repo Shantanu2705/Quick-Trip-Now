@@ -89,7 +89,7 @@ export function VehicleBookingWizard({
   const couponDiscountAmount = appliedCoupon ? (baseFare * appliedCoupon.discount) / 100 : 0;
   const priceAfterCoupon = baseFare - couponDiscountAmount;
   
-  const gstPercent = selectedVehicle?.gstPercentage || 0;
+  const gstPercent = cabRouteData?.gstPercentage || selectedVehicle?.gstPercentage || 0;
   const gstAmount = (priceAfterCoupon * gstPercent) / 100;
   const finalPrice = Math.round(priceAfterCoupon + gstAmount);
 
@@ -457,9 +457,9 @@ export function VehicleBookingWizard({
                               </div>
                               <div className="text-right flex flex-col items-end">
                                 <span className="font-bold text-xl text-primary">₹{v.price * qtyRequired}</span>
-                                {v.gstPercentage ? (
+                                {cabRouteData?.gstPercentage || v.gstPercentage ? (
                                   <span className="text-xs font-medium text-muted-foreground/60 mb-0.5 mt-[-2px]">
-                                    + ₹{Math.round((v.price * qtyRequired) * v.gstPercentage / 100)} GST
+                                    + ₹{Math.round((v.price * qtyRequired) * (cabRouteData?.gstPercentage || v.gstPercentage) / 100)} GST
                                   </span>
                                 ) : null}
                                 <div className="text-xs text-muted-foreground">Total Fare (x{qtyRequired})</div>
