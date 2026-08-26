@@ -10,6 +10,7 @@ import {
   GoogleAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  getAdditionalUserInfo,
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
@@ -89,6 +90,15 @@ export default function AuthPage() {
       }
     } catch (err: any) {
       let msg = err.message || "An error occurred";
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || msg.includes('invalid-credential') || msg.includes('user-not-found')) {
+        if (isLogin) {
+          msg = "Account does not exist or invalid credentials. Please create an account first.";
+        } else {
+          msg = "Invalid credentials.";
+        }
+      } else if (err.code === 'auth/email-already-in-use') {
+        msg = "Account already exists, please sign in.";
+      }
       setError(msg);
     } finally {
       setLoading(false);
@@ -104,6 +114,21 @@ export default function AuthPage() {
     try {
       const provider = new GoogleAuthProvider();
       const userCred = await signInWithPopup(auth, provider);
+      const additionalInfo = getAdditionalUserInfo(userCred);
+
+      if (isLogin && additionalInfo?.isNewUser) {
+        // Trying to login but account doesn't exist
+        await userCred.user.delete(); // Clean up the auto-created firebase auth user
+        await auth.signOut();
+        setError("Account does not exist, please create an account.");
+        return;
+      }
+
+      if (!isLogin && !additionalInfo?.isNewUser) {
+        await auth.signOut();
+        setError("Account already exists, please sign in.");
+        return;
+      }
       
       // Sync user with Firestore
       const token = await userCred.user.getIdToken();
@@ -112,7 +137,7 @@ export default function AuthPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      await handleSuccess(userCred.user, undefined, false);
+      await handleSuccess(userCred.user, undefined, additionalInfo?.isNewUser);
     } catch (err: any) {
       let msg = err.message || "Failed to sign in with Google";
       setError(msg);
