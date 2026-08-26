@@ -81,7 +81,7 @@ export default async function PackageDetailsPage({ params }: { params: Promise<{
         maxAdults={maxAdults || 4}
         maxChildren={maxChildren || 2}
         maxInfants={maxInfants || 2}
-        gstPercentage={settings?.gstPercentage || 0}
+        gstPercentage={pkgData.gstPercentage !== undefined ? pkgData.gstPercentage : (settings?.gstPercentage || 0)}
         vehicles={vehiclesData}
         packageDetailsContent={
           <>

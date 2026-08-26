@@ -177,7 +177,6 @@ export default function AdminPackagesPage() {
     const missingFields = [];
     if (!formData.title) missingFields.push("Package Name");
     if (!formData.destination || formData.destination.trim() === "") missingFields.push(`Destination`);
-    if (!formData.duration) missingFields.push("Duration Text");
     if (!formData.description) missingFields.push("Description");
 
     if (missingFields.length > 0) {
@@ -222,6 +221,7 @@ export default function AdminPackagesPage() {
       const pkgData = {
         ...(editingId ? { id: editingId } : {}),
         ...formData,
+        duration: `${formData.days} Days / ${formData.nights} ${formData.nights > 1 ? 'Nights' : 'Night'}`,
         maxAdults: Number(formData.maxAdults),
         maxChildren: Number(formData.maxChildren),
         maxInfants: Number(formData.maxInfants),
@@ -324,11 +324,6 @@ export default function AdminPackagesPage() {
                     ))}
                   </select>
                 </div>
-                
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Duration <span className="text-destructive">*</span></label>
-                  <input type="text" value={formData.duration} onChange={e => setFormData({...formData, duration: e.target.value})} className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary" placeholder="e.g. 3 Days / 2 Nights" />
-                </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Status</label>
                   <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className="w-full bg-muted/50 border border-border rounded-xl py-2 px-3 focus:outline-none focus:border-primary">
@@ -369,21 +364,6 @@ export default function AdminPackagesPage() {
                   <div className="w-1/2">
                     <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Number of Reviews</label>
                     <input type="number" min="0" value={formData.reviews} onChange={e => setFormData({...formData, reviews: Number(e.target.value)})} className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary" />
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <div className="w-1/3">
-                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Max Adults</label>
-                    <input type="number" min="1" value={formData.maxAdults} onChange={e => setFormData({...formData, maxAdults: Number(e.target.value)})} className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary" />
-                  </div>
-                  <div className="w-1/3">
-                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Max Children</label>
-                    <input type="number" min="0" value={formData.maxChildren} onChange={e => setFormData({...formData, maxChildren: Number(e.target.value)})} className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary" />
-                  </div>
-                  <div className="w-1/3">
-                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Max Infants</label>
-                    <input type="number" min="0" value={formData.maxInfants} onChange={e => setFormData({...formData, maxInfants: Number(e.target.value)})} className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary" />
                   </div>
                 </div>
                 
