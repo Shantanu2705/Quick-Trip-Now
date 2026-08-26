@@ -434,22 +434,7 @@ export default function AdminPackagesPage() {
                         </label>
                         {formData.allowedVehicles.includes(veh.id) && (
                           <div className="flex flex-col gap-3 mt-2 pt-2 border-t border-border/50">
-                            <div>
-                              <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 block">Flat Price</label>
-                              <input
-                                type="number"
-                                placeholder={`Default: ₹${veh.price || veh.pricePerDay || 0}`}
-                                value={formData.vehiclePrices[veh.id] || ''}
-                                onChange={(e) => setFormData({
-                                  ...formData,
-                                  vehiclePrices: {
-                                    ...formData.vehiclePrices,
-                                    [veh.id]: Number(e.target.value)
-                                  }
-                                })}
-                                className="w-full bg-muted/30 border border-border rounded-lg py-1.5 px-3 text-xs focus:outline-none focus:border-primary"
-                              />
-                            </div>
+
                             
                             <div className="space-y-2">
                               <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">Seasonal Prices</span>

@@ -41,9 +41,29 @@ export function PackageBookingClient({
 
   const totalTravelers = adults + children + infants;
 
-  // Process vehicles to determine required quantities
+  // Process vehicles to determine required quantities and seasonal prices
   const processedVehicles = useMemo(() => {
-    return vehicles.map(v => {
+    let availableVehicles = vehicles;
+    
+    // Filter out vehicles that do not have a valid seasonal price for the selected date
+    if (date) {
+      const dateStr = format(date, "yyyy-MM-dd");
+      availableVehicles = availableVehicles.filter(v => {
+        if (!v.seasonalPrices || v.seasonalPrices.length === 0) return false;
+        return v.seasonalPrices.some((sp: any) => dateStr >= sp.startDate && dateStr <= sp.endDate);
+      });
+    }
+
+    return availableVehicles.map(v => {
+      let currentPrice = 0;
+      if (date && v.seasonalPrices) {
+        const dateStr = format(date, "yyyy-MM-dd");
+        const validPriceObj = v.seasonalPrices.find((sp: any) => dateStr >= sp.startDate && dateStr <= sp.endDate);
+        if (validPriceObj) {
+          currentPrice = validPriceObj.price;
+        }
+      }
+
       const calculateCars = () => {
         let cars = 0;
         let a = adults;
@@ -74,13 +94,13 @@ export function PackageBookingClient({
       };
 
       const qtyRequired = calculateCars();
-      return { ...v, qtyRequired };
+      return { ...v, qtyRequired, currentPrice };
     });
-  }, [vehicles, adults, children, infants]);
+  }, [vehicles, adults, children, infants, date]);
 
   const selectedVehicle = processedVehicles.find(v => v.id === selectedVehicleId);
   const requiredVehiclesCount = selectedVehicle?.qtyRequired || 1;
-  const vehiclePrice = selectedVehicle?.price || selectedVehicle?.pricePerDay || 0;
+  const vehiclePrice = selectedVehicle?.currentPrice || 0;
   
   // Total Base Price is calculated purely from vehicles
   const calculatedBasePrice = selectedVehicle ? vehiclePrice * requiredVehiclesCount : 0;
@@ -213,7 +233,9 @@ export function PackageBookingClient({
                         <h4 className="font-bold text-foreground">{v.name}</h4>
                         <div className="text-sm text-muted-foreground flex justify-between items-center mt-1">
                           <span>{v.seats} Seats/Car</span>
-                          <span className="font-semibold text-foreground">₹{v.price || v.pricePerDay}</span>
+                          <span className="font-semibold text-foreground">
+                            {date ? `₹${v.currentPrice}` : "Select date for price"}
+                          </span>
                         </div>
                       </div>
                     </div>
