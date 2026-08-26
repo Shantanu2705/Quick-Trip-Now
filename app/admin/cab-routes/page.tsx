@@ -236,10 +236,10 @@ export default function AdminCabRoutesPage() {
 
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Destination <span className="text-destructive">*</span></label>
-                  <input 
-                    type="text" required
+                  <textarea 
+                    required rows={3}
                     value={formData.destination} onChange={e => setFormData({...formData, destination: e.target.value})}
-                    className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all"
+                    className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all resize-y"
                     placeholder="e.g. Gangtok"
                   />
                 </div>
