@@ -19,9 +19,6 @@ export default function AdminBookingsPage() {
   const handleDownloadPdf = async () => {
     setGeneratingPdf(true);
     try {
-      const htmlToImage = await import("html-to-image");
-      const jsPDF = (await import("jspdf")).default;
-      
       // Use jsPDF's built-in html() method which natively prevents text slicing!
       const html2canvas = (await import("html2canvas")).default;
       const jsPDF = (await import("jspdf")).default;
