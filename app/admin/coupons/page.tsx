@@ -24,9 +24,20 @@ export default function AdminCouponsPage() {
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState("");
 
+  const getAuthToken = async () => {
+    const authModule = await import("@/lib/firebase");
+    const currentUser = authModule.auth?.currentUser;
+    if (!currentUser) return null;
+    return await currentUser.getIdToken();
+  };
+
   const fetchData = async () => {
     try {
-      const couponsRes = await fetch("/api/admin/coupons");
+      const token = await getAuthToken();
+      if (!token) return;
+      const couponsRes = await fetch("/api/admin/coupons", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const couponsData = await couponsRes.json();
       
       if (couponsData.success) setCoupons(couponsData.data);
@@ -51,9 +62,14 @@ export default function AdminCouponsPage() {
     }
 
     try {
+      const token = await getAuthToken();
+      if (!token) return;
       const res = await fetch("/api/admin/coupons", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
         body: JSON.stringify(newCoupon)
       });
       const data = await res.json();
@@ -72,9 +88,14 @@ export default function AdminCouponsPage() {
 
   const toggleStatus = async (id: string, currentStatus: boolean) => {
     try {
+      const token = await getAuthToken();
+      if (!token) return;
       const res = await fetch("/api/admin/coupons", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
         body: JSON.stringify({ id, isActive: !currentStatus })
       });
       if (res.ok) {
@@ -88,7 +109,12 @@ export default function AdminCouponsPage() {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this coupon?")) return;
     try {
-      const res = await fetch(`/api/admin/coupons?id=${id}`, { method: "DELETE" });
+      const token = await getAuthToken();
+      if (!token) return;
+      const res = await fetch(`/api/admin/coupons?id=${id}`, { 
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (res.ok) {
         setCoupons(coupons.filter(c => c.id !== id));
       }
@@ -102,9 +128,14 @@ export default function AdminCouponsPage() {
     setSending(true);
     setSendResult("");
     try {
+      const token = await getAuthToken();
+      if (!token) return;
       const res = await fetch("/api/admin/coupons/send", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
         body: JSON.stringify({
           couponCode: sendModal.coupon.code,
           minTrips: sendModal.minTrips,
