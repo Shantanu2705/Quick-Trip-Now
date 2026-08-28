@@ -315,10 +315,35 @@ export function VehicleBookingWizard({
             )}
           </div>
 
-          {cabRouteData.terms && (
+          {(cabRouteData.terms || (cabRouteData.inclusions && cabRouteData.inclusions.length > 0)) && (
             <div className="mt-2 p-4 bg-background/50 rounded-xl border border-border text-sm text-muted-foreground whitespace-pre-wrap">
               <span className="font-bold text-foreground block mb-2">Route Terms & Conditions:</span>
               {cabRouteData.terms}
+              
+              {cabRouteData.inclusions && cabRouteData.inclusions.length > 0 && (
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {cabRouteData.inclusions.some((i: any) => String(i.included) === "true") && (
+                    <div>
+                      <span className="font-bold text-emerald-600 block mb-1">Inclusions:</span>
+                      <ul className="list-disc pl-5 space-y-1 text-foreground/80">
+                        {cabRouteData.inclusions.filter((i: any) => String(i.included) === "true").map((item: any, idx: number) => (
+                          <li key={idx}>{item.text}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {cabRouteData.inclusions.some((i: any) => String(i.included) === "false") && (
+                    <div>
+                      <span className="font-bold text-destructive block mb-1">Exclusions:</span>
+                      <ul className="list-disc pl-5 space-y-1 text-foreground/80">
+                        {cabRouteData.inclusions.filter((i: any) => String(i.included) === "false").map((item: any, idx: number) => (
+                          <li key={idx}>{item.text}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -493,8 +518,33 @@ export function VehicleBookingWizard({
                         className="mt-8 p-6 bg-muted/20 border border-border rounded-2xl"
                       >
                         <h4 className="font-bold text-lg mb-3">Vehicle Terms & Conditions</h4>
-                        <div className="bg-background border border-border p-4 rounded-xl text-sm text-muted-foreground whitespace-pre-wrap max-h-40 overflow-y-auto mb-4">
-                          {selectedVehicle.terms || "Standard terms and conditions apply for this vehicle."}
+                        <div className="bg-background border border-border p-4 rounded-xl text-sm text-muted-foreground whitespace-pre-wrap max-h-60 overflow-y-auto mb-4">
+                          {selectedVehicle.termsAndConditions || selectedVehicle.terms || "Standard terms and conditions apply for this vehicle."}
+                          
+                          {selectedVehicle.inclusions && selectedVehicle.inclusions.length > 0 && (
+                            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              {selectedVehicle.inclusions.some((i: any) => String(i.included) === "true") && (
+                                <div>
+                                  <span className="font-bold text-emerald-600 block mb-1">Inclusions:</span>
+                                  <ul className="list-disc pl-5 space-y-1 text-foreground/80">
+                                    {selectedVehicle.inclusions.filter((i: any) => String(i.included) === "true").map((item: any, idx: number) => (
+                                      <li key={idx}>{item.text}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              {selectedVehicle.inclusions.some((i: any) => String(i.included) === "false") && (
+                                <div>
+                                  <span className="font-bold text-destructive block mb-1">Exclusions:</span>
+                                  <ul className="list-disc pl-5 space-y-1 text-foreground/80">
+                                    {selectedVehicle.inclusions.filter((i: any) => String(i.included) === "false").map((item: any, idx: number) => (
+                                      <li key={idx}>{item.text}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <label className="flex items-start gap-3 cursor-pointer group">
                           <input 
