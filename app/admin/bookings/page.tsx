@@ -49,7 +49,7 @@ export default function AdminBookingsPage() {
           },
           callback: function (doc) {
             // Draw borders and watermarks on each page
-            const totalPages = doc.internal.getNumberOfPages();
+            const totalPages = (doc as any).getNumberOfPages();
             const pageHeight = doc.internal.pageSize.getHeight();
             
             for (let i = 1; i <= totalPages; i++) {
