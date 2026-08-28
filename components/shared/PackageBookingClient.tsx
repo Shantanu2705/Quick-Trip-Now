@@ -45,17 +45,16 @@ export function PackageBookingClient({
   const processedVehicles = useMemo(() => {
     let availableVehicles = vehicles;
     
-    // Filter out vehicles that do not have a valid seasonal price for the selected date
     if (date) {
       const dateStr = format(date, "yyyy-MM-dd");
       availableVehicles = availableVehicles.filter(v => {
-        if (!v.seasonalPrices || v.seasonalPrices.length === 0) return false;
-        return v.seasonalPrices.some((sp: any) => dateStr >= sp.startDate && dateStr <= sp.endDate);
+        if (v.unavailableDates && v.unavailableDates.includes(dateStr)) return false;
+        return true;
       });
     }
 
     return availableVehicles.map(v => {
-      let currentPrice = 0;
+      let currentPrice = v.price || 0;
       if (date && v.seasonalPrices) {
         const dateStr = format(date, "yyyy-MM-dd");
         const validPriceObj = v.seasonalPrices.find((sp: any) => dateStr >= sp.startDate && dateStr <= sp.endDate);
