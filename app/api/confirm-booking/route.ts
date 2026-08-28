@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     const counterRef = adminDb.collection('counters').doc('bookings');
     
     const bookingId = await adminDb.runTransaction(async (transaction: Transaction) => {
-      const counterDoc = await transaction.get(counterRef);
+      const counterDoc = await transaction.get(counterRef as any) as any;
       let newCount = 1;
       
       if (counterDoc.exists) {
