@@ -25,14 +25,21 @@ export default function AdminBookingsPage() {
       const element = document.getElementById("booking-invoice-pdf");
       if (!element) return;
       
-      // We will use html2pdf.js to perfectly handle page breaks without slicing text!
+      // Safely import html2pdf.js
       // @ts-ignore
-      const html2pdf = (await import('html2pdf.js')).default;
+      const html2pdfModule = await import('html2pdf.js');
+      const html2pdf = html2pdfModule.default || html2pdfModule;
       
-      // Load watermark image
+      // Load watermark image safely without hanging
       const watermarkImg = new window.Image();
+      const loadPromise = new Promise((resolve) => {
+        watermarkImg.onload = resolve;
+        watermarkImg.onerror = resolve;
+      });
       watermarkImg.src = "/images/logo_transparent.png";
-      await new Promise((resolve) => { watermarkImg.onload = resolve; });
+      if (!watermarkImg.complete) {
+        await loadPromise;
+      }
       
       const marginMm = 10;
       
