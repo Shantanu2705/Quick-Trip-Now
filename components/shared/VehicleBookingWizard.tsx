@@ -308,6 +308,11 @@ export function VehicleBookingWizard({
                 Associated Package: {packageData.title}
               </div>
             )}
+            {(cabRouteData.destination || cabRouteData.subtitle) && (
+              <div className="mt-3 text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                {cabRouteData.destination || cabRouteData.subtitle}
+              </div>
+            )}
           </div>
 
           {cabRouteData.terms && (
