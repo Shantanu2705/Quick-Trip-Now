@@ -19,14 +19,9 @@ export default function AdminBookingsPage() {
   const handleDownloadPdf = async () => {
     setGeneratingPdf(true);
     try {
-      // Use jsPDF's built-in html() method which natively prevents text slicing!
-      const html2canvas = (await import("html2canvas")).default;
+      // Use the highly stable html-to-image library to generate each page separately!
+      const htmlToImage = await import("html-to-image");
       const jsPDF = (await import("jspdf")).default;
-      
-      // CRITICAL FIX: jsPDF's .html() method internally calls html2canvas. 
-      // If it's not globally available on the window object, it throws an error and crashes!
-      // @ts-ignore
-      window.html2canvas = html2canvas;
       
       const element = document.getElementById("booking-invoice-pdf");
       if (!element) {
@@ -34,45 +29,26 @@ export default function AdminBookingsPage() {
         return;
       }
       
-      // We will render it at a fixed width
-      element.style.width = '794px';
-      // element is already hidden via z-index in BookingInvoice.tsx.
-      // Do NOT use left: -9999px because html2canvas will crash or render blank for out-of-bounds elements!
+      const pages = element.querySelectorAll('.invoice-page');
+      if (pages.length === 0) {
+        setGeneratingPdf(false);
+        return;
+      }
       
-      const pdf = new jsPDF("p", "pt", "a4");
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const marginPt = 40; // ~14mm
+      const pdf = new jsPDF("p", "px", [794, 1123]); // A4 dimensions in CSS pixels!
       
       try {
-        await pdf.html(element, {
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            logging: false
-          },
-          callback: function (doc) {
-            // Draw borders and watermarks on each page
-            const totalPages = (doc as any).getNumberOfPages();
-            const pageHeight = doc.internal.pageSize.getHeight();
-            
-            for (let i = 1; i <= totalPages; i++) {
-              doc.setPage(i);
-              
-              // Draw border
-              doc.setDrawColor(203, 213, 225); // slate-300
-              doc.setLineWidth(2);
-              doc.rect(marginPt, marginPt, pdfWidth - (marginPt * 2), pageHeight - (marginPt * 2));
-            }
-            
-            doc.save(`Booking_${selectedBooking.id}.pdf`);
-            setGeneratingPdf(false);
-          },
-          margin: [marginPt, marginPt, marginPt, marginPt],
-          autoPaging: 'text',
-          width: pdfWidth - (marginPt * 2),
-          windowWidth: 794
-        });
+        for (let i = 0; i < pages.length; i++) {
+          if (i > 0) pdf.addPage();
+          
+          const pageEl = pages[i] as HTMLElement;
+          const imgData = await htmlToImage.toPng(pageEl, { pixelRatio: 2 });
+          
+          pdf.addImage(imgData, 'PNG', 0, 0, 794, 1123);
+        }
+        
+        pdf.save(`Booking_${selectedBooking.id}.pdf`);
+        setGeneratingPdf(false);
       } catch (err) {
         console.error("PDF generation failed:", err);
         setGeneratingPdf(false);
