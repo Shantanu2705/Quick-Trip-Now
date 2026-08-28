@@ -25,6 +25,24 @@ export default function AdminBookingsPage() {
       const element = document.getElementById("booking-invoice-pdf");
       if (!element) return;
       
+      // Calculate CSS pixels per PDF page to snap height
+      const marginMm = 10;
+      const contentWidthMm = 210 - (marginMm * 2); // 190mm
+      const contentHeightMm = 297 - (marginMm * 2); // 277mm
+      const pxPerMm = 794 / contentWidthMm;
+      const pxPerPage = contentHeightMm * pxPerMm;
+      
+      // Reset height to let it grow naturally
+      element.style.minHeight = 'auto';
+      element.style.height = 'auto';
+      
+      const currentHeight = element.scrollHeight;
+      const totalPages = Math.ceil(currentHeight / pxPerPage);
+      const targetHeight = totalPages * pxPerPage;
+      
+      element.style.minHeight = `${targetHeight}px`;
+      element.style.height = `${targetHeight}px`;
+      
       const imgData = await htmlToImage.toPng(element, { pixelRatio: 2 });
 
       const img = new window.Image();
@@ -88,6 +106,10 @@ export default function AdminBookingsPage() {
       }
       
       pdf.save(`Booking_${selectedBooking.id}.pdf`);
+      
+      // Reset element styles after generation
+      element.style.minHeight = '1123px';
+      element.style.height = 'auto';
     } catch (error) {
       console.error("Error generating PDF:", error);
     } finally {
