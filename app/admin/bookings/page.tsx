@@ -23,6 +23,11 @@ export default function AdminBookingsPage() {
       const html2canvas = (await import("html2canvas")).default;
       const jsPDF = (await import("jspdf")).default;
       
+      // CRITICAL FIX: jsPDF's .html() method internally calls html2canvas. 
+      // If it's not globally available on the window object, it throws an error and crashes!
+      // @ts-ignore
+      window.html2canvas = html2canvas;
+      
       const element = document.getElementById("booking-invoice-pdf");
       if (!element) {
         setGeneratingPdf(false);
@@ -31,9 +36,8 @@ export default function AdminBookingsPage() {
       
       // We will render it at a fixed width
       element.style.width = '794px';
-      element.style.position = 'absolute';
-      element.style.left = '-9999px';
-      element.style.top = '0';
+      // element is already hidden via z-index in BookingInvoice.tsx.
+      // Do NOT use left: -9999px because html2canvas will crash or render blank for out-of-bounds elements!
       
       const pdf = new jsPDF("p", "pt", "a4");
       
