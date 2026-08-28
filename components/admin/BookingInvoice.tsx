@@ -26,7 +26,7 @@ export function BookingInvoice({ booking, id }: BookingInvoiceProps) {
       }}
     >
 
-      <div className="relative z-10 space-y-12 flex-1 pb-[250px]">
+      <div className="relative z-10 space-y-12 flex-1">
         {/* Header */}
         <div className="flex justify-between items-start border-b-4 border-primary/20 pb-8">
           <div>
@@ -182,10 +182,8 @@ export function BookingInvoice({ booking, id }: BookingInvoiceProps) {
           </div>
         )}
 
-      </div>
-
       {/* Footer / Signature Block */}
-      <div className="absolute bottom-16 left-16 right-16 z-10 pt-8 border-t-2 border-slate-200 flex justify-between items-end bg-white">
+      <div id="invoice-footer" className="relative z-10 pt-8 border-t-2 border-slate-200 flex justify-between items-end bg-white mt-12">
         <div className="text-xs text-slate-500 space-y-1 w-1/2">
           <p className="font-bold text-slate-700">Terms & Conditions:</p>
           <p>1. Please retain this invoice for your records.</p>

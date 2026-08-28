@@ -25,7 +25,7 @@ export default function AdminBookingsPage() {
       const element = document.getElementById("booking-invoice-pdf");
       if (!element) return;
       
-      // Calculate CSS pixels per PDF page to snap height
+      // Calculate CSS pixels per PDF page
       const marginMm = 10;
       const contentWidthMm = 210 - (marginMm * 2); // 190mm
       const contentHeightMm = 297 - (marginMm * 2); // 277mm
@@ -33,15 +33,27 @@ export default function AdminBookingsPage() {
       const pxPerPage = contentHeightMm * pxPerMm;
       
       // Reset height to let it grow naturally
-      element.style.minHeight = 'auto';
+      element.style.minHeight = '1123px';
       element.style.height = 'auto';
       
-      const currentHeight = element.scrollHeight;
-      const totalPages = Math.ceil(currentHeight / pxPerPage);
-      const targetHeight = totalPages * pxPerPage;
-      
-      element.style.minHeight = `${targetHeight}px`;
-      element.style.height = `${targetHeight}px`;
+      const footer = document.getElementById("invoice-footer");
+      let originalMarginTop = "";
+      if (footer) {
+        originalMarginTop = footer.style.marginTop;
+        const footerTop = footer.offsetTop;
+        const footerBottom = footerTop + footer.offsetHeight;
+        
+        const startPage = Math.floor(footerTop / pxPerPage);
+        const endPage = Math.floor(footerBottom / pxPerPage);
+        
+        if (startPage !== endPage) {
+          // Footer crosses a page boundary. Push it down safely.
+          const currentMt = parseInt(window.getComputedStyle(footer).marginTop || "0");
+          const targetTop = endPage * pxPerPage;
+          const extraPush = targetTop - footerTop + (marginMm * pxPerMm);
+          footer.style.marginTop = `${currentMt + extraPush}px`;
+        }
+      }
       
       const imgData = await htmlToImage.toPng(element, { pixelRatio: 2 });
 
@@ -110,6 +122,9 @@ export default function AdminBookingsPage() {
       // Reset element styles after generation
       element.style.minHeight = '1123px';
       element.style.height = 'auto';
+      if (footer) {
+        footer.style.marginTop = originalMarginTop;
+      }
     } catch (error) {
       console.error("Error generating PDF:", error);
     } finally {
