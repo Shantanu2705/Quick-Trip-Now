@@ -182,6 +182,8 @@ export function BookingInvoice({ booking, id }: BookingInvoiceProps) {
           </div>
         )}
 
+      </div>
+
       {/* Footer / Signature Block */}
       <div id="invoice-footer" className="relative z-10 pt-8 border-t-2 border-slate-200 flex justify-between items-end bg-white mt-12">
         <div className="text-xs text-slate-500 space-y-1 w-1/2">
