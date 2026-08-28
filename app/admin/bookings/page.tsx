@@ -19,90 +19,19 @@ export default function AdminBookingsPage() {
   const handleDownloadPdf = async () => {
     setGeneratingPdf(true);
     try {
-      // Use the highly stable html-to-image library for the capture.
-      const htmlToImage = await import("html-to-image");
-      const jsPDF = (await import("jspdf")).default;
+      // Use react-to-print which triggers the flawless Native Print Dialog
+      const { default: generatePrint } = await import('react-to-print');
       
-      const element = document.getElementById("booking-invoice-pdf");
-      if (!element) {
-        setGeneratingPdf(false);
-        return;
-      }
-      
-      // Load watermark image safely
-      const watermarkImg = new window.Image();
-      const loadPromise = new Promise((resolve) => {
-        watermarkImg.onload = resolve;
-        watermarkImg.onerror = resolve;
+      generatePrint({
+        content: () => document.getElementById("booking-invoice-pdf"),
+        documentTitle: `Booking_${selectedBooking.id}`,
+        onAfterPrint: () => setGeneratingPdf(false),
+        onPrintError: () => setGeneratingPdf(false),
+        removeAfterPrint: true,
       });
-      watermarkImg.src = "/images/logo_transparent.png";
-      if (!watermarkImg.complete) {
-        await loadPromise;
-      }
       
-      // Capture the ENTIRE flowing document as a single high-res PNG
-      const canvasData = await htmlToImage.toPng(element, { pixelRatio: 2 });
-      
-      // Load the PNG into an Image object to get its dimensions
-      const img = new window.Image();
-      img.src = canvasData;
-      await new Promise(r => { img.onload = r; });
-      
-      // Initialize PDF (A4 size in points)
-      const pdf = new jsPDF("p", "pt", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth(); // 595.28 pt
-      const pdfHeight = pdf.internal.pageSize.getHeight(); // 841.89 pt
-      
-      // Calculate scaled dimensions
-      const scaledHeight = (img.height * pdfWidth) / img.width;
-      
-      // Setup watermark dimensions
-      const wmWidth = 300;
-      const wmHeight = (watermarkImg.height * wmWidth) / watermarkImg.width;
-      const wmX = (pdfWidth - wmWidth) / 2;
-      const wmY = (pdfHeight - wmHeight) / 2;
-      
-      let heightLeft = scaledHeight;
-      let position = 0;
-      let pageNum = 1;
-      
-      // Manually slice the image into A4 pages
-      while (heightLeft > 0) {
-        if (pageNum > 1) {
-          pdf.addPage();
-        }
-        
-        // Draw the sliced section of the image (position shifts up for each page)
-        pdf.addImage(canvasData, "PNG", 0, position, pdfWidth, scaledHeight);
-        
-        // Draw Watermark on top
-        if (watermarkImg.complete && watermarkImg.width > 0) {
-          try {
-            pdf.setGState(new (pdf as any).GState({opacity: 0.05}));
-            pdf.addImage(watermarkImg, "PNG", wmX, wmY, wmWidth, wmHeight);
-            pdf.setGState(new (pdf as any).GState({opacity: 1.0}));
-          } catch (e) {
-            // fallback
-          }
-        }
-        
-        // Draw Border on top (20pt from edge, slate-300)
-        pdf.setDrawColor(203, 213, 225); 
-        pdf.setLineWidth(2);
-        const marginPt = 20;
-        pdf.rect(marginPt, marginPt, pdfWidth - (marginPt * 2), pdfHeight - (marginPt * 2));
-        
-        heightLeft -= pdfHeight;
-        position -= pdfHeight;
-        pageNum++;
-      }
-      
-      pdf.save(`Booking_${selectedBooking.id}.pdf`);
-      setGeneratingPdf(false);
-
     } catch (error) {
-      console.error("Error generating PDF:", error);
-    } finally {
+      console.error("Print generation failed:", error);
       setGeneratingPdf(false);
     }
   };

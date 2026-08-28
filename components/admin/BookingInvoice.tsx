@@ -2,25 +2,67 @@ import React from 'react';
 import { Logo } from '@/components/shared/Logo';
 import { format } from 'date-fns';
 
-interface BookingInvoiceProps {
-  booking: any;
-  id?: string;
-}
-
-export function BookingInvoice({ booking, id }: BookingInvoiceProps) {
+export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
   if (!booking) return null;
 
-  // A4 dimensions at 96 DPI: 794px x 1123px
   return (
     <div 
       id={id} 
-      className="absolute left-0 top-0 z-[-50] flex flex-col gap-8 bg-white p-12 font-sans w-[794px]" 
+      className="hidden print:block bg-white text-slate-800 font-sans relative w-full" 
       style={{ fontFamily: 'Inter, sans-serif' }}
     >
-      
-      <div className="relative z-10 space-y-10 flex-1">
+      <style dangerouslySetInnerHTML={{__html: `
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 20mm;
+          }
+          body {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            background: white !important;
+          }
+          
+          /* Native repeating borders on all pages */
+          .print-border {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border: 2px solid #cbd5e1; /* slate-300 */
+            border-radius: 8px;
+            z-index: -10;
+            pointer-events: none;
+          }
+          
+          /* Native repeating watermark on all pages */
+          .print-watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.05;
+            z-index: -20;
+            pointer-events: none;
+          }
+          
+          .avoid-break {
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+        }
+      `}} />
+
+      {/* Repeating Fixed Background Elements */}
+      <div className="print-border"></div>
+      <div className="print-watermark">
+        <Logo variant="bare" className="w-[400px] grayscale" />
+      </div>
+
+      <div className="relative z-10 space-y-10">
         {/* Header */}
-        <div className="flex justify-between items-start border-b-4 border-primary/20 pb-8">
+        <div className="flex justify-between items-start border-b-4 border-primary/20 pb-8 avoid-break">
           <div>
             <Logo variant="bare" className="h-14 w-56 mb-4 origin-left" />
             <div className="text-slate-500 text-sm mt-4 leading-relaxed">
@@ -53,7 +95,7 @@ export function BookingInvoice({ booking, id }: BookingInvoiceProps) {
         </div>
 
         {/* Customer Info */}
-        <div className="bg-primary/5 p-6 rounded-xl border border-primary/10 relative overflow-hidden">
+        <div className="bg-primary/5 p-6 rounded-xl border border-primary/10 relative overflow-hidden avoid-break">
           <div className="absolute top-0 left-0 w-1.5 h-full bg-primary"></div>
           <h3 className="text-xs font-black text-primary uppercase tracking-widest mb-4">Billed To</h3>
           <div className="text-sm space-y-1">
@@ -64,7 +106,7 @@ export function BookingInvoice({ booking, id }: BookingInvoiceProps) {
         </div>
 
         {/* Trip Details */}
-        <div>
+        <div className="avoid-break">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Trip Summary</h3>
           <table className="w-full text-left text-sm border-collapse">
             <thead>
@@ -90,7 +132,7 @@ export function BookingInvoice({ booking, id }: BookingInvoiceProps) {
         </div>
 
         {/* Summary & Totals */}
-        <div className="flex justify-end">
+        <div className="flex justify-end avoid-break">
           <div className="w-2/3 bg-slate-50 p-6 rounded-lg border border-slate-200 space-y-3">
             <div className="flex justify-between text-sm text-slate-600">
               <span>Base Fare</span>
@@ -133,7 +175,7 @@ export function BookingInvoice({ booking, id }: BookingInvoiceProps) {
         {(booking.terms || (booking.inclusions && booking.inclusions.length > 0)) && (
           <div className="relative z-10 flex-1 text-xs pt-8 border-t border-slate-200">
             {booking.inclusions && booking.inclusions.length > 0 && (
-              <div className="grid grid-cols-2 gap-8 mb-6">
+              <div className="grid grid-cols-2 gap-8 mb-6 avoid-break">
                 {booking.inclusions.some((i: any) => String(i.included) === "true") && (
                   <div>
                     <h4 className="font-bold text-emerald-700 uppercase tracking-wider mb-3">Inclusions</h4>
@@ -167,9 +209,9 @@ export function BookingInvoice({ booking, id }: BookingInvoiceProps) {
               </div>
             )}
             {booking.terms && (
-              <div className="mt-8">
-                <h4 className="font-bold text-slate-700 uppercase tracking-wider mb-3">Specific Terms & Conditions</h4>
-                <div className="text-slate-600 whitespace-pre-wrap leading-relaxed">{booking.terms}</div>
+              <div className="mt-8 text-slate-600 whitespace-pre-wrap leading-relaxed text-[11px]">
+                <h4 className="font-bold text-slate-700 uppercase tracking-wider mb-3 text-xs avoid-break">Specific Terms & Conditions</h4>
+                {booking.terms}
               </div>
             )}
           </div>
@@ -177,7 +219,7 @@ export function BookingInvoice({ booking, id }: BookingInvoiceProps) {
       </div>
 
       {/* Footer / Signature Block */}
-      <div className="relative z-10 pt-8 border-t-2 border-slate-200 flex justify-between items-end bg-white mt-12 page-break-inside-avoid">
+      <div className="relative z-10 pt-8 border-t-2 border-slate-200 flex justify-between items-end bg-white mt-12 avoid-break">
         <div className="text-xs text-slate-500 space-y-1 w-1/2">
           <p className="font-bold text-slate-700">Terms & Conditions:</p>
           <p>1. Please retain this invoice for your records.</p>
