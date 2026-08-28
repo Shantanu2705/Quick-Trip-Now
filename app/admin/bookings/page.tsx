@@ -19,14 +19,9 @@ export default function AdminBookingsPage() {
   const handleDownloadPdf = async () => {
     setGeneratingPdf(true);
     try {
-      // Use jsPDF's built-in html() method which natively supports dynamic page breaks
-      const html2canvas = (await import("html2canvas")).default;
+      // Use the highly stable html-to-image library for the capture.
+      const htmlToImage = await import("html-to-image");
       const jsPDF = (await import("jspdf")).default;
-      
-      // CRITICAL FIX: jsPDF's .html() method internally calls html2canvas. 
-      // If it's not globally available on the window object, it throws an error and crashes!
-      // @ts-ignore
-      window.html2canvas = html2canvas;
       
       const element = document.getElementById("booking-invoice-pdf");
       if (!element) {
@@ -34,7 +29,7 @@ export default function AdminBookingsPage() {
         return;
       }
       
-      // Load watermark image safely without hanging
+      // Load watermark image safely
       const watermarkImg = new window.Image();
       const loadPromise = new Promise((resolve) => {
         watermarkImg.onload = resolve;
@@ -45,58 +40,65 @@ export default function AdminBookingsPage() {
         await loadPromise;
       }
       
+      // Capture the ENTIRE flowing document as a single high-res PNG
+      const canvasData = await htmlToImage.toPng(element, { pixelRatio: 2 });
+      
+      // Load the PNG into an Image object to get its dimensions
+      const img = new window.Image();
+      img.src = canvasData;
+      await new Promise(r => { img.onload = r; });
+      
+      // Initialize PDF (A4 size in points)
       const pdf = new jsPDF("p", "pt", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth(); // 595.28 pt
+      const pdfHeight = pdf.internal.pageSize.getHeight(); // 841.89 pt
       
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const marginPt = 40; // ~14mm
+      // Calculate scaled dimensions
+      const scaledHeight = (img.height * pdfWidth) / img.width;
       
-      try {
-        await pdf.html(element, {
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            logging: false
-          },
-          callback: function (doc) {
-            // Draw borders and watermarks dynamically on EACH generated page!
-            const totalPages = (doc as any).getNumberOfPages();
-            const pageHeight = doc.internal.pageSize.getHeight();
-            
-            const wmWidth = 300; // pt
-            const wmHeight = (watermarkImg.height * wmWidth) / watermarkImg.width;
-            const wmX = (pdfWidth - wmWidth) / 2;
-            const wmY = (pageHeight - wmHeight) / 2;
-            
-            for (let i = 1; i <= totalPages; i++) {
-              doc.setPage(i);
-              
-              // Draw Watermark
-              try {
-                doc.setGState(new (doc as any).GState({opacity: 0.05}));
-                doc.addImage(watermarkImg, "PNG", wmX, wmY, wmWidth, wmHeight);
-                doc.setGState(new (doc as any).GState({opacity: 1.0}));
-              } catch (e) {
-                // fallback if image fails
-              }
-              
-              // Draw border (slate-300 = rgb(203, 213, 225))
-              doc.setDrawColor(203, 213, 225); 
-              doc.setLineWidth(2);
-              doc.rect(marginPt, marginPt, pdfWidth - (marginPt * 2), pageHeight - (marginPt * 2));
-            }
-            
-            doc.save(`Booking_${selectedBooking.id}.pdf`);
-            setGeneratingPdf(false);
-          },
-          margin: [marginPt, marginPt, marginPt, marginPt],
-          autoPaging: 'text',
-          width: pdfWidth - (marginPt * 2),
-          windowWidth: 794
-        });
-      } catch (err) {
-        console.error("PDF generation failed:", err);
-        setGeneratingPdf(false);
+      // Setup watermark dimensions
+      const wmWidth = 300;
+      const wmHeight = (watermarkImg.height * wmWidth) / watermarkImg.width;
+      const wmX = (pdfWidth - wmWidth) / 2;
+      const wmY = (pdfHeight - wmHeight) / 2;
+      
+      let heightLeft = scaledHeight;
+      let position = 0;
+      let pageNum = 1;
+      
+      // Manually slice the image into A4 pages
+      while (heightLeft > 0) {
+        if (pageNum > 1) {
+          pdf.addPage();
+        }
+        
+        // Draw the sliced section of the image (position shifts up for each page)
+        pdf.addImage(canvasData, "PNG", 0, position, pdfWidth, scaledHeight);
+        
+        // Draw Watermark on top
+        if (watermarkImg.complete && watermarkImg.width > 0) {
+          try {
+            pdf.setGState(new (pdf as any).GState({opacity: 0.05}));
+            pdf.addImage(watermarkImg, "PNG", wmX, wmY, wmWidth, wmHeight);
+            pdf.setGState(new (pdf as any).GState({opacity: 1.0}));
+          } catch (e) {
+            // fallback
+          }
+        }
+        
+        // Draw Border on top (20pt from edge, slate-300)
+        pdf.setDrawColor(203, 213, 225); 
+        pdf.setLineWidth(2);
+        const marginPt = 20;
+        pdf.rect(marginPt, marginPt, pdfWidth - (marginPt * 2), pdfHeight - (marginPt * 2));
+        
+        heightLeft -= pdfHeight;
+        position -= pdfHeight;
+        pageNum++;
       }
+      
+      pdf.save(`Booking_${selectedBooking.id}.pdf`);
+      setGeneratingPdf(false);
 
     } catch (error) {
       console.error("Error generating PDF:", error);
