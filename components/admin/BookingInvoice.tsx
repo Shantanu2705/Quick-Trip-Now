@@ -14,7 +14,7 @@ export function BookingInvoice({ booking, id }: BookingInvoiceProps) {
   return (
     <div 
       id={id}
-      className="bg-white text-black p-12 relative overflow-hidden flex flex-col justify-between"
+      className="bg-white text-black p-16 relative flex flex-col justify-between"
       style={{
         width: '794px',
         minHeight: '1123px',
@@ -26,43 +26,44 @@ export function BookingInvoice({ booking, id }: BookingInvoiceProps) {
       }}
     >
 
-
       <div className="relative z-10 space-y-12 flex-1">
         {/* Header */}
-        <div className="flex justify-between items-start border-b-2 border-slate-200 pb-8">
+        <div className="flex justify-between items-start border-b-4 border-primary/20 pb-8">
           <div>
-            <Logo variant="bare" className="h-12 w-48 mb-4 origin-left" />
-            <div className="text-slate-500 text-sm mt-4">
-              <p>QuickTripNow Travel Services</p>
-              <p>Bagdogra, Bhujiyapani, Darjeeling, West Bengal, India, Pin: 734017.</p>
-              <p>quicktripnow1@gmail.com | +91 7047399677</p>
-              <p>GSTIN: 22AAAAA0000A1Z5</p>
+            <Logo variant="bare" className="h-14 w-56 mb-4 origin-left" />
+            <div className="text-slate-500 text-sm mt-4 leading-relaxed">
+              <p className="font-bold text-slate-700">QuickTripNow Travel Services</p>
+              <p>Bagdogra, Bhujiyapani, Darjeeling,</p>
+              <p>West Bengal, India, Pin: 734017.</p>
+              <p className="text-primary font-medium mt-1">quicktripnow1@gmail.com | +91 7047399677</p>
+              <p className="text-xs mt-1">GSTIN: 22AAAAA0000A1Z5</p>
             </div>
           </div>
           <div className="text-right">
-            <h1 className="text-4xl font-bold text-slate-800 tracking-tight uppercase">Invoice</h1>
-            <h2 className="text-lg text-slate-500 tracking-wider mt-1">BOOKING RECEIPT</h2>
+            <h1 className="text-5xl font-black text-primary tracking-tight uppercase">Invoice</h1>
+            <h2 className="text-xl text-slate-500 font-bold tracking-widest mt-2 uppercase">Booking Receipt</h2>
             
-            <div className="mt-6 space-y-1 text-sm">
-              <div className="flex justify-end gap-4">
-                <span className="text-slate-500 font-semibold w-24">Invoice No:</span>
-                <span className="font-mono font-medium text-slate-800">INV-{booking.id?.substring(0, 8).toUpperCase()}</span>
+            <div className="mt-8 space-y-2 text-sm bg-slate-50 p-4 rounded-xl border border-slate-100 inline-block text-left ml-auto min-w-[250px]">
+              <div className="flex justify-between items-center gap-6">
+                <span className="text-slate-400 font-bold uppercase tracking-wider text-xs">Invoice No:</span>
+                <span className="font-mono font-bold text-slate-800">INV-{booking.id?.substring(0, 8).toUpperCase()}</span>
               </div>
-              <div className="flex justify-end gap-4">
-                <span className="text-slate-500 font-semibold w-24">Booking ID:</span>
-                <span className="font-mono text-slate-800">{booking.id}</span>
+              <div className="flex justify-between items-center gap-6">
+                <span className="text-slate-400 font-bold uppercase tracking-wider text-xs">Booking ID:</span>
+                <span className="font-mono font-bold text-primary">{booking.id}</span>
               </div>
-              <div className="flex justify-end gap-4">
-                <span className="text-slate-500 font-semibold w-24">Date Issued:</span>
-                <span className="text-slate-800">{format(new Date(), 'MMM dd, yyyy')}</span>
+              <div className="flex justify-between items-center gap-6 pt-2 border-t border-slate-200 mt-2">
+                <span className="text-slate-400 font-bold uppercase tracking-wider text-xs">Date Issued:</span>
+                <span className="font-bold text-slate-700">{format(new Date(), 'MMM dd, yyyy')}</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Customer Info */}
-        <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Billed To</h3>
+        <div className="bg-primary/5 p-6 rounded-xl border border-primary/10 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1.5 h-full bg-primary"></div>
+          <h3 className="text-xs font-black text-primary uppercase tracking-widest mb-4">Billed To</h3>
           <div className="text-sm space-y-1">
             <p className="font-bold text-lg text-slate-800">{booking.customerName || booking.fullName || booking.travelers?.[0]?.fullName || "Valued Customer"}</p>
             <p className="text-slate-600">{booking.email || booking.travelers?.[0]?.email || "N/A"}</p>

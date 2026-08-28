@@ -53,13 +53,20 @@ export default function AdminBookingsPage() {
       const wmY = (pageHeight - wmHeight) / 2;
       
       const drawPageExtras = () => {
+        // Draw white masks over all 4 margins to hide any overflowing unclipped image
+        pdf.setFillColor(255, 255, 255);
+        pdf.rect(0, 0, pdfWidth, margin, "F"); // Top mask
+        pdf.rect(0, pageHeight - margin, pdfWidth, margin, "F"); // Bottom mask
+        pdf.rect(0, 0, margin, pageHeight, "F"); // Left mask
+        pdf.rect(pdfWidth - margin, 0, margin, pageHeight, "F"); // Right mask
+
         // Draw watermark with opacity if possible
         try {
           pdf.setGState(new (pdf as any).GState({opacity: 0.08}));
           pdf.addImage(watermarkImg, "PNG", wmX, wmY, wmWidth, wmHeight);
           pdf.setGState(new (pdf as any).GState({opacity: 1.0}));
         } catch (e) {
-          // fallback without opacity (might be too dark, so we skip if GState fails)
+          // fallback without opacity
         }
         
         // Draw border
