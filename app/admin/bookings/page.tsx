@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Search, RefreshCw, Eye, CalendarDays, Receipt, Users, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,12 +18,13 @@ export default function AdminBookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
 
+  const printRef = useRef<HTMLDivElement>(null);
+
   const handlePrint = useReactToPrint({
-    content: () => document.getElementById("booking-invoice-pdf"),
+    contentRef: printRef,
     documentTitle: selectedBooking ? `Booking_${selectedBooking.id}` : "Booking_Invoice",
     onAfterPrint: () => setGeneratingPdf(false),
     onPrintError: () => setGeneratingPdf(false),
-    removeAfterPrint: true,
   });
 
   const handleDownloadPdf = () => {
@@ -312,7 +313,9 @@ export default function AdminBookingsPage() {
       
       {/* Hidden Invoice Template for PDF Generation */}
       {selectedBooking && (
-        <BookingInvoice booking={selectedBooking} id="booking-invoice-pdf" />
+        <div ref={printRef}>
+          <BookingInvoice booking={selectedBooking} id="booking-invoice-pdf" />
+        </div>
       )}
     </div>
   );
