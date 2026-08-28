@@ -266,26 +266,8 @@ export function VehicleBookingWizard({
             ))}
           </div>
 
-          {/* Line 2: Distance, Duration, Date */}
+          {/* Line 2: Date */}
           <div className="flex flex-wrap items-center gap-4 sm:gap-8 w-full">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-primary/10 rounded-xl">
-                <Navigation className="w-5 h-5 text-primary" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Distance</span>
-                <span className="font-semibold">{cabRouteData.distance || "N/A"}</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-primary/10 rounded-xl">
-                <Clock className="w-5 h-5 text-primary" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Duration</span>
-                <span className="font-semibold">{cabRouteData.duration || "N/A"}</span>
-              </div>
-            </div>
             <div className="flex items-center gap-3">
               <div className="p-3 bg-primary/10 rounded-xl">
                 <Calendar className="w-5 h-5 text-primary" />
