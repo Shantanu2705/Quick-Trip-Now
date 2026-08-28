@@ -145,7 +145,9 @@ export function VehicleBookingWizard({
           childrenCount: localChildren,
           infantsCount: localInfants,
           travelers,
-          couponCode: appliedCoupon?.code
+          couponCode: appliedCoupon?.code,
+          terms: cabRouteData?.terms || selectedVehicle?.termsAndConditions || selectedVehicle?.terms || "",
+          inclusions: cabRouteData?.inclusions || selectedVehicle?.inclusions || []
         })
       });
     } catch (err) {

@@ -172,7 +172,9 @@ export function BookingWizard({
           type: 'tour',
           vehicleName: selectedVehicle?.name,
           vehicleQty: selectedVehicle?.qtyRequired,
-          couponCode: appliedCoupon?.code
+          couponCode: appliedCoupon?.code,
+          terms: packageData?.terms || "",
+          inclusions: packageData?.inclusions || []
         })
       });
     } catch (err) {

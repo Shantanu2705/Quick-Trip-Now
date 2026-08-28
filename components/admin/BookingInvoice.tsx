@@ -17,7 +17,7 @@ export function BookingInvoice({ booking, id }: BookingInvoiceProps) {
       className="bg-white text-black p-12 relative overflow-hidden flex flex-col justify-between"
       style={{
         width: '794px',
-        height: '1123px',
+        minHeight: '1123px',
         position: 'absolute',
         left: 0,
         top: 0,
@@ -127,6 +127,42 @@ export function BookingInvoice({ booking, id }: BookingInvoiceProps) {
             </div>
           </div>
         </div>
+        {/* Terms & Inclusions */}
+        {(booking.terms || (booking.inclusions && booking.inclusions.length > 0)) && (
+          <div className="mt-8 pt-8 border-t border-slate-200 text-xs">
+            {booking.inclusions && booking.inclusions.length > 0 && (
+              <div className="grid grid-cols-2 gap-8 mb-6">
+                {booking.inclusions.some((i: any) => String(i.included) === "true") && (
+                  <div>
+                    <h4 className="font-bold text-emerald-700 uppercase tracking-wider mb-2">Inclusions</h4>
+                    <ul className="list-disc pl-4 text-slate-600 space-y-1">
+                      {booking.inclusions.filter((i: any) => String(i.included) === "true").map((item: any, idx: number) => (
+                        <li key={idx}>{item.text}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {booking.inclusions.some((i: any) => String(i.included) === "false") && (
+                  <div>
+                    <h4 className="font-bold text-red-700 uppercase tracking-wider mb-2">Exclusions</h4>
+                    <ul className="list-disc pl-4 text-slate-600 space-y-1">
+                      {booking.inclusions.filter((i: any) => String(i.included) === "false").map((item: any, idx: number) => (
+                        <li key={idx}>{item.text}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+            {booking.terms && (
+              <div>
+                <h4 className="font-bold text-slate-700 uppercase tracking-wider mb-2">Specific Terms & Conditions</h4>
+                <div className="text-slate-600 whitespace-pre-wrap">{booking.terms}</div>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
 
       {/* Footer / Signature Block */}
