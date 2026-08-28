@@ -17,24 +17,40 @@ export async function POST(req: NextRequest) {
       status: "confirmed"
     };
 
-    const docRef = await adminDb.collection("bookings").add(bookingData);
+    const counterRef = adminDb.collection('counters').doc('bookings');
+    
+    const bookingId = await adminDb.runTransaction(async (transaction) => {
+      const counterDoc = await transaction.get(counterRef);
+      let newCount = 1;
+      
+      if (counterDoc.exists) {
+        newCount = (counterDoc.data()?.count || 0) + 1;
+      }
+      
+      transaction.set(counterRef, { count: newCount }, { merge: true });
+      
+      const generatedId = `QUICKTRIP${newCount}`;
+      const bookingRef = adminDb.collection("bookings").doc(generatedId);
+      
+      transaction.set(bookingRef, {
+        ...bookingData,
+        id: generatedId
+      });
+      
+      return generatedId;
+    });
 
     if (data.couponCode && data.userId && data.userId !== "guest") {
       const userRef = adminDb.collection("users").doc(data.userId);
       await userRef.update({
         usedCoupons: FieldValue.arrayUnion(data.couponCode)
       });
-      // Optionally deactivate the coupon if you want it strictly one-time globally
-      // but the rule was "used once per user", so tracking on user is enough.
-      // However, if the coupon is single-use overall, we'd do:
-      // const couponQ = await adminDb.collection('coupons').where('code', '==', data.couponCode).get();
-      // if (!couponQ.empty) await couponQ.docs[0].ref.update({ isActive: false });
     }
 
     // Send notification
-    await sendBookingNotification({ id: docRef.id, ...bookingData }, 'direct');
+    await sendBookingNotification({ id: bookingId, ...bookingData }, 'direct');
 
-    return NextResponse.json({ success: true, bookingId: docRef.id });
+    return NextResponse.json({ success: true, bookingId });
   } catch (error: any) {
     console.error("Booking confirmation error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
