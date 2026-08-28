@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue, Transaction } from "firebase-admin/firestore";
 import { sendBookingNotification } from "@/lib/notification-service";
 
 export async function POST(req: NextRequest) {
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     const counterRef = adminDb.collection('counters').doc('bookings');
     
-    const bookingId = await adminDb.runTransaction(async (transaction) => {
+    const bookingId = await adminDb.runTransaction(async (transaction: Transaction) => {
       const counterDoc = await transaction.get(counterRef);
       let newCount = 1;
       
