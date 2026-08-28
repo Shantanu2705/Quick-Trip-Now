@@ -8,6 +8,8 @@ import { BookingInvoice } from "@/components/admin/BookingInvoice";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
+import { useReactToPrint } from 'react-to-print';
+
 export default function AdminBookingsPage() {
   const { user } = useAuth();
   const [bookings, setBookings] = useState<any[]>([]);
@@ -16,22 +18,19 @@ export default function AdminBookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
 
-  const handleDownloadPdf = async () => {
+  const handlePrint = useReactToPrint({
+    content: () => document.getElementById("booking-invoice-pdf"),
+    documentTitle: selectedBooking ? `Booking_${selectedBooking.id}` : "Booking_Invoice",
+    onAfterPrint: () => setGeneratingPdf(false),
+    onPrintError: () => setGeneratingPdf(false),
+    removeAfterPrint: true,
+  });
+
+  const handleDownloadPdf = () => {
     setGeneratingPdf(true);
-    try {
-      // Use react-to-print which triggers the flawless Native Print Dialog
-      const { default: generatePrint } = await import('react-to-print');
-      
-      generatePrint({
-        content: () => document.getElementById("booking-invoice-pdf"),
-        documentTitle: `Booking_${selectedBooking.id}`,
-        onAfterPrint: () => setGeneratingPdf(false),
-        onPrintError: () => setGeneratingPdf(false),
-        removeAfterPrint: true,
-      });
-      
-    } catch (error) {
-      console.error("Print generation failed:", error);
+    if (handlePrint) {
+      handlePrint();
+    } else {
       setGeneratingPdf(false);
     }
   };
