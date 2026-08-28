@@ -221,7 +221,7 @@ export default function AdminCouponsPage() {
 
       <div className="bg-background rounded-2xl border border-border overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className="w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
                 <th className="px-6 py-4 font-semibold">Code</th>

@@ -266,7 +266,7 @@ export default function AdminCustomersPage() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
+            <table className="w-full text-sm text-left whitespace-nowrap">
               <thead className="text-xs text-muted-foreground uppercase bg-muted/30 border-y border-border">
                 <tr>
                   <th className="px-4 py-3">User</th>

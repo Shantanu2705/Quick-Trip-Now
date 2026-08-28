@@ -230,7 +230,7 @@ export default function AdminTransferPackagesPage() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
+            <table className="w-full text-sm text-left whitespace-nowrap">
               <thead className="text-xs text-muted-foreground uppercase bg-muted/30 border-y border-border/50">
                 <tr>
                   <th className="px-6 py-4 font-semibold tracking-wider">Package Title</th>
