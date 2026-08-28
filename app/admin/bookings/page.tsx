@@ -191,7 +191,7 @@ export default function AdminBookingsPage() {
       </Card>
 
       <Dialog open={!!selectedBooking} onOpenChange={(open) => !open && setSelectedBooking(null)}>
-        <DialogContent className="max-w-4xl sm:max-w-4xl md:max-w-4xl max-h-[85vh] overflow-y-auto rounded-3xl p-0 border-none overflow-hidden">
+        <DialogContent className="max-w-4xl sm:max-w-4xl md:max-w-4xl max-h-[85vh] overflow-y-auto rounded-3xl p-0 border-none">
           {selectedBooking && (
             <div className="bg-background" id="booking-details-pdf">
               <div className="bg-primary/5 border-b border-border p-6 md:p-8 flex flex-col md:flex-row md:justify-between md:items-start gap-4">
