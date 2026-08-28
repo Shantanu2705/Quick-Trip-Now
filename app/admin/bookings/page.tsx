@@ -25,100 +25,58 @@ export default function AdminBookingsPage() {
       const element = document.getElementById("booking-invoice-pdf");
       if (!element) return;
       
-      // Calculate CSS pixels per PDF page
-      const marginMm = 10;
-      const contentWidthMm = 210 - (marginMm * 2); // 190mm
-      const contentHeightMm = 297 - (marginMm * 2); // 277mm
-      const pxPerMm = 794 / contentWidthMm;
-      const pxPerPage = contentHeightMm * pxPerMm;
-      
-      // Reset height to let it grow naturally
-      element.style.minHeight = '1123px';
-      element.style.height = 'auto';
-      
-      const footer = document.getElementById("invoice-footer");
-      let originalMarginTop = "";
-      if (footer) {
-        originalMarginTop = footer.style.marginTop;
-        const footerTop = footer.offsetTop;
-        const footerBottom = footerTop + footer.offsetHeight;
-        
-        const startPage = Math.floor(footerTop / pxPerPage);
-        const endPage = Math.floor(footerBottom / pxPerPage);
-        
-        if (startPage !== endPage) {
-          // Footer crosses a page boundary. Push it down safely.
-          const currentMt = parseInt(window.getComputedStyle(footer).marginTop || "0");
-          const targetTop = endPage * pxPerPage;
-          const extraPush = targetTop - footerTop + (marginMm * pxPerMm);
-          footer.style.marginTop = `${currentMt + extraPush}px`;
-        }
-      }
-      
-      const imgData = await htmlToImage.toPng(element, { pixelRatio: 2 });
-
-      const img = new window.Image();
-      img.src = imgData;
-      await new Promise((resolve) => { img.onload = resolve; });
-
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10; // 10mm margin for border
-      const contentWidth = pdfWidth - margin * 2;
-      const contentHeight = pageHeight - margin * 2;
-      
-      const pdfHeight = (img.height * contentWidth) / img.width;
-      
-      let heightLeft = pdfHeight;
-      let position = margin;
+      // We will use html2pdf.js to perfectly handle page breaks without slicing text!
+      // @ts-ignore
+      const html2pdf = (await import('html2pdf.js')).default;
       
       // Load watermark image
       const watermarkImg = new window.Image();
       watermarkImg.src = "/images/logo_transparent.png";
       await new Promise((resolve) => { watermarkImg.onload = resolve; });
-      const wmWidth = 80;
-      const wmHeight = (watermarkImg.height * wmWidth) / watermarkImg.width;
-      const wmX = (pdfWidth - wmWidth) / 2;
-      const wmY = (pageHeight - wmHeight) / 2;
       
-      const drawPageExtras = () => {
-        // Draw white masks over all 4 margins to hide any overflowing unclipped image
-        pdf.setFillColor(255, 255, 255);
-        pdf.rect(0, 0, pdfWidth, margin, "F"); // Top mask
-        pdf.rect(0, pageHeight - margin, pdfWidth, margin, "F"); // Bottom mask
-        pdf.rect(0, 0, margin, pageHeight, "F"); // Left mask
-        pdf.rect(pdfWidth - margin, 0, margin, pageHeight, "F"); // Right mask
-
-        // Draw watermark with opacity if possible
-        try {
-          pdf.setGState(new (pdf as any).GState({opacity: 0.08}));
-          pdf.addImage(watermarkImg, "PNG", wmX, wmY, wmWidth, wmHeight);
-          pdf.setGState(new (pdf as any).GState({opacity: 1.0}));
-        } catch (e) {
-          // fallback without opacity
-        }
-        
-        // Draw border
-        pdf.setDrawColor(203, 213, 225); // slate-300
-        pdf.setLineWidth(1);
-        pdf.rect(margin, margin, contentWidth, contentHeight);
+      const marginMm = 10;
+      
+      const opt = {
+        margin:       marginMm,
+        filename:     `Booking_${selectedBooking.id}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, logging: false },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
       };
 
-      pdf.addImage(imgData, "PNG", margin, position, contentWidth, pdfHeight);
-      drawPageExtras();
-      heightLeft -= contentHeight;
+      await html2pdf().set(opt).from(element).toPdf().get('pdf').then((pdf: any) => {
+        const totalPages = pdf.internal.getNumberOfPages();
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const contentWidth = pdfWidth - marginMm * 2;
+        const contentHeight = pageHeight - marginMm * 2;
+        
+        const wmWidth = 80;
+        const wmHeight = (watermarkImg.height * wmWidth) / watermarkImg.width;
+        const wmX = (pdfWidth - wmWidth) / 2;
+        const wmY = (pageHeight - wmHeight) / 2;
+        
+        for (let i = 1; i <= totalPages; i++) {
+          pdf.setPage(i);
+          
+          // Draw watermark
+          try {
+            pdf.setGState(new (pdf as any).GState({opacity: 0.08}));
+            pdf.addImage(watermarkImg, "PNG", wmX, wmY, wmWidth, wmHeight);
+            pdf.setGState(new (pdf as any).GState({opacity: 1.0}));
+          } catch (e) {
+            // fallback
+          }
+          
+          // Draw border
+          pdf.setDrawColor(203, 213, 225); // slate-300
+          pdf.setLineWidth(1);
+          pdf.rect(marginMm, marginMm, contentWidth, contentHeight);
+        }
+      }).save();
       
-      while (heightLeft > 0) {
-        position = position - contentHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", margin, position, contentWidth, pdfHeight);
-        drawPageExtras();
-        heightLeft -= contentHeight;
-      }
-      
-      pdf.save(`Booking_${selectedBooking.id}.pdf`);
-      
+
       // Reset element styles after generation
       element.style.minHeight = '1123px';
       element.style.height = 'auto';
