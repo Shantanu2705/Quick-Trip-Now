@@ -19,9 +19,14 @@ export default function AdminBookingsPage() {
   const handleDownloadPdf = async () => {
     setGeneratingPdf(true);
     try {
-      // Use the highly stable html-to-image library to generate each page separately!
-      const htmlToImage = await import("html-to-image");
+      // Use jsPDF's built-in html() method which natively supports dynamic page breaks
+      const html2canvas = (await import("html2canvas")).default;
       const jsPDF = (await import("jspdf")).default;
+      
+      // CRITICAL FIX: jsPDF's .html() method internally calls html2canvas. 
+      // If it's not globally available on the window object, it throws an error and crashes!
+      // @ts-ignore
+      window.html2canvas = html2canvas;
       
       const element = document.getElementById("booking-invoice-pdf");
       if (!element) {
@@ -29,26 +34,65 @@ export default function AdminBookingsPage() {
         return;
       }
       
-      const pages = element.querySelectorAll('.invoice-page');
-      if (pages.length === 0) {
-        setGeneratingPdf(false);
-        return;
+      // Load watermark image safely without hanging
+      const watermarkImg = new window.Image();
+      const loadPromise = new Promise((resolve) => {
+        watermarkImg.onload = resolve;
+        watermarkImg.onerror = resolve;
+      });
+      watermarkImg.src = "/images/logo_transparent.png";
+      if (!watermarkImg.complete) {
+        await loadPromise;
       }
       
-      const pdf = new jsPDF("p", "px", [794, 1123]); // A4 dimensions in CSS pixels!
+      const pdf = new jsPDF("p", "pt", "a4");
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const marginPt = 40; // ~14mm
       
       try {
-        for (let i = 0; i < pages.length; i++) {
-          if (i > 0) pdf.addPage();
-          
-          const pageEl = pages[i] as HTMLElement;
-          const imgData = await htmlToImage.toPng(pageEl, { pixelRatio: 2 });
-          
-          pdf.addImage(imgData, 'PNG', 0, 0, 794, 1123);
-        }
-        
-        pdf.save(`Booking_${selectedBooking.id}.pdf`);
-        setGeneratingPdf(false);
+        await pdf.html(element, {
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            logging: false
+          },
+          callback: function (doc) {
+            // Draw borders and watermarks dynamically on EACH generated page!
+            const totalPages = (doc as any).getNumberOfPages();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            
+            const wmWidth = 300; // pt
+            const wmHeight = (watermarkImg.height * wmWidth) / watermarkImg.width;
+            const wmX = (pdfWidth - wmWidth) / 2;
+            const wmY = (pageHeight - wmHeight) / 2;
+            
+            for (let i = 1; i <= totalPages; i++) {
+              doc.setPage(i);
+              
+              // Draw Watermark
+              try {
+                doc.setGState(new (doc as any).GState({opacity: 0.05}));
+                doc.addImage(watermarkImg, "PNG", wmX, wmY, wmWidth, wmHeight);
+                doc.setGState(new (doc as any).GState({opacity: 1.0}));
+              } catch (e) {
+                // fallback if image fails
+              }
+              
+              // Draw border (slate-300 = rgb(203, 213, 225))
+              doc.setDrawColor(203, 213, 225); 
+              doc.setLineWidth(2);
+              doc.rect(marginPt, marginPt, pdfWidth - (marginPt * 2), pageHeight - (marginPt * 2));
+            }
+            
+            doc.save(`Booking_${selectedBooking.id}.pdf`);
+            setGeneratingPdf(false);
+          },
+          margin: [marginPt, marginPt, marginPt, marginPt],
+          autoPaging: 'text',
+          width: pdfWidth - (marginPt * 2),
+          windowWidth: 794
+        });
       } catch (err) {
         console.error("PDF generation failed:", err);
         setGeneratingPdf(false);
