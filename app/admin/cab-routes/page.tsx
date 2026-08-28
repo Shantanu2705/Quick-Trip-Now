@@ -237,7 +237,7 @@ export default function AdminCabRoutesPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Destination <span className="text-destructive">*</span></label>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Description <span className="text-destructive">*</span></label>
                   <textarea 
                     required rows={3}
                     value={formData.destination} onChange={e => setFormData({...formData, destination: e.target.value})}
@@ -443,7 +443,6 @@ export default function AdminCabRoutesPage() {
                     <tr key={route.id} className="border-b border-border/50 last:border-0 hover:bg-muted/10 transition-colors">
                       <td className="px-6 py-4">
                         <div className="font-medium text-foreground">{route.title}</div>
-                        <div className="text-xs text-muted-foreground mt-1">{route.destination || route.subtitle}</div>
                         {route.allowedVehicles && route.allowedVehicles.length > 0 && (
                           <div className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full inline-block mt-2">
                             {route.allowedVehicles.length} Vehicles Allowed
