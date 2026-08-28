@@ -83,9 +83,7 @@ export default function AdminBookingsPage() {
       // Reset element styles after generation
       element.style.minHeight = '1123px';
       element.style.height = 'auto';
-      if (footer) {
-        footer.style.marginTop = originalMarginTop;
-      }
+
     } catch (error) {
       console.error("Error generating PDF:", error);
     } finally {
