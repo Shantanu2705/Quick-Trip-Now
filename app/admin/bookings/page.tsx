@@ -45,7 +45,8 @@ export default function AdminBookingsPage() {
         pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
       };
 
-      await html2pdf().set(opt).from(element).toPdf().get('pdf').then((pdf: any) => {
+      const worker = html2pdf().set(opt).from(element).toPdf();
+      await worker.get('pdf').then((pdf: any) => {
         const totalPages = pdf.internal.getNumberOfPages();
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
@@ -74,7 +75,9 @@ export default function AdminBookingsPage() {
           pdf.setLineWidth(1);
           pdf.rect(marginMm, marginMm, contentWidth, contentHeight);
         }
-      }).save();
+      });
+      
+      await worker.save();
       
 
       // Reset element styles after generation
