@@ -12,7 +12,6 @@ export function BookingInvoice({ booking, id }: BookingInvoiceProps) {
 
   // A4 dimensions at 96 DPI: 794px x 1123px
   return (
-  return (
     <div 
       id={id} 
       className="absolute left-0 top-0 z-[-50] flex flex-col gap-8 bg-white p-12 font-sans w-[794px]" 
@@ -197,6 +196,5 @@ export function BookingInvoice({ booking, id }: BookingInvoiceProps) {
         </div>
       </div>
     </div>
-  );
   );
 }
