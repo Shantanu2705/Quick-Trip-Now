@@ -33,20 +33,51 @@ export default function AdminBookingsPage() {
 
       const pdf = new jsPDF("p", "mm", "a4");
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (img.height * pdfWidth) / img.width;
       const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10; // 10mm margin for border
+      const contentWidth = pdfWidth - margin * 2;
+      const contentHeight = pageHeight - margin * 2;
+      
+      const pdfHeight = (img.height * contentWidth) / img.width;
       
       let heightLeft = pdfHeight;
-      let position = 0;
+      let position = margin;
       
-      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, pdfHeight);
-      heightLeft -= pageHeight;
+      // Load watermark image
+      const watermarkImg = new window.Image();
+      watermarkImg.src = "/images/logo_transparent.png";
+      await new Promise((resolve) => { watermarkImg.onload = resolve; });
+      const wmWidth = 80;
+      const wmHeight = (watermarkImg.height * wmWidth) / watermarkImg.width;
+      const wmX = (pdfWidth - wmWidth) / 2;
+      const wmY = (pageHeight - wmHeight) / 2;
+      
+      const drawPageExtras = () => {
+        // Draw watermark with opacity if possible
+        try {
+          pdf.setGState(new (pdf as any).GState({opacity: 0.08}));
+          pdf.addImage(watermarkImg, "PNG", wmX, wmY, wmWidth, wmHeight);
+          pdf.setGState(new (pdf as any).GState({opacity: 1.0}));
+        } catch (e) {
+          // fallback without opacity (might be too dark, so we skip if GState fails)
+        }
+        
+        // Draw border
+        pdf.setDrawColor(203, 213, 225); // slate-300
+        pdf.setLineWidth(1);
+        pdf.rect(margin, margin, contentWidth, contentHeight);
+      };
+
+      pdf.addImage(imgData, "PNG", margin, position, contentWidth, pdfHeight);
+      drawPageExtras();
+      heightLeft -= contentHeight;
       
       while (heightLeft > 0) {
-        position = position - pageHeight;
+        position = position - contentHeight;
         pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, pdfHeight);
-        heightLeft -= pageHeight;
+        pdf.addImage(imgData, "PNG", margin, position, contentWidth, pdfHeight);
+        drawPageExtras();
+        heightLeft -= contentHeight;
       }
       
       pdf.save(`Booking_${selectedBooking.id}.pdf`);

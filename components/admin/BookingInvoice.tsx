@@ -25,12 +25,7 @@ export function BookingInvoice({ booking, id }: BookingInvoiceProps) {
         fontFamily: 'Inter, sans-serif'
       }}
     >
-      {/* Watermark */}
-      <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none z-0">
-        <div className="scale-[5] rotate-[-30deg] w-[150px]">
-          <Logo variant="bare" />
-        </div>
-      </div>
+
 
       <div className="relative z-10 space-y-12 flex-1">
         {/* Header */}
