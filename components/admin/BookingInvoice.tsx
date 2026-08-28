@@ -105,13 +105,26 @@ export function BookingInvoice({ booking, id }: BookingInvoiceProps) {
         <div className="flex justify-end">
           <div className="w-1/2 bg-slate-50 p-6 rounded-lg border border-slate-200 space-y-3">
             <div className="flex justify-between text-sm text-slate-600">
-              <span>Subtotal</span>
-              <span>₹{booking.amount?.toLocaleString("en-IN") || 0}</span>
+              <span>Base Fare</span>
+              <span>₹{((booking.amount || 0) - (booking.gstAmount || 0)).toLocaleString("en-IN")}</span>
             </div>
-            <div className="flex justify-between text-sm text-slate-600">
-              <span>Tax / Fees</span>
-              <span>Included</span>
-            </div>
+            {(booking.gstAmount || 0) > 0 ? (
+              <>
+                <div className="flex justify-between text-sm text-slate-600">
+                  <span>CGST ({(booking.gstPercentage || 0) / 2}%)</span>
+                  <span>₹{((booking.gstAmount || 0) / 2).toLocaleString("en-IN")}</span>
+                </div>
+                <div className="flex justify-between text-sm text-slate-600">
+                  <span>SGST ({(booking.gstPercentage || 0) / 2}%)</span>
+                  <span>₹{((booking.gstAmount || 0) / 2).toLocaleString("en-IN")}</span>
+                </div>
+              </>
+            ) : (
+              <div className="flex justify-between text-sm text-slate-600">
+                <span>Tax / Fees</span>
+                <span>₹0</span>
+              </div>
+            )}
             <div className="border-t border-slate-200 pt-3 flex justify-between items-center">
               <span className="font-bold text-slate-800 uppercase tracking-wider">Total Amount</span>
               <span className="text-xl font-bold text-emerald-600">₹{booking.amount?.toLocaleString("en-IN") || 0}</span>
