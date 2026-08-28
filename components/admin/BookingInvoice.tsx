@@ -149,9 +149,14 @@ export function BookingInvoice({ booking, id }: BookingInvoiceProps) {
                   <div>
                     <h4 className="font-bold text-emerald-700 uppercase tracking-wider mb-2">Inclusions</h4>
                     <ul className="list-disc pl-4 text-slate-600 space-y-1">
-                      {booking.inclusions.filter((i: any) => String(i.included) === "true").map((item: any, idx: number) => (
-                        <li key={idx}>{item.text}</li>
-                      ))}
+                      {booking.inclusions.filter((i: any) => String(i.included) === "true").map((item: any, idx: number) => {
+                        if (item.text.includes('•')) {
+                          return item.text.split('•').map((p: string) => p.trim()).filter(Boolean).map((p: string, i: number) => (
+                            <li key={`${idx}-${i}`}>{p}</li>
+                          ));
+                        }
+                        return <li key={idx}>{item.text}</li>;
+                      })}
                     </ul>
                   </div>
                 )}
@@ -159,9 +164,14 @@ export function BookingInvoice({ booking, id }: BookingInvoiceProps) {
                   <div>
                     <h4 className="font-bold text-red-700 uppercase tracking-wider mb-2">Exclusions</h4>
                     <ul className="list-disc pl-4 text-slate-600 space-y-1">
-                      {booking.inclusions.filter((i: any) => String(i.included) === "false").map((item: any, idx: number) => (
-                        <li key={idx}>{item.text}</li>
-                      ))}
+                      {booking.inclusions.filter((i: any) => String(i.included) === "false").map((item: any, idx: number) => {
+                        if (item.text.includes('•')) {
+                          return item.text.split('•').map((p: string) => p.trim()).filter(Boolean).map((p: string, i: number) => (
+                            <li key={`${idx}-${i}`}>{p}</li>
+                          ));
+                        }
+                        return <li key={idx}>{item.text}</li>;
+                      })}
                     </ul>
                   </div>
                 )}
