@@ -164,17 +164,17 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
               className="flex flex-col md:flex-row items-center w-full gap-2"
             >
               {/* Destination Field (Dropdown) */}
-              <div className="flex-1 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-4">
-                <div className="bg-primary/10 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                  <MapPin className="w-6 h-6 text-primary" />
+              <div className="flex-1 min-w-0 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-3 md:gap-4">
+                <div className="bg-primary/10 p-2.5 md:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                  <MapPin className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                 </div>
-                <div className="flex flex-col flex-1 relative">
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Destination</span>
+                <div className="flex flex-col flex-1 min-w-0 relative">
+                  <span className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 truncate">Destination</span>
                   <Select value={destination} onValueChange={(val) => {
                     setDestination(val || "");
                     setSelectedToursPackageId("");
                   }}>
-                    <SelectTrigger className="border-none shadow-none p-0 h-auto focus:ring-0 bg-transparent text-left text-base font-semibold w-full">
+                    <SelectTrigger className="border-none shadow-none p-0 h-auto focus:ring-0 bg-transparent text-left text-[15px] md:text-base font-semibold w-full [&>span]:truncate">
                       <SelectValue placeholder="Where to next?" />
                     </SelectTrigger>
                     <SelectContent>
@@ -191,23 +191,23 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
               <div className="hidden md:block w-px h-12 bg-border" />
 
               {/* Select Package Field (Dropdown) */}
-              <div className="flex-1 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-4">
-                <div className="bg-primary/10 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                  <Compass className="w-6 h-6 text-primary" />
+              <div className="flex-1 min-w-0 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-3 md:gap-4">
+                <div className="bg-primary/10 p-2.5 md:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                  <Compass className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                 </div>
-                <div className="flex flex-col flex-1 relative">
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Package</span>
+                <div className="flex flex-col flex-1 min-w-0 relative">
+                  <span className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 truncate">Package</span>
                   <Select value={selectedToursPackageId} onValueChange={(val) => setSelectedToursPackageId(val || "")} disabled={!destination}>
-                    <SelectTrigger className="border-none shadow-none p-0 h-auto focus:ring-0 bg-transparent text-left text-base font-semibold w-full">
+                    <SelectTrigger className="border-none shadow-none p-0 h-auto focus:ring-0 bg-transparent text-left text-[15px] md:text-base font-semibold w-full [&>span]:truncate [&>span]:flex-1 [&>span]:min-w-0">
                       <SelectValue placeholder={!destination ? "Select destination first" : "Select package"}>
                         {selectedToursPackageId && packages.find(p => p.id === selectedToursPackageId) ? (
-                          <div className="flex flex-col gap-1">
-                            <span className="font-semibold text-base text-foreground">{packages.find(p => p.id === selectedToursPackageId)!.title}</span>
+                          <div className="flex flex-col gap-0.5 min-w-0">
+                            <span className="font-semibold text-[15px] md:text-base text-foreground truncate">{packages.find(p => p.id === selectedToursPackageId)!.title}</span>
                             {(() => {
                               const p = packages.find(pkg => pkg.id === selectedToursPackageId)!;
                               if (p.days || p.nights || p.duration) {
                                 return (
-                                  <span className="text-[13px] text-muted-foreground whitespace-normal font-normal">
+                                  <span className="text-[12px] md:text-[13px] text-muted-foreground truncate font-normal">
                                     {p.days || p.nights ? `${p.days || 0} Days / ${p.nights || 0} Nights` : p.duration}
                                   </span>
                                 );
@@ -247,13 +247,13 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
 
               {/* Date Field */}
               <Popover>
-                <PopoverTrigger className="flex-1 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-4 text-left outline-none">
-                  <div className="bg-primary/10 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                    <CalendarIcon className="w-6 h-6 text-primary" />
+                <PopoverTrigger className="flex-1 min-w-0 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-3 md:gap-4 text-left outline-none">
+                  <div className="bg-primary/10 p-2.5 md:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                    <CalendarIcon className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                   </div>
-                  <div className="flex flex-col flex-1">
-                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Travel Dates</span>
-                    <span className="font-semibold text-foreground/80">
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <span className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 truncate">Travel Dates</span>
+                    <span className="font-semibold text-[15px] md:text-base text-foreground/80 truncate">
                       {date ? format(date, "PPP") : "Add dates"}
                     </span>
                   </div>
@@ -273,19 +273,19 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
 
               {/* Travelers Field */}
               <Popover>
-                <PopoverTrigger className="flex-1 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-4 text-left outline-none">
-                  <div className="bg-primary/10 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                    <Users className="w-6 h-6 text-primary" />
+                <PopoverTrigger className="flex-1 min-w-0 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-3 md:gap-4 text-left outline-none">
+                  <div className="bg-primary/10 p-2.5 md:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                    <Users className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                   </div>
-                  <div className="flex flex-col flex-1 relative">
-                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Travelers</span>
-                    <div className="flex items-center gap-1">
-                      <span className="text-base font-semibold text-foreground">
+                  <div className="flex flex-col flex-1 min-w-0 relative">
+                    <span className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 truncate">Travelers</span>
+                    <div className="flex items-center gap-1 min-w-0">
+                      <span className="text-[15px] md:text-base font-semibold text-foreground truncate">
                         {adults} Adult{adults !== 1 ? 's' : ''}{children > 0 ? `, ${children} Child${children !== 1 ? 'ren' : ''}` : ''}{infants > 0 ? `, ${infants} Infant${infants !== 1 ? 's' : ''}` : ''}
                       </span>
                     </div>
                     {guestError && (
-                      <span className="absolute -bottom-6 left-0 text-[10px] text-red-500 font-bold tracking-wide whitespace-nowrap">
+                      <span className="absolute -bottom-6 left-0 text-[10px] text-red-500 font-bold tracking-wide truncate max-w-full">
                         {guestError}
                       </span>
                     )}
@@ -345,11 +345,11 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
               </Popover>
 
               {/* Search Button */}
-              <div className="w-full md:w-auto p-2 relative">
+              <div className="w-full md:w-auto p-2 relative flex-shrink-0">
                 <button 
                   onClick={handleExplore}
-                  className="w-full md:w-[160px] h-[64px] bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl flex items-center justify-center gap-3 font-semibold transition-all shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 text-lg">
-                  <Search className="w-5 h-5" />
+                  className="w-full md:w-[150px] lg:w-[160px] h-[56px] md:h-[64px] bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl flex items-center justify-center gap-2 md:gap-3 font-semibold transition-all shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 text-base md:text-lg">
+                  <Search className="w-4 h-4 md:w-5 md:h-5" />
                   <span>Book Tour</span>
                 </button>
               </div>
@@ -367,20 +367,20 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
               className="flex flex-col md:flex-row items-center w-full gap-2"
             >
               {/* Select Package Field (Dropdown) */}
-              <div className="flex-1 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-4">
-                <div className="bg-primary/10 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                  <Palmtree className="w-6 h-6 text-primary" />
+              <div className="flex-1 min-w-0 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-3 md:gap-4">
+                <div className="bg-primary/10 p-2.5 md:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                  <Palmtree className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                 </div>
-                <div className="flex flex-col flex-1">
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Select Package</span>
+                <div className="flex flex-col flex-1 min-w-0">
+                  <span className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 truncate">Select Package</span>
                   <Select value={selectedPackageId} onValueChange={(val) => {
                     setSelectedPackageId(val || "");
                     setCabRouteId(""); // Reset transfer when package changes
                   }}>
-                    <SelectTrigger className="border-none shadow-none p-0 h-auto focus:ring-0 bg-transparent text-left text-base font-semibold w-full">
+                    <SelectTrigger className="border-none shadow-none p-0 h-auto focus:ring-0 bg-transparent text-left text-[15px] md:text-base font-semibold w-full [&>span]:truncate [&>span]:flex-1 [&>span]:min-w-0">
                       <SelectValue placeholder="Which package?">
                         {selectedPackageId && transferPackages.find(p => p.id === selectedPackageId) ? (
-                          <span className="font-semibold text-base text-foreground">{transferPackages.find(p => p.id === selectedPackageId)!.title}</span>
+                          <span className="font-semibold text-[15px] md:text-base text-foreground truncate block">{transferPackages.find(p => p.id === selectedPackageId)!.title}</span>
                         ) : undefined}
                       </SelectValue>
                     </SelectTrigger>
@@ -408,18 +408,18 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
               <div className="hidden md:block w-px h-12 bg-border" />
 
               {/* Select Cab Route Field (Dropdown) */}
-              <div className="flex-1 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-4">
-                <div className="bg-primary/10 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                  <MapPin className="w-6 h-6 text-primary" />
+              <div className="flex-1 min-w-0 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-3 md:gap-4">
+                <div className="bg-primary/10 p-2.5 md:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                  <MapPin className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                 </div>
-                <div className="flex flex-col flex-1">
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Select Transfer</span>
+                <div className="flex flex-col flex-1 min-w-0">
+                  <span className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 truncate">Select Transfer</span>
                   <Select disabled={!selectedPackageId} value={cabRouteId} onValueChange={(val) => val && setCabRouteId(val)}>
-                    <SelectTrigger className="border-none shadow-none p-0 h-auto focus:ring-0 bg-transparent text-left text-base font-semibold w-full">
+                    <SelectTrigger className="border-none shadow-none p-0 h-auto focus:ring-0 bg-transparent text-left text-[15px] md:text-base font-semibold w-full [&>span]:truncate [&>span]:flex-1 [&>span]:min-w-0">
                       <SelectValue placeholder={!selectedPackageId ? "Select a package first" : "Which transfer?"}>
                         {cabRouteId && cabRoutes.find(r => r.id === cabRouteId) ? (
-                          <div className="flex flex-col gap-1">
-                            <span className="font-semibold text-base text-foreground">{cabRoutes.find(r => r.id === cabRouteId)!.title}</span>
+                          <div className="flex flex-col gap-0.5 min-w-0">
+                            <span className="font-semibold text-[15px] md:text-base text-foreground truncate block">{cabRoutes.find(r => r.id === cabRouteId)!.title}</span>
                           </div>
                         ) : undefined}
                       </SelectValue>
@@ -449,13 +449,13 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
 
               {/* Date Field */}
               <Popover>
-                <PopoverTrigger className="flex-1 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-4 text-left outline-none">
-                  <div className="bg-primary/10 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                    <CalendarIcon className="w-6 h-6 text-primary" />
+                <PopoverTrigger className="flex-1 min-w-0 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-3 md:gap-4 text-left outline-none">
+                  <div className="bg-primary/10 p-2.5 md:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                    <CalendarIcon className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                   </div>
-                  <div className="flex flex-col flex-1">
-                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Date</span>
-                    <span className="font-semibold text-foreground/80">
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <span className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 truncate">Date</span>
+                    <span className="font-semibold text-[15px] md:text-base text-foreground/80 truncate">
                       {date ? format(date, "PPP") : "Select date"}
                     </span>
                   </div>
@@ -475,19 +475,19 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
 
               {/* Travelers Field */}
               <Popover>
-                <PopoverTrigger className="flex-1 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-4 text-left outline-none">
-                  <div className="bg-primary/10 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                    <Users className="w-6 h-6 text-primary" />
+                <PopoverTrigger className="flex-1 min-w-0 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-3 md:gap-4 text-left outline-none">
+                  <div className="bg-primary/10 p-2.5 md:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                    <Users className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                   </div>
-                  <div className="flex flex-col flex-1 relative">
-                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Travelers</span>
-                    <div className="flex items-center gap-1">
-                      <span className="text-base font-semibold text-foreground">
+                  <div className="flex flex-col flex-1 min-w-0 relative">
+                    <span className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 truncate">Travelers</span>
+                    <div className="flex items-center gap-1 min-w-0">
+                      <span className="text-[15px] md:text-base font-semibold text-foreground truncate">
                         {adults} Adult{adults !== 1 ? 's' : ''}{children > 0 ? `, ${children} Child${children !== 1 ? 'ren' : ''}` : ''}{infants > 0 ? `, ${infants} Infant${infants !== 1 ? 's' : ''}` : ''}
                       </span>
                     </div>
                     {guestError && (
-                      <span className="absolute -bottom-6 left-0 text-[10px] text-red-500 font-bold tracking-wide whitespace-nowrap">
+                      <span className="absolute -bottom-6 left-0 text-[10px] text-red-500 font-bold tracking-wide truncate max-w-full">
                         {guestError}
                       </span>
                     )}
@@ -547,11 +547,11 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
               </Popover>
 
               {/* Search Button */}
-              <div className="w-full md:w-auto p-2">
+              <div className="w-full md:w-auto p-2 relative flex-shrink-0">
                 <button 
                   onClick={handleCabExplore}
-                  className="w-full md:w-[160px] h-[64px] bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl flex items-center justify-center gap-3 font-semibold transition-all shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 text-lg">
-                  <Search className="w-5 h-5" />
+                  className="w-full md:w-[150px] lg:w-[160px] h-[56px] md:h-[64px] bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl flex items-center justify-center gap-2 md:gap-3 font-semibold transition-all shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 text-base md:text-lg">
+                  <Search className="w-4 h-4 md:w-5 md:h-5" />
                   <span>Book Vehicle</span>
                 </button>
               </div>
