@@ -31,6 +31,18 @@ const TOURS = [
     price: 2500,
     rating: 5.0,
     reviews: 45
+  },
+  {
+    title: "Razorpay Live Test Package",
+    slug: "razorpay-live-test",
+    image: "/images/sikkim_tour_1.png",
+    duration: "1 Day",
+    category: "Test",
+    price: 2, // 2 INR total (50% is 1 INR)
+    partPaymentEnabled: true,
+    partPaymentPercentage: 50,
+    rating: 5.0,
+    reviews: 1
   }
 ];
 

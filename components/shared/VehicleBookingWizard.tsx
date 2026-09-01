@@ -185,13 +185,78 @@ export function VehicleBookingWizard({
   };
 
   const handleRazorpayPayment = async () => {
-    // TODO: Implement actual Razorpay integration later.
-    // Temporarily bypassing payment to allow testing and deployment.
+    setError("");
     setPaymentStatus("verifying");
     
-    setTimeout(() => {
-      triggerSuccess();
-    }, 1000);
+    // Check if Razorpay is configured
+    if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID) {
+      // Simulate Razorpay success delay if no keys
+      setTimeout(() => {
+        triggerSuccess();
+      }, 2000);
+      return;
+    }
+
+    // Razorpay Integration
+    try {
+      const isLoaded = await initializeRazorpay();
+      if (!isLoaded) {
+        setPaymentStatus("idle");
+        return setError("Failed to load Razorpay SDK. Are you online?");
+      }
+
+      const data = await fetch("/api/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          amount: amountToPay, 
+          couponCode: appliedCoupon?.code, 
+          userId: userData?.uid,
+          bookingDetails: {
+            paymentType: paymentSelection,
+            totalAmount: finalPrice,
+            paidAmount: amountToPay,
+            pendingAmount: finalPrice - amountToPay
+          }
+        }), 
+      }).then((t) => t.json());
+
+      if (data.error) {
+        setPaymentStatus("idle");
+        return setError(`Server Error: ${data.error}`);
+      }
+
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, 
+        amount: data.amount,
+        currency: data.currency,
+        name: "Quick Trip Now",
+        description: `Booking for ${selectedVehicle?.name}`,
+        order_id: data.id,
+        handler: function () {
+          triggerSuccess();
+        },
+        prefill: {
+          name: travelers[0].fullName,
+          email: travelers[0].email,
+          contact: travelers[0].phone,
+        },
+        theme: {
+          color: "#29B4C4",
+        },
+      };
+
+      const paymentObject = new (window as any).Razorpay(options);
+      paymentObject.on("payment.failed", function (response: any) {
+        setError(`Payment failed: ${response.error.description}`);
+        setPaymentStatus("idle");
+      });
+      
+      paymentObject.open();
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred during payment.");
+      setPaymentStatus("idle");
+    }
   };
 
   const handleNext = () => {

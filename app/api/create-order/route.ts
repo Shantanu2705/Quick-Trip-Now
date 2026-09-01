@@ -13,7 +13,7 @@ async function createOrderHandler(req: AuthenticatedRequest) {
       return NextResponse.json({ success: false, message: "Invalid amount", error: "INVALID_AMOUNT" }, { status: 400 });
     }
 
-    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+    if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
       return NextResponse.json(
         { success: false, message: "Razorpay keys not configured.", error: "MISSING_KEYS" },
         { status: 500 }
@@ -32,7 +32,7 @@ async function createOrderHandler(req: AuthenticatedRequest) {
     }
 
     const razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID,
+      key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
 
