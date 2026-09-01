@@ -32,7 +32,7 @@ export function BookingWizard({
   selectedVehicleId?: string;
   vehiclesRequired?: number;
 }) {
-  const { userData, loading: authLoading } = useAuth();
+  const { user, userData, loading: authLoading } = useAuth();
   const [currentStep, setCurrentStep] = useState(() => selectedVehicleId ? 1 : 0);
   const [error, setError] = useState("");
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "verifying" | "success">("idle");
@@ -211,9 +211,14 @@ export function BookingWizard({
 
       await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for script to load
 
+      const token = user ? await user.getIdToken() : "";
+
       const data = await fetch("/api/create-order", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        },
         body: JSON.stringify({ 
           amount: amountToPay, 
           couponCode: appliedCoupon?.code, 

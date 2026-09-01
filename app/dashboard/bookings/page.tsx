@@ -44,9 +44,13 @@ export default function UserBookingsPage() {
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
+      const token = await user.getIdToken();
       const data = await fetch("/api/create-order", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
         body: JSON.stringify({ 
           amount: booking.pendingAmount, 
           userId: user.uid,

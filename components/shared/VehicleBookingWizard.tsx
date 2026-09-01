@@ -29,7 +29,7 @@ export function VehicleBookingWizard({
   infantsCount: number,
   maxChildAge: number
 }) {
-  const { userData, loading: authLoading } = useAuth();
+  const { user, userData, loading: authLoading } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [error, setError] = useState("");
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "verifying" | "success">("idle");
@@ -205,9 +205,14 @@ export function VehicleBookingWizard({
         return setError("Failed to load Razorpay SDK. Are you online?");
       }
 
+      const token = user ? await user.getIdToken() : "";
+
       const data = await fetch("/api/create-order", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        },
         body: JSON.stringify({ 
           amount: amountToPay, 
           couponCode: appliedCoupon?.code, 
