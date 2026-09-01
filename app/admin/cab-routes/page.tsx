@@ -23,9 +23,8 @@ export default function AdminCabRoutesPage() {
     allowedVehicles: [] as string[],
     vehiclePrices: {} as Record<string, number>,
     vehicleSeasonalPrices: {} as Record<string, { startDate: string; endDate: string; price: number }[]>,
+    vehiclePartPayments: {} as Record<string, { enabled: boolean; percentage: number }>,
     gstPercentage: 0,
-    partPaymentEnabled: false,
-    partPaymentPercentage: 50,
   });
   const [inclusions, setInclusions] = useState([{ text: "", included: true }]);
   const [saving, setSaving] = useState(false);
@@ -66,7 +65,7 @@ export default function AdminCabRoutesPage() {
 
   const handleOpenCreate = () => {
     setEditingId(null);
-    setFormData({ title: "", destination: "", packageId: "", terms: "", allowedVehicles: [], vehiclePrices: {}, vehicleSeasonalPrices: {}, gstPercentage: 0, partPaymentEnabled: false, partPaymentPercentage: 50 });
+    setFormData({ title: "", destination: "", packageId: "", terms: "", allowedVehicles: [], vehiclePrices: {}, vehicleSeasonalPrices: {}, vehiclePartPayments: {}, gstPercentage: 0 });
     setInclusions([{ text: "", included: true }]);
     setError("");
     setIsModalOpen(true);
@@ -82,9 +81,8 @@ export default function AdminCabRoutesPage() {
       allowedVehicles: route.allowedVehicles || [],
       vehiclePrices: route.vehiclePrices || {},
       vehicleSeasonalPrices: route.vehicleSeasonalPrices || {},
+      vehiclePartPayments: route.vehiclePartPayments || {},
       gstPercentage: route.gstPercentage || 0,
-      partPaymentEnabled: route.partPaymentEnabled || false,
-      partPaymentPercentage: route.partPaymentPercentage || 50,
     });
     setInclusions(route.inclusions && route.inclusions.length > 0 ? route.inclusions : [{ text: "", included: true }]);
     setError("");
@@ -261,30 +259,6 @@ export default function AdminCabRoutesPage() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Part Payment Enabled</label>
-                  <select 
-                    value={formData.partPaymentEnabled ? "true" : "false"} 
-                    onChange={e => setFormData({...formData, partPaymentEnabled: e.target.value === "true"})}
-                    className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all"
-                  >
-                    <option value="false">No</option>
-                    <option value="true">Yes</option>
-                  </select>
-                </div>
-
-                {formData.partPaymentEnabled && (
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Part Payment (%)</label>
-                    <input 
-                      type="number" 
-                      value={formData.partPaymentPercentage || ''} 
-                      onChange={e => setFormData({...formData, partPaymentPercentage: Number(e.target.value)})}
-                      className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all"
-                      placeholder="e.g. 50"
-                    />
-                  </div>
-                )}
               </div>
 
               {/* Available Vehicles Selection */}
@@ -306,8 +280,54 @@ export default function AdminCabRoutesPage() {
                       {formData.allowedVehicles.includes(veh.id) && (
                         <div className="flex flex-col gap-3 mt-2 pt-2 border-t border-border/50">
 
+                          <div className="flex flex-col gap-2">
+                            <label className="flex items-center gap-2 text-sm">
+                              <input 
+                                type="checkbox"
+                                checked={formData.vehiclePartPayments?.[veh.id]?.enabled || false}
+                                onChange={(e) => {
+                                  setFormData({
+                                    ...formData,
+                                    vehiclePartPayments: {
+                                      ...formData.vehiclePartPayments,
+                                      [veh.id]: {
+                                        ...formData.vehiclePartPayments?.[veh.id],
+                                        enabled: e.target.checked,
+                                        percentage: formData.vehiclePartPayments?.[veh.id]?.percentage || 50
+                                      }
+                                    }
+                                  });
+                                }}
+                                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                              />
+                              Enable Part Payment
+                            </label>
+                            
+                            {formData.vehiclePartPayments?.[veh.id]?.enabled && (
+                              <div className="pl-6">
+                                <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Part Payment (%)</label>
+                                <input 
+                                  type="number" 
+                                  value={formData.vehiclePartPayments?.[veh.id]?.percentage || 50}
+                                  onChange={(e) => {
+                                    setFormData({
+                                      ...formData,
+                                      vehiclePartPayments: {
+                                        ...formData.vehiclePartPayments,
+                                        [veh.id]: {
+                                          ...formData.vehiclePartPayments?.[veh.id],
+                                          percentage: Number(e.target.value)
+                                        }
+                                      }
+                                    });
+                                  }}
+                                  className="w-full bg-background border border-border rounded py-1 px-2 text-sm" 
+                                />
+                              </div>
+                            )}
+                          </div>
                           
-                          <div className="space-y-2">
+                          <div className="space-y-2 mt-2 pt-2 border-t border-border/50">
                             <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">Seasonal Prices</span>
                             {(formData.vehicleSeasonalPrices[veh.id] || []).map((sp, idx) => (
                               <div key={idx} className="flex flex-col gap-1.5 bg-muted/50 p-2 rounded-md border border-border/50">

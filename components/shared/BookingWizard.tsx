@@ -98,8 +98,9 @@ export function BookingWizard({
   const gstAmount = (priceAfterCoupon * gstPercent) / 100;
   const finalPrice = Math.round(priceAfterCoupon + gstAmount);
   
-  const amountToPay = paymentSelection === "part" && packageData?.partPaymentEnabled
-    ? Math.round((finalPrice * (packageData.partPaymentPercentage || 50)) / 100)
+  const currentVehiclePartPayment = (selectedVehicle && packageData?.vehiclePartPayments?.[selectedVehicle.id]) || { enabled: false, percentage: 50 };
+  const amountToPay = paymentSelection === "part" && currentVehiclePartPayment.enabled
+    ? Math.round((finalPrice * (currentVehiclePartPayment.percentage || 50)) / 100)
     : finalPrice;
 
   const applyCoupon = async () => {
@@ -623,7 +624,7 @@ export function BookingWizard({
                     <span className="text-3xl font-bold font-heading text-primary">₹{finalPrice.toLocaleString("en-IN")}</span>
                   </div>
 
-                  {packageData?.partPaymentEnabled && (
+                  {currentVehiclePartPayment.enabled && (
                     <div className="pt-4 border-t border-border/50">
                       <span className="text-sm font-semibold text-muted-foreground block mb-2">Payment Option</span>
                       <div className="flex flex-col gap-2">
@@ -637,8 +638,8 @@ export function BookingWizard({
                         <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${paymentSelection === "part" ? "bg-primary/5 border-primary text-primary" : "bg-background border-border"}`}>
                           <input type="radio" name="paymentOption" checked={paymentSelection === "part"} onChange={() => setPaymentSelection("part")} className="w-4 h-4 text-primary" />
                           <div className="flex flex-col">
-                            <span className="font-semibold text-sm">Pay Part Amount ({packageData.partPaymentPercentage}%)</span>
-                            <span className="text-xs text-muted-foreground">₹{Math.round((finalPrice * (packageData.partPaymentPercentage || 50)) / 100).toLocaleString("en-IN")}</span>
+                            <span className="font-semibold text-sm">Pay Part Amount ({currentVehiclePartPayment.percentage}%)</span>
+                            <span className="text-xs text-muted-foreground">₹{Math.round((finalPrice * (currentVehiclePartPayment.percentage || 50)) / 100).toLocaleString("en-IN")}</span>
                           </div>
                         </label>
                       </div>
