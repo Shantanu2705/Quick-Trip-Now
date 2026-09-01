@@ -249,6 +249,11 @@ export function VehicleBookingWizard({
         theme: {
           color: "#29B4C4",
         },
+        modal: {
+          ondismiss: function () {
+            setPaymentStatus("idle");
+          }
+        }
       };
 
       const paymentObject = new (window as any).Razorpay(options);
