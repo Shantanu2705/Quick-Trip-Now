@@ -10,6 +10,7 @@ export default function UserBookingsPage() {
   const { user } = useAuth();
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [payingBookingId, setPayingBookingId] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchBookings() {
@@ -32,6 +33,73 @@ export default function UserBookingsPage() {
     
     fetchBookings();
   }, [user]);
+
+  const handlePayBalance = async (booking: any) => {
+    if (!user) return;
+    setPayingBookingId(booking.id);
+    try {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      document.body.appendChild(script);
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      const data = await fetch("/api/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          amount: booking.pendingAmount, 
+          userId: user.uid,
+          bookingDetails: {
+            bookingId: booking.id,
+            isBalancePayment: true
+          }
+        }), 
+      }).then((t) => t.json());
+
+      if (data.error) {
+        setPayingBookingId(null);
+        alert(`Server Error: ${data.error}`);
+        return;
+      }
+
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, 
+        amount: data.amount,
+        currency: data.currency,
+        name: "Quick Trip Now",
+        description: `Balance payment for ${booking.type === 'package' ? booking.packageName : booking.vehicleName}`,
+        order_id: data.id,
+        handler: async function () {
+          // Confirm payment
+          try {
+            const token = await user.getIdToken();
+            await fetch(`/api/user/bookings?id=${booking.id}`, {
+              method: "PUT",
+              headers: { 
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}` 
+              },
+              body: JSON.stringify({ pendingAmount: 0, paidAmount: booking.amount, status: 'confirmed' })
+            });
+            // Update local state
+            setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, pendingAmount: 0, paidAmount: booking.amount, status: 'confirmed' } : b));
+          } catch (e) {
+            console.error(e);
+          }
+          setPayingBookingId(null);
+        },
+        theme: { color: "#29B4C4" },
+        modal: { ondismiss: function() { setPayingBookingId(null); } }
+      };
+
+      const paymentObject = new (window as any).Razorpay(options);
+      paymentObject.open();
+    } catch (err) {
+      console.error(err);
+      setPayingBookingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -93,8 +161,18 @@ export default function UserBookingsPage() {
                   </div>
                   
                   <div className="mt-6 pt-6 border-t border-border/50">
-                    <div className="text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1">Total Amount</div>
-                    <div className="text-2xl font-bold text-primary">₹{(booking.amount || 0).toLocaleString('en-IN')}</div>
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <div className="text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1">Total Amount</div>
+                        <div className="text-2xl font-bold text-primary">₹{(booking.amount || 0).toLocaleString('en-IN')}</div>
+                      </div>
+                      {booking.paymentType === 'part' && booking.pendingAmount > 0 && (
+                        <div className="text-right">
+                          <div className="text-[10px] text-destructive uppercase font-bold tracking-wider mb-1">Pending Balance</div>
+                          <div className="text-lg font-bold text-destructive">₹{booking.pendingAmount.toLocaleString('en-IN')}</div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
                 
@@ -137,6 +215,23 @@ export default function UserBookingsPage() {
                   </div>
                 </div>
               </div>
+              
+              {/* Bottom Section: Actions */}
+              {booking.paymentType === 'part' && booking.pendingAmount > 0 && (
+                <div className="p-4 bg-destructive/5 border-t border-destructive/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-destructive">Pending Balance: ₹{booking.pendingAmount.toLocaleString('en-IN')}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Please pay the remaining balance to fully confirm your trip.</p>
+                  </div>
+                  <button 
+                    onClick={() => handlePayBalance(booking)}
+                    disabled={payingBookingId === booking.id}
+                    className="px-6 py-2 bg-primary text-primary-foreground text-sm font-bold rounded-lg hover:bg-primary/90 transition-colors whitespace-nowrap disabled:opacity-50"
+                  >
+                    {payingBookingId === booking.id ? "Processing..." : "Pay Balance"}
+                  </button>
+                </div>
+              )}
             </Card>
           ))}
         </div>

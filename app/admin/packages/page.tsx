@@ -43,6 +43,8 @@ export default function AdminPackagesPage() {
     allowedVehicles: [] as string[],
     vehiclePrices: {} as Record<string, number>,
     vehicleSeasonalPrices: {} as Record<string, { startDate: string; endDate: string; price: number }[]>,
+    partPaymentEnabled: false,
+    partPaymentPercentage: 50,
   });
   const [itinerary, setItinerary] = useState([{ day: 1, title: "", desc: "" }]);
   const [inclusions, setInclusions] = useState([{ text: "", included: true }]);
@@ -114,6 +116,8 @@ export default function AdminPackagesPage() {
       allowedVehicles: pkg.allowedVehicles || [],
       vehiclePrices: pkg.vehiclePrices || {},
       vehicleSeasonalPrices: pkg.vehicleSeasonalPrices || {},
+      partPaymentEnabled: pkg.partPaymentEnabled || false,
+      partPaymentPercentage: pkg.partPaymentPercentage || 50,
     });
     setItinerary(pkg.itinerary && pkg.itinerary.length > 0 ? pkg.itinerary : [{ day: 1, title: "", desc: "" }]);
     setInclusions(pkg.inclusions && pkg.inclusions.length > 0 ? pkg.inclusions : [{ text: "", included: true }]);
@@ -228,7 +232,9 @@ export default function AdminPackagesPage() {
         image: imageUrl,
         highlights: formData.highlightsStr.split(",").map(s => s.trim()).filter(Boolean),
         itinerary,
-        inclusions
+        inclusions,
+        partPaymentEnabled: formData.partPaymentEnabled,
+        partPaymentPercentage: formData.partPaymentPercentage
       };
 
       const method = editingId ? "PUT" : "POST";
@@ -263,7 +269,8 @@ export default function AdminPackagesPage() {
     setFormData({
       title: "", description: "", image: "", duration: "", days: 3, nights: 2,
       category: "Shared Tour", destination: "", status: "Active", isFeatured: false, highlightsStr: "",
-      rating: 5.0, reviews: 0, termsAndConditions: "", maxAdults: 4, maxChildren: 2, maxInfants: 2, gstPercentage: 0, allowedVehicles: [], vehiclePrices: {}, vehicleSeasonalPrices: {}
+      rating: 5.0, reviews: 0, termsAndConditions: "", maxAdults: 4, maxChildren: 2, maxInfants: 2, gstPercentage: 0, allowedVehicles: [], vehiclePrices: {}, vehicleSeasonalPrices: {},
+      partPaymentEnabled: false, partPaymentPercentage: 50
     });
     setItinerary([{ day: 1, title: "", desc: "" }]);
     setInclusions([{ text: "", included: true }]);
@@ -335,6 +342,19 @@ export default function AdminPackagesPage() {
                   <label className="block text-sm font-medium mb-1">GST Percentage (%)</label>
                   <input type="number" value={formData.gstPercentage} onChange={(e) => setFormData({ ...formData, gstPercentage: Number(e.target.value) })} className="w-full bg-muted/50 border border-border rounded-xl py-2 px-3 focus:outline-none focus:border-primary" placeholder="e.g. 5" />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Part Payment Enabled</label>
+                  <select value={formData.partPaymentEnabled ? "true" : "false"} onChange={(e) => setFormData({ ...formData, partPaymentEnabled: e.target.value === "true" })} className="w-full bg-muted/50 border border-border rounded-xl py-2 px-3 focus:outline-none focus:border-primary">
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                  </select>
+                </div>
+                {formData.partPaymentEnabled && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Part Payment (%)</label>
+                    <input type="number" value={formData.partPaymentPercentage} onChange={(e) => setFormData({ ...formData, partPaymentPercentage: Number(e.target.value) })} className="w-full bg-muted/50 border border-border rounded-xl py-2 px-3 focus:outline-none focus:border-primary" placeholder="e.g. 50" />
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Category</label>
                   <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary">

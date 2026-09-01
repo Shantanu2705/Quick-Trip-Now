@@ -24,6 +24,8 @@ export default function AdminCabRoutesPage() {
     vehiclePrices: {} as Record<string, number>,
     vehicleSeasonalPrices: {} as Record<string, { startDate: string; endDate: string; price: number }[]>,
     gstPercentage: 0,
+    partPaymentEnabled: false,
+    partPaymentPercentage: 50,
   });
   const [inclusions, setInclusions] = useState([{ text: "", included: true }]);
   const [saving, setSaving] = useState(false);
@@ -64,7 +66,7 @@ export default function AdminCabRoutesPage() {
 
   const handleOpenCreate = () => {
     setEditingId(null);
-    setFormData({ title: "", destination: "", packageId: "", terms: "", allowedVehicles: [], vehiclePrices: {}, vehicleSeasonalPrices: {}, gstPercentage: 0 });
+    setFormData({ title: "", destination: "", packageId: "", terms: "", allowedVehicles: [], vehiclePrices: {}, vehicleSeasonalPrices: {}, gstPercentage: 0, partPaymentEnabled: false, partPaymentPercentage: 50 });
     setInclusions([{ text: "", included: true }]);
     setError("");
     setIsModalOpen(true);
@@ -81,6 +83,8 @@ export default function AdminCabRoutesPage() {
       vehiclePrices: route.vehiclePrices || {},
       vehicleSeasonalPrices: route.vehicleSeasonalPrices || {},
       gstPercentage: route.gstPercentage || 0,
+      partPaymentEnabled: route.partPaymentEnabled || false,
+      partPaymentPercentage: route.partPaymentPercentage || 50,
     });
     setInclusions(route.inclusions && route.inclusions.length > 0 ? route.inclusions : [{ text: "", included: true }]);
     setError("");
@@ -256,6 +260,31 @@ export default function AdminCabRoutesPage() {
                     placeholder="e.g. 5"
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Part Payment Enabled</label>
+                  <select 
+                    value={formData.partPaymentEnabled ? "true" : "false"} 
+                    onChange={e => setFormData({...formData, partPaymentEnabled: e.target.value === "true"})}
+                    className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all"
+                  >
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                  </select>
+                </div>
+
+                {formData.partPaymentEnabled && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Part Payment (%)</label>
+                    <input 
+                      type="number" 
+                      value={formData.partPaymentPercentage || ''} 
+                      onChange={e => setFormData({...formData, partPaymentPercentage: Number(e.target.value)})}
+                      className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all"
+                      placeholder="e.g. 50"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Available Vehicles Selection */}

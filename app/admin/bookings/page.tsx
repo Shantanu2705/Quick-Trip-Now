@@ -17,6 +17,7 @@ export default function AdminBookingsPage() {
   const [search, setSearch] = useState("");
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [updating, setUpdating] = useState(false);
 
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -55,6 +56,38 @@ export default function AdminBookingsPage() {
       console.error("Error fetching bookings:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMarkAsPaid = async (bookingId: string, totalAmount: number) => {
+    if (!confirm("Are you sure you want to mark the pending balance for this booking as paid?")) return;
+    setUpdating(true);
+    try {
+      const authModule = await import("@/lib/firebase");
+      const currentUser = authModule.auth?.currentUser;
+      if (!currentUser) return;
+      const token = await currentUser.getIdToken();
+
+      const res = await fetch(`/api/admin/bookings?id=${bookingId}`, {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ pendingAmount: 0, paidAmount: totalAmount, status: 'confirmed' })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSelectedBooking((prev: any) => ({ ...prev, pendingAmount: 0, paidAmount: totalAmount, status: 'confirmed' }));
+        fetchBookings();
+      } else {
+        alert("Failed to update booking.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred.");
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -224,10 +257,27 @@ export default function AdminBookingsPage() {
                       <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Date</div>
                       <div className="font-medium">{selectedBooking.date || "N/A"}</div>
                     </div>
-                    <div>
-                      <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Amount</div>
-                      <div className="font-bold text-primary">₹{selectedBooking.amount?.toLocaleString("en-IN") || 0}</div>
-                    </div>
+                    {selectedBooking.paymentType === 'part' ? (
+                      <>
+                        <div>
+                          <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Total Amount</div>
+                          <div className="font-bold">₹{selectedBooking.amount?.toLocaleString("en-IN") || 0}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Paid</div>
+                          <div className="font-bold text-emerald-600">₹{selectedBooking.paidAmount?.toLocaleString("en-IN") || 0}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Pending</div>
+                          <div className="font-bold text-destructive">₹{selectedBooking.pendingAmount?.toLocaleString("en-IN") || 0}</div>
+                        </div>
+                      </>
+                    ) : (
+                      <div>
+                        <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Amount</div>
+                        <div className="font-bold text-primary">₹{selectedBooking.amount?.toLocaleString("en-IN") || 0}</div>
+                      </div>
+                    )}
                     <div>
                       <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Status</div>
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium uppercase ${
@@ -235,6 +285,15 @@ export default function AdminBookingsPage() {
                       }`}>
                         {selectedBooking.status}
                       </span>
+                      {selectedBooking.paymentType === 'part' && selectedBooking.pendingAmount > 0 && (
+                        <button
+                          onClick={() => handleMarkAsPaid(selectedBooking.id, selectedBooking.amount)}
+                          disabled={updating}
+                          className="mt-2 block w-full text-center bg-primary text-primary-foreground text-xs font-bold py-1.5 px-2 rounded hover:bg-primary/90 transition-colors disabled:opacity-50"
+                        >
+                          {updating ? "Updating..." : "Mark as Paid"}
+                        </button>
+                      )}
                     </div>
                   </div>
                   {selectedBooking.vehicleName && (

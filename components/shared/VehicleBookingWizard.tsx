@@ -40,6 +40,7 @@ export function VehicleBookingWizard({
   const [appliedCoupon, setAppliedCoupon] = useState<{code: string, discount: number} | null>(null);
   const [couponError, setCouponError] = useState("");
   const [validatingCoupon, setValidatingCoupon] = useState(false);
+  const [paymentSelection, setPaymentSelection] = useState<"full" | "part">("full");
 
   const [localAdults, setLocalAdults] = useState(adultsCount);
   const [localChildren, setLocalChildren] = useState(childrenCount);
@@ -93,6 +94,10 @@ export function VehicleBookingWizard({
   const gstAmount = (priceAfterCoupon * gstPercent) / 100;
   const finalPrice = Math.round(priceAfterCoupon + gstAmount);
 
+  const amountToPay = paymentSelection === "part" && cabRouteData?.partPaymentEnabled
+    ? Math.round((finalPrice * (cabRouteData.partPaymentPercentage || 50)) / 100)
+    : finalPrice;
+
   const applyCoupon = async () => {
     if (!couponCode || !userData) return;
     setValidatingCoupon(true);
@@ -137,6 +142,9 @@ export function VehicleBookingWizard({
           dropoff: cabRouteData.subtitle || cabRouteData.title,
           date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
           amount: finalPrice,
+          paidAmount: amountToPay,
+          pendingAmount: finalPrice - amountToPay,
+          paymentType: paymentSelection,
           baseAmount: baseFare,
           gstPercentage: gstPercent,
           gstAmount: Math.round(gstAmount),
@@ -679,6 +687,28 @@ export function VehicleBookingWizard({
                       <span className="text-lg font-bold text-foreground">Total Amount</span>
                       <span className="text-2xl font-bold text-primary">₹{finalPrice.toLocaleString("en-IN")}</span>
                     </div>
+
+                    {cabRouteData?.partPaymentEnabled && (
+                      <div className="pt-4 border-t border-border/50">
+                        <span className="text-sm font-semibold text-muted-foreground block mb-2">Payment Option</span>
+                        <div className="flex flex-col gap-2">
+                          <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${paymentSelection === "full" ? "bg-primary/5 border-primary text-primary" : "bg-background border-border"}`}>
+                            <input type="radio" name="paymentOption" checked={paymentSelection === "full"} onChange={() => setPaymentSelection("full")} className="w-4 h-4 text-primary" />
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-sm">Pay Full Amount</span>
+                              <span className="text-xs text-muted-foreground">₹{finalPrice.toLocaleString("en-IN")}</span>
+                            </div>
+                          </label>
+                          <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${paymentSelection === "part" ? "bg-primary/5 border-primary text-primary" : "bg-background border-border"}`}>
+                            <input type="radio" name="paymentOption" checked={paymentSelection === "part"} onChange={() => setPaymentSelection("part")} className="w-4 h-4 text-primary" />
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-sm">Pay Part Amount ({cabRouteData.partPaymentPercentage}%)</span>
+                              <span className="text-xs text-muted-foreground">₹{Math.round((finalPrice * (cabRouteData.partPaymentPercentage || 50)) / 100).toLocaleString("en-IN")}</span>
+                            </div>
+                          </label>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex gap-4 items-center justify-center opacity-70">
@@ -730,7 +760,7 @@ export function VehicleBookingWizard({
             disabled={paymentStatus !== "idle" || (currentStep === 0 && !selectedVehicle)}
             className="rounded-xl px-8 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all"
           >
-            {paymentStatus === "verifying" ? "Processing..." : (currentStep === STEPS.length - 1 ? (!userData ? "Login to Pay" : "Pay with Razorpay") : "Continue")} 
+            {paymentStatus === "verifying" ? "Processing..." : (currentStep === STEPS.length - 1 ? (!userData ? "Login to Pay" : `Pay ₹${amountToPay.toLocaleString("en-IN")}`) : "Continue")} 
             {paymentStatus === "idle" && <ChevronRight className="w-4 h-4 ml-2" />}
           </Button>
         </div>

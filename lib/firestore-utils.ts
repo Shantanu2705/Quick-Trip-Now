@@ -45,6 +45,8 @@ export interface CabRoute {
   terms?: string;
   inclusions?: { text: string; included: boolean }[];
   gstPercentage?: number;
+  partPaymentEnabled?: boolean;
+  partPaymentPercentage?: number;
   createdAt?: any;
 }
 
@@ -71,6 +73,8 @@ export interface Package {
   maxChildren: number;
   maxInfants: number;
   gstPercentage: number;
+  partPaymentEnabled?: boolean;
+  partPaymentPercentage?: number;
   allowedVehicles?: string[]; // Array of vehicle IDs
   vehiclePrices?: Record<string, number>; // Vehicle ID to Price mapping
   vehicleSeasonalPrices?: Record<string, { startDate: string; endDate: string; price: number }[]>;
