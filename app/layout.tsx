@@ -16,6 +16,15 @@ export const metadata: Metadata = {
   description: "Experience the world's most luxurious and breathtaking destinations with Quick Trip Now.",
 };
 
+import { Viewport } from "next";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 import NextTopLoader from 'nextjs-toploader';
 
 export default function RootLayout({
