@@ -19,7 +19,7 @@ export function Hero({
   const displayTitle = heroTitle || defaultTitle;
   
   return (
-    <section className="relative w-full h-[100svh] min-h-[700px] flex items-center justify-center pt-20 overflow-hidden">
+    <section className="relative w-full min-h-[100svh] flex items-center justify-center pt-32 md:pt-24 pb-12 overflow-hidden">
       {/* Background Image & Overlay */}
       <div className="absolute inset-0 z-0">
         <Image
@@ -32,9 +32,9 @@ export function Hero({
         <div className="absolute inset-0 bg-gradient-to-b from-foreground/60 via-foreground/40 to-background" />
       </div>
 
-      <div className="container relative z-10 mx-auto px-4 md:px-8 h-full flex flex-col items-center justify-center">
+      <div className="container relative z-10 mx-auto px-4 md:px-8 h-full flex flex-col items-center justify-start md:justify-center mt-4 md:mt-0">
         {/* Hero Text */}
-        <div className="text-center mb-12 max-w-4xl">
+        <div className="text-center mb-8 md:mb-12 max-w-4xl">
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
