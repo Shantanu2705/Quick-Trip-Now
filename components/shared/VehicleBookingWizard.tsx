@@ -234,11 +234,11 @@ export function VehicleBookingWizard({
 
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, 
-        amount: data.amount,
-        currency: data.currency,
+        amount: data.data.amount,
+        currency: data.data.currency,
         name: "Quick Trip Now",
         description: `Booking for ${selectedVehicle?.name}`,
-        order_id: data.id,
+        order_id: data.data.id,
         handler: function () {
           triggerSuccess();
         },
