@@ -8,6 +8,10 @@ import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
 import { format } from "date-fns";
 import Image from "next/image";
+import { useRef } from "react";
+import { useReactToPrint } from "react-to-print";
+import { BookingInvoice } from "@/components/admin/BookingInvoice";
+import { Download } from "lucide-react";
 
 const STEPS = ["Vehicle Selection", "Personal Info", "Secure Payment"];
 
@@ -43,6 +47,13 @@ export function BookingWizard({
   const [couponError, setCouponError] = useState("");
   const [validatingCoupon, setValidatingCoupon] = useState(false);
   const [paymentSelection, setPaymentSelection] = useState<"full" | "part">("full");
+  const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
+  
+  const printRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: confirmedBooking ? `Invoice_${confirmedBooking.id}` : "Invoice",
+  });
 
   // Initialize single leader traveler
   const [travelers, setTravelers] = useState(() => {
@@ -151,41 +162,47 @@ export function BookingWizard({
   const triggerSuccess = async () => {
     setPaymentStatus("success");
     
+    const bookingData = {
+      userId: userData?.uid || "guest",
+      customerName: travelers[0].fullName,
+      email: travelers[0].email,
+      phone: travelers[0].phone,
+      packageId: packageData?.id,
+      packageType: packageData?.title,
+      date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
+      adultsCount: safeAdults,
+      childrenCount: safeChildren,
+      infantsCount: safeInfants,
+      travelers: travelers,
+      specialRequests: specialRequests,
+      amount: finalPrice,
+      paidAmount: amountToPay,
+      pendingAmount: finalPrice - amountToPay,
+      paymentType: paymentSelection,
+      baseAmount: totalBasePrice,
+      gstPercentage: gstPercent,
+      gstAmount: Math.round(gstAmount),
+      discountApplied: hasDiscount,
+      discountPercentage: discountPercent,
+      type: 'tour',
+      vehicleName: selectedVehicle?.name,
+      vehicleQty: selectedVehicle?.qtyRequired,
+      couponCode: appliedCoupon?.code,
+      terms: packageData?.terms || "",
+      inclusions: packageData?.inclusions || []
+    };
+
     // Save to Firestore
     try {
-      await fetch("/api/confirm-booking", {
+      const res = await fetch("/api/confirm-booking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: userData?.uid || "guest",
-          customerName: travelers[0].fullName,
-          email: travelers[0].email,
-          phone: travelers[0].phone,
-          packageId: packageData?.id,
-          packageType: packageData?.title,
-          date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
-          adultsCount: safeAdults,
-          childrenCount: safeChildren,
-          infantsCount: safeInfants,
-          travelers: travelers,
-          specialRequests: specialRequests,
-          amount: finalPrice,
-          paidAmount: amountToPay,
-          pendingAmount: finalPrice - amountToPay,
-          paymentType: paymentSelection,
-          baseAmount: totalBasePrice,
-          gstPercentage: gstPercent,
-          gstAmount: Math.round(gstAmount),
-          discountApplied: hasDiscount,
-          discountPercentage: discountPercent,
-          type: 'tour',
-          vehicleName: selectedVehicle?.name,
-          vehicleQty: selectedVehicle?.qtyRequired,
-          couponCode: appliedCoupon?.code,
-          terms: packageData?.terms || "",
-          inclusions: packageData?.inclusions || []
-        })
+        body: JSON.stringify(bookingData)
       });
+      const dbData = await res.json();
+      if (dbData.success) {
+        setConfirmedBooking({ ...bookingData, id: dbData.bookingId, status: "confirmed" });
+      }
     } catch (err) {
       console.error("Failed to save booking to db", err);
     }
@@ -669,10 +686,22 @@ export function BookingWizard({
                  <h3 className="text-4xl font-heading font-bold text-emerald-600 dark:text-emerald-400">Booking Confirmed!</h3>
                  <p className="text-lg text-muted-foreground max-w-md">Your payment was successful and your trip is secured.</p>
                  <div className="mt-8 flex gap-4">
+                   {confirmedBooking && (
+                     <Button onClick={() => handlePrint()} variant="default" className="rounded-xl px-6 bg-emerald-600 hover:bg-emerald-700 text-white">
+                       <Download className="w-4 h-4 mr-2" /> Download Bill
+                     </Button>
+                   )}
                    <Link href="/user">
                      <Button variant="outline" className="rounded-xl px-6">View My Bookings</Button>
                    </Link>
                  </div>
+                 
+                 {/* Hidden Invoice for Printing */}
+                 {confirmedBooking && (
+                   <div className="hidden" ref={printRef}>
+                     <BookingInvoice booking={confirmedBooking} />
+                   </div>
+                 )}
               </motion.div>
             )}
           </motion.div>

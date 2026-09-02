@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
 import { format } from "date-fns";
+import { useRef } from "react";
+import { useReactToPrint } from "react-to-print";
+import { BookingInvoice } from "@/components/admin/BookingInvoice";
+import { Download } from "lucide-react";
 
 const STEPS = ["Select Vehicle", "Travel Details", "Payment"];
 
@@ -41,6 +45,13 @@ export function VehicleBookingWizard({
   const [couponError, setCouponError] = useState("");
   const [validatingCoupon, setValidatingCoupon] = useState(false);
   const [paymentSelection, setPaymentSelection] = useState<"full" | "part">("full");
+  const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
+  
+  const printRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: confirmedBooking ? `Invoice_${confirmedBooking.id}` : "Invoice",
+  });
 
   const [localAdults, setLocalAdults] = useState(adultsCount);
   const [localChildren, setLocalChildren] = useState(childrenCount);
@@ -126,39 +137,45 @@ export function VehicleBookingWizard({
   const triggerSuccess = async () => {
     setPaymentStatus("success");
     
+    const leadTraveler = travelers[0];
+    const bookingData = {
+      userId: userData?.uid || "guest",
+      customerName: leadTraveler.fullName,
+      email: leadTraveler.email,
+      phone: leadTraveler.phone,
+      vehicleName: selectedVehicle.name,
+      vehicleQty: selectedVehicle.qtyRequired,
+      pickup: cabRouteData.title,
+      dropoff: cabRouteData.subtitle || cabRouteData.title,
+      date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
+      amount: finalPrice,
+      paidAmount: amountToPay,
+      pendingAmount: finalPrice - amountToPay,
+      paymentType: paymentSelection,
+      baseAmount: baseFare,
+      gstPercentage: gstPercent,
+      gstAmount: Math.round(gstAmount),
+      type: 'vehicle',
+      adultsCount: localAdults,
+      childrenCount: localChildren,
+      infantsCount: localInfants,
+      travelers,
+      couponCode: appliedCoupon?.code,
+      terms: cabRouteData?.terms || selectedVehicle?.termsAndConditions || selectedVehicle?.terms || "",
+      inclusions: cabRouteData?.inclusions || selectedVehicle?.inclusions || []
+    };
+
     // Save to Firestore
     try {
-      const leadTraveler = travelers[0];
-      await fetch("/api/confirm-booking", {
+      const res = await fetch("/api/confirm-booking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: userData?.uid || "guest",
-          customerName: leadTraveler.fullName,
-          email: leadTraveler.email,
-          phone: leadTraveler.phone,
-          vehicleName: selectedVehicle.name,
-          vehicleQty: selectedVehicle.qtyRequired,
-          pickup: cabRouteData.title,
-          dropoff: cabRouteData.subtitle || cabRouteData.title,
-          date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
-          amount: finalPrice,
-          paidAmount: amountToPay,
-          pendingAmount: finalPrice - amountToPay,
-          paymentType: paymentSelection,
-          baseAmount: baseFare,
-          gstPercentage: gstPercent,
-          gstAmount: Math.round(gstAmount),
-          type: 'vehicle',
-          adultsCount: localAdults,
-          childrenCount: localChildren,
-          infantsCount: localInfants,
-          travelers,
-          couponCode: appliedCoupon?.code,
-          terms: cabRouteData?.terms || selectedVehicle?.termsAndConditions || selectedVehicle?.terms || "",
-          inclusions: cabRouteData?.inclusions || selectedVehicle?.inclusions || []
-        })
+        body: JSON.stringify(bookingData)
       });
+      const dbData = await res.json();
+      if (dbData.success) {
+        setConfirmedBooking({ ...bookingData, id: dbData.bookingId, status: "confirmed" });
+      }
     } catch (err) {
       console.error("Failed to save vehicle booking to db", err);
     }
@@ -811,6 +828,24 @@ export function VehicleBookingWizard({
                    <div className="mt-8 p-4 bg-muted/50 rounded-xl animate-pulse">
                      <p className="text-sm font-medium">Redirecting to WhatsApp to send final details to owner...</p>
                    </div>
+                   
+                   <div className="mt-6 flex flex-wrap justify-center gap-4">
+                     {confirmedBooking && (
+                       <Button onClick={() => handlePrint()} variant="default" className="rounded-xl px-6 bg-emerald-600 hover:bg-emerald-700 text-white">
+                         <Download className="w-4 h-4 mr-2" /> Download Bill
+                       </Button>
+                     )}
+                     <Link href="/user">
+                       <Button variant="outline" className="rounded-xl px-6">View My Bookings</Button>
+                     </Link>
+                   </div>
+
+                   {/* Hidden Invoice for Printing */}
+                   {confirmedBooking && (
+                     <div className="hidden" ref={printRef}>
+                       <BookingInvoice booking={confirmedBooking} />
+                     </div>
+                   )}
                 </motion.div>
               )}
             </motion.div>
