@@ -2,79 +2,62 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
     // Helper functions
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+
+    // Admins bypass everything (handled by Firebase Admin SDK anyway),
+    // but if an admin authenticates from the client, give them access.
+    function isAdmin() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Users Collection
-    match /users/{userId} {
-      allow read, write: if isOwner(userId);
-    }
-
-    // Publicly readable collections (Tour packages, destinations, vehicles, routes)
+    // 1. PUBLIC READ, ADMIN WRITE
+    // Safe public collections for the frontend
     match /packages/{document=**} {
       allow read: if true;
-      allow write: if false; // Only admins can write (handled via admin SDK)
+      allow write: if false; // Only Admin SDK can write
     }
-
-    match /transfer_packages/{document=**} {
-      allow read: if true;
-      allow write: if false;
-    }
-
     match /destinations/{document=**} {
       allow read: if true;
       allow write: if false;
     }
-
-    match /vehicles/{document=**} {
+    match /transfer_packages/{document=**} {
       allow read: if true;
       allow write: if false;
     }
-
-    match /cab_routes/{document=**} {
+    match /cab-routes/{document=**} {
       allow read: if true;
       allow write: if false;
     }
-
-    match /settings/{document=**} {
+    match /globalSettings/{document=**} {
       allow read: if true;
       allow write: if false;
     }
+    match /coupons/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
 
-    // Bookings
+    // 2. PRIVATE READ/WRITE (Users can only access their own data)
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      // Only write to your own user document
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
     match /bookings/{bookingId} {
       // Users can only read their own bookings
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      // Allow users to create bookings for themselves
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if false; // Modifications by admin SDK only
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      // Users shouldn't write bookings directly from the client, they should use API routes (Admin SDK)
+      // This prevents a user from tampering with `paidAmount` or `status` directly from the browser.
+      allow write: if false; 
     }
 
-    // Audit logs
-    match /auditLogs/{document=**} {
-      allow read, write: if false; // Admin only
-    }
-    
-    // Coupons
-    match /coupons/{document=**} {
-      allow read: if isAuthenticated(); // Global coupons, anyone can read if logged in
-      allow write: if false; // Admin SDK only
-    }
-
-    // Notifications
-    match /notifications/{notificationId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
-      allow create, delete: if false;
-    }
-
-    // Default deny
+    // 3. DEFAULT DENY ALL
+    // Blocks everything else completely
     match /{document=**} {
       allow read, write: if false;
     }

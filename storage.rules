@@ -1,0 +1,25 @@
+rules_version = '2';
+
+// Craft rules based on data in your Firestore database
+// allow write: if firestore.get(
+//    /databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin;
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // 1. PUBLIC READ ACCESS
+    // Allow anyone to view images (required for your website to display package images, destination images, etc.)
+    match /{allPaths=**} {
+      allow read: if true;
+      
+      // 2. NO CLIENT WRITE ACCESS
+      // The Next.js Admin API uses the Firebase Admin SDK to upload images, which completely bypasses these rules.
+      // Therefore, we can safely DENY ALL writes from the client, meaning a hacker can NEVER upload or delete files!
+      allow write: if false; 
+    }
+  }
+}
