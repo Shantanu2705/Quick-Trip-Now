@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { FieldValue, Transaction } from "firebase-admin/firestore";
-import { sendBookingNotification } from "@/lib/notification-service";
-
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
@@ -47,8 +45,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Send notification
-    await sendBookingNotification({ id: bookingId, ...bookingData }, 'direct');
 
     return NextResponse.json({ success: true, bookingId });
   } catch (error: any) {

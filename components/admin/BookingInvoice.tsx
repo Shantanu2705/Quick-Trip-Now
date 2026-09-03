@@ -8,7 +8,7 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
   return (
     <div 
       id={id} 
-      className="hidden print:block bg-white text-slate-800 font-sans relative w-full" 
+      className="bg-white text-slate-800 font-sans relative w-full" 
       style={{ fontFamily: 'Inter, sans-serif' }}
     >
       <style dangerouslySetInnerHTML={{__html: `
@@ -81,24 +81,20 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                       <p>Bagdogra, Bhujiyapani, Darjeeling,</p>
                       <p>West Bengal, India, Pin: 734017.</p>
                       <p className="text-primary font-medium mt-1">quicktripnow1@gmail.com | +91 7047399677</p>
-                      <p className="text-xs mt-1">GSTIN: 22AAAAA0000A1Z5</p>
+                      <p className="text-xs mt-1 font-bold text-slate-600">GSTIN: 19DHGPR6231C1ZB</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <h1 className="text-5xl font-black text-primary tracking-tight uppercase">Invoice</h1>
                     <h2 className="text-xl text-slate-500 font-bold tracking-widest mt-2 uppercase">Booking Receipt</h2>
                     
-                    <div className="mt-8 space-y-2 text-sm bg-slate-50 p-4 rounded-xl border border-slate-100 inline-block text-left ml-auto min-w-[250px]">
+                    <div className="mt-8 space-y-3 text-sm bg-primary/5 p-4 rounded-xl border border-primary/10 inline-block text-left ml-auto min-w-[280px] shadow-sm">
                       <div className="flex justify-between items-center gap-6">
-                        <span className="text-slate-400 font-bold uppercase tracking-wider text-xs">Invoice No:</span>
-                        <span className="font-mono font-bold text-slate-800">INV-{booking.id?.substring(0, 8).toUpperCase()}</span>
+                        <span className="text-primary/70 font-bold uppercase tracking-wider text-xs">Booking ID:</span>
+                        <span className="font-mono font-black text-primary text-base">{booking.id}</span>
                       </div>
-                      <div className="flex justify-between items-center gap-6">
-                        <span className="text-slate-400 font-bold uppercase tracking-wider text-xs">Booking ID:</span>
-                        <span className="font-mono font-bold text-primary">{booking.id}</span>
-                      </div>
-                      <div className="flex justify-between items-center gap-6 pt-2 border-t border-slate-200 mt-2">
-                        <span className="text-slate-400 font-bold uppercase tracking-wider text-xs">Date Issued:</span>
+                      <div className="flex justify-between items-center gap-6 pt-3 border-t border-primary/10">
+                        <span className="text-primary/70 font-bold uppercase tracking-wider text-xs">Date Issued:</span>
                         <span className="font-bold text-slate-700">{format(new Date(), 'MMM dd, yyyy')}</span>
                       </div>
                     </div>
@@ -166,9 +162,25 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                         <span>₹0</span>
                       </div>
                     )}
-                    <div className="border-t border-slate-200 pt-3 flex justify-between items-center">
-                      <span className="font-bold text-slate-800 uppercase tracking-wider">Total Amount</span>
-                      <span className="text-xl font-bold text-emerald-600">₹{booking.amount?.toLocaleString("en-IN") || 0}</span>
+                    <div className="border-t border-slate-200 pt-3 flex flex-col gap-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-slate-800 uppercase tracking-wider">Total Amount</span>
+                        <span className="text-xl font-bold text-emerald-600">₹{booking.amount?.toLocaleString("en-IN") || 0}</span>
+                      </div>
+                      {booking.paymentType === 'part' && (
+                        <>
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="font-bold text-slate-600 uppercase tracking-wider">Amount Paid</span>
+                            <span className="font-bold text-emerald-600">₹{booking.paidAmount?.toLocaleString("en-IN") || 0}</span>
+                          </div>
+                          {booking.pendingAmount > 0 && (
+                            <div className="flex justify-between items-center text-sm">
+                              <span className="font-bold text-slate-600 uppercase tracking-wider">Pending Balance</span>
+                              <span className="font-bold text-red-600">₹{booking.pendingAmount?.toLocaleString("en-IN") || 0}</span>
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                     <div className="pt-2 flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-semibold uppercase tracking-wider">Payment Status</span>

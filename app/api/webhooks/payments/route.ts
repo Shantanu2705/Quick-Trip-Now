@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { adminDb } from "@/lib/firebase-admin";
-import { sendBookingNotification } from "@/lib/notification-service";
-
 export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
@@ -79,8 +77,6 @@ export async function POST(req: NextRequest) {
         updatedAt: new Date().toISOString(),
       });
 
-      // Send notification
-      await sendBookingNotification({ orderId, amount: paymentData.amount / 100 }, 'payment_captured');
 
       // Log success
       await adminDb.collection("activityLogs").add({

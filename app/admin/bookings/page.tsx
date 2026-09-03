@@ -167,7 +167,17 @@ export default function AdminBookingsPage() {
                         {booking.date || booking.travelDate || "N/A"}
                       </div>
                     </td>
-                    <td className="px-6 py-4 font-bold">₹{booking.amount?.toLocaleString("en-IN") || 0}</td>
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-foreground">₹{booking.amount?.toLocaleString("en-IN") || 0}</div>
+                      {booking.paymentType === 'part' && (
+                        <div className="text-[10px] mt-1 space-y-0.5">
+                          <div className="text-emerald-600 font-medium">Paid: ₹{booking.paidAmount?.toLocaleString("en-IN") || 0}</div>
+                          {booking.pendingAmount > 0 && (
+                            <div className="text-destructive font-medium">Pending: ₹{booking.pendingAmount?.toLocaleString("en-IN") || 0}</div>
+                          )}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         booking.status === 'confirmed' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' :
@@ -372,8 +382,10 @@ export default function AdminBookingsPage() {
       
       {/* Hidden Invoice Template for PDF Generation */}
       {selectedBooking && (
-        <div ref={printRef}>
-          <BookingInvoice booking={selectedBooking} id="booking-invoice-pdf" />
+        <div className="hidden">
+          <div ref={printRef}>
+            <BookingInvoice booking={selectedBooking} id="booking-invoice-pdf" />
+          </div>
         </div>
       )}
     </div>

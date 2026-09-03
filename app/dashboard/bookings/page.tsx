@@ -1,16 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, Package, MapPin, Car, FileText, User } from "lucide-react";
+import { CalendarDays, Package, MapPin, Car, FileText, User, Download } from "lucide-react";
 import { format } from "date-fns";
+import { useReactToPrint } from "react-to-print";
+import { BookingInvoice } from "@/components/admin/BookingInvoice";
 
 export default function UserBookingsPage() {
   const { user } = useAuth();
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [payingBookingId, setPayingBookingId] = useState<string | null>(null);
+  const [printingBooking, setPrintingBooking] = useState<any>(null);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: printingBooking ? `Booking_${printingBooking.id}` : "Booking_Invoice",
+    onAfterPrint: () => {
+      setGeneratingPdf(false);
+      setTimeout(() => setPrintingBooking(null), 100);
+    },
+    onPrintError: () => {
+      setGeneratingPdf(false);
+      setTimeout(() => setPrintingBooking(null), 100);
+    },
+  });
+
+  const handleDownloadPdf = (booking: any) => {
+    setPrintingBooking(booking);
+    setGeneratingPdf(true);
+    setTimeout(() => {
+      if (handlePrint) handlePrint();
+    }, 150);
+  };
 
   useEffect(() => {
     async function fetchBookings() {
@@ -221,23 +247,45 @@ export default function UserBookingsPage() {
               </div>
               
               {/* Bottom Section: Actions */}
-              {booking.paymentType === 'part' && booking.pendingAmount > 0 && (
-                <div className="p-4 bg-destructive/5 border-t border-destructive/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div>
-                    <p className="text-sm font-semibold text-destructive">Pending Balance: ₹{booking.pendingAmount.toLocaleString('en-IN')}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Please pay the remaining balance to fully confirm your trip.</p>
-                  </div>
+              <div className={`p-4 border-t flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${booking.paymentType === 'part' && booking.pendingAmount > 0 ? 'bg-destructive/5 border-destructive/10' : 'bg-muted/10 border-border/50'}`}>
+                <div className="flex items-center gap-3 w-full sm:w-auto">
                   <button 
-                    onClick={() => handlePayBalance(booking)}
-                    disabled={payingBookingId === booking.id}
-                    className="px-6 py-2 bg-primary text-primary-foreground text-sm font-bold rounded-lg hover:bg-primary/90 transition-colors whitespace-nowrap disabled:opacity-50"
+                    onClick={() => handleDownloadPdf(booking)}
+                    disabled={generatingPdf && printingBooking?.id === booking.id}
+                    className="px-4 py-2 bg-background border border-border text-foreground text-sm font-bold rounded-lg hover:bg-muted transition-colors flex items-center justify-center gap-2 w-full sm:w-auto shadow-sm disabled:opacity-50"
                   >
-                    {payingBookingId === booking.id ? "Processing..." : "Pay Balance"}
+                    <Download className="w-4 h-4" />
+                    {generatingPdf && printingBooking?.id === booking.id ? "Generating..." : "Download Invoice"}
                   </button>
                 </div>
-              )}
+                
+                {booking.paymentType === 'part' && booking.pendingAmount > 0 && (
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
+                    <div className="text-left sm:text-right">
+                      <p className="text-sm font-semibold text-destructive">Pending Balance: ₹{booking.pendingAmount.toLocaleString('en-IN')}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Pay remaining to fully confirm.</p>
+                    </div>
+                    <button 
+                      onClick={() => handlePayBalance(booking)}
+                      disabled={payingBookingId === booking.id}
+                      className="px-6 py-2 bg-primary text-primary-foreground text-sm font-bold rounded-lg hover:bg-primary/90 transition-colors whitespace-nowrap disabled:opacity-50 w-full sm:w-auto shadow-sm"
+                    >
+                      {payingBookingId === booking.id ? "Processing..." : "Pay Balance"}
+                    </button>
+                  </div>
+                )}
+              </div>
             </Card>
           ))}
+        </div>
+      )}
+
+      {/* Hidden Invoice Template for PDF Generation */}
+      {printingBooking && (
+        <div className="hidden">
+          <div ref={printRef}>
+            <BookingInvoice booking={printingBooking} id="booking-invoice-pdf" />
+          </div>
         </div>
       )}
     </div>
