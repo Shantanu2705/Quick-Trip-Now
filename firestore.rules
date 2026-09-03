@@ -28,7 +28,11 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false;
     }
-    match /cab-routes/{document=**} {
+    match /cab_routes/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /vehicles/{document=**} {
       allow read: if true;
       allow write: if false;
     }
