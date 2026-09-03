@@ -177,7 +177,7 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                     <SelectTrigger className="border-none shadow-none p-0 h-auto focus:ring-0 bg-transparent text-left text-[15px] md:text-base font-semibold w-full [&>span]:truncate">
                       <SelectValue placeholder="Where to next?" />
                     </SelectTrigger>
-                    <SelectContent alignItemWithTrigger={false}>
+                    <SelectContent alignItemWithTrigger={false} align="start">
                       {destinations.map(d => (
                         <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
                       ))}
@@ -220,7 +220,7 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                         ) : undefined}
                       </SelectValue>
                     </SelectTrigger>
-                    <SelectContent alignItemWithTrigger={false} className="min-w-[320px] p-2">
+                    <SelectContent alignItemWithTrigger={false} align="start" className="min-w-[320px] p-2">
                       {packages.filter(p => p.destination === destination).length > 0 ? (
                         packages.filter(p => p.destination === destination).map((pkg) => (
                           <SelectItem key={pkg.id} value={pkg.id} className="py-3 px-4 rounded-xl mb-1 cursor-pointer hover:bg-muted/50 transition-colors">
@@ -386,7 +386,7 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                         ) : undefined}
                       </SelectValue>
                     </SelectTrigger>
-                    <SelectContent alignItemWithTrigger={false} className="min-w-[320px] p-2">
+                    <SelectContent alignItemWithTrigger={false} align="start" className="min-w-[320px] p-2">
                       {transferPackages.length > 0 ? (
                         transferPackages.map((pkg) => (
                           <SelectItem key={pkg.id} value={pkg.id} className="py-3 px-4 rounded-xl mb-1 cursor-pointer hover:bg-muted/50 transition-colors">
@@ -426,7 +426,7 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                         ) : undefined}
                       </SelectValue>
                     </SelectTrigger>
-                    <SelectContent alignItemWithTrigger={false} className="min-w-[320px] p-2">
+                    <SelectContent alignItemWithTrigger={false} align="start" className="min-w-[320px] p-2">
                       {cabRoutes.filter(r => r.packageId === selectedPackageId).length > 0 ? (
                         cabRoutes.filter(r => r.packageId === selectedPackageId).map((route) => (
                           <SelectItem key={route.id} value={route.id} className="py-3 px-4 rounded-xl mb-1 cursor-pointer hover:bg-muted/50 transition-colors">
