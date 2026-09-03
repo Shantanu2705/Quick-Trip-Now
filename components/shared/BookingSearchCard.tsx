@@ -45,21 +45,29 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
   useEffect(() => {
     async function loadData() {
       try {
-        const [dests, vechs, routes, pkgs, tpkgs] = await Promise.all([
-          getDestinations(),
-          getVehicles(),
-          getCabRoutes(),
-          getPackages(),
-          getTransferPackages()
-        ]);
+        const dests = await getDestinations().catch(e => { console.error("Destinations error", e); return []; });
         setDestinations(dests);
+      } catch (err) {}
+      
+      try {
+        const vechs = await getVehicles().catch(e => { console.error("Vehicles error", e); return []; });
         setVehicles(vechs);
+      } catch (err) {}
+
+      try {
+        const routes = await getCabRoutes().catch(e => { console.error("CabRoutes error", e); return []; });
         setCabRoutes(routes);
+      } catch (err) {}
+
+      try {
+        const pkgs = await getPackages().catch(e => { console.error("Packages error", e); return []; });
         setPackages(pkgs);
+      } catch (err) {}
+
+      try {
+        const tpkgs = await getTransferPackages().catch(e => { console.error("TransferPackages error", e); return []; });
         setTransferPackages(tpkgs);
-      } catch (err) {
-        console.error("Failed to load options", err);
-      }
+      } catch (err) {}
     }
     loadData();
   }, []);
