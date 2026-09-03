@@ -181,7 +181,9 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                       {destinations.map(d => (
                         <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
                       ))}
-                      {destinations.length === 0 && <SelectItem value="loading" disabled>Loading...</SelectItem>}
+                      {destinations.length === 0 && (
+                        <div className="py-2 px-2 text-sm text-muted-foreground text-center">Loading...</div>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -233,9 +235,9 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                           </SelectItem>
                         ))
                       ) : (
-                        <SelectItem value="none" disabled className="py-3 px-4">
+                        <div className="py-3 px-4 text-center">
                           <span className="text-muted-foreground text-sm">No packages found for this destination.</span>
-                        </SelectItem>
+                        </div>
                       )}
                     </SelectContent>
                   </Select>
@@ -395,9 +397,9 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                           </SelectItem>
                         ))
                       ) : (
-                        <SelectItem value="loading" disabled className="py-3 px-4">
+                        <div className="py-3 px-4 text-center">
                           <span className="text-muted-foreground text-sm">Loading packages...</span>
-                        </SelectItem>
+                        </div>
                       )}
                     </SelectContent>
                   </Select>
@@ -435,9 +437,9 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                           </SelectItem>
                         ))
                       ) : (
-                        <SelectItem value="none" disabled className="py-3 px-4">
+                        <div className="py-3 px-4 text-center">
                           <span className="text-muted-foreground text-sm">No transfers found for this package.</span>
-                        </SelectItem>
+                        </div>
                       )}
                     </SelectContent>
                   </Select>
