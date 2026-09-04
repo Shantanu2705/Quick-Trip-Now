@@ -203,13 +203,13 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                           <div>
                             <h4 className="font-bold text-emerald-700 uppercase tracking-wider mb-3">Inclusions</h4>
                             <ul className="list-disc pl-4 text-slate-600 space-y-1.5 leading-relaxed">
-                              {booking.inclusions.filter((i: any) => String(i.included) === "true").map((item: any, idx: number) => {
-                                if (item.text.includes('•')) {
-                                  return item.text.split('•').map((p: string) => p.trim()).filter(Boolean).map((p: string, i: number) => (
+                              {Array.from(new Set(booking.inclusions.filter((i: any) => String(i.included) === "true").map((item: any) => item.text))).map((text: any, idx: number) => {
+                                if (text.includes('•')) {
+                                  return text.split('•').map((p: string) => p.trim()).filter(Boolean).map((p: string, i: number) => (
                                     <li key={`${idx}-${i}`}>{p}</li>
                                   ));
                                 }
-                                return <li key={idx}>{item.text}</li>;
+                                return <li key={idx}>{text}</li>;
                               })}
                             </ul>
                           </div>
@@ -218,13 +218,13 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                           <div>
                             <h4 className="font-bold text-red-700 uppercase tracking-wider mb-3">Exclusions</h4>
                             <ul className="list-disc pl-4 text-slate-600 space-y-1.5 leading-relaxed">
-                              {booking.inclusions.filter((i: any) => String(i.included) === "false").map((item: any, idx: number) => {
-                                if (item.text.includes('•')) {
-                                  return item.text.split('•').map((p: string) => p.trim()).filter(Boolean).map((p: string, i: number) => (
+                              {Array.from(new Set(booking.inclusions.filter((i: any) => String(i.included) === "false").map((item: any) => item.text))).map((text: any, idx: number) => {
+                                if (text.includes('•')) {
+                                  return text.split('•').map((p: string) => p.trim()).filter(Boolean).map((p: string, i: number) => (
                                     <li key={`${idx}-${i}`}>{p}</li>
                                   ));
                                 }
-                                return <li key={idx}>{item.text}</li>;
+                                return <li key={idx}>{text}</li>;
                               })}
                             </ul>
                           </div>

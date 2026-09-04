@@ -161,8 +161,8 @@ export function VehicleBookingWizard({
       infantsCount: localInfants,
       travelers,
       couponCode: appliedCoupon?.code,
-      terms: cabRouteData?.terms || selectedVehicle?.termsAndConditions || selectedVehicle?.terms || "",
-      inclusions: cabRouteData?.inclusions || selectedVehicle?.inclusions || []
+      terms: [cabRouteData?.terms, selectedVehicle?.termsAndConditions || selectedVehicle?.terms].filter(Boolean).join('\n\n---\n\nVehicle Terms:\n'),
+      inclusions: [...(cabRouteData?.inclusions || []), ...(selectedVehicle?.inclusions || [])]
     };
 
     // Save to Firestore
