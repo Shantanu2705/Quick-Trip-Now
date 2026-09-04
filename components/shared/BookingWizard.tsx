@@ -163,7 +163,7 @@ export function BookingWizard({
     setPaymentStatus("success");
     
     const bookingData = {
-      userId: userData?.uid || "guest",
+      userId: user?.uid || "guest",
       customerName: travelers[0].fullName,
       email: travelers[0].email,
       phone: travelers[0].phone,

@@ -139,7 +139,7 @@ export function VehicleBookingWizard({
     
     const leadTraveler = travelers[0];
     const bookingData = {
-      userId: userData?.uid || "guest",
+      userId: user?.uid || "guest",
       customerName: leadTraveler.fullName,
       email: leadTraveler.email,
       phone: leadTraveler.phone,
