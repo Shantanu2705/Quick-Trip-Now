@@ -277,7 +277,7 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                     <p>2. Subject to standard cancellation policies.</p>
                     <p>3. This is a computer generated invoice and does not require a physical signature.</p>
                   </div>
-                  <div className="text-center w-1/3 space-y-2">
+                  <div className="text-center w-1/3 space-y-2 translate-y-6">
                     <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Powered and Managed By:</p>
                     <img src="/images/swastik-logo.png" alt="Swastik Tripline" className="h-12 mx-auto grayscale opacity-80" />
                   </div>
