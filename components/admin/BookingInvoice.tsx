@@ -82,6 +82,7 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                       <p>West Bengal, India, Pin: 734017.</p>
                       <p className="text-primary font-medium mt-1">quicktripnow1@gmail.com | +91 7047399677</p>
                       <p className="text-xs mt-1 font-bold text-slate-600">GSTIN: 19DHGPR6231C1ZB</p>
+                      <p className="text-xs mt-0.5 font-bold text-slate-600">Place of Supply: 19-WEST BENGAL</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -139,14 +140,15 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                             </>
                           ) : (
                             <>
-                              {booking.vehicleName || booking.packageType || booking.packageName || "Custom Travel Package"}
+                              <span className="block">{booking.vehicleName || booking.packageType || booking.packageName || "Custom Travel Package"}</span>
                               {booking.vehicleName && <span className="block text-xs text-slate-500 mt-1 font-normal">Vehicle Booking (x{booking.vehicleQty || 1})</span>}
                             </>
                           )}
+                          <span className="block text-xs text-slate-500 mt-1 font-normal">SAC: 998552</span>
                         </td>
                         <td className="py-4 px-4 text-slate-600">{booking.date || booking.travelDate || "N/A"}</td>
                         <td className="py-4 px-4 text-slate-600">{booking.travelers?.length || 1} Person(s)</td>
-                        <td className="py-4 px-4 text-right font-bold text-slate-800">₹{booking.amount?.toLocaleString("en-IN") || 0}</td>
+                        <td className="py-4 px-4 text-right font-bold text-slate-800">₹{booking.amount?.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) || 0}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -155,42 +157,55 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                 {/* Summary & Totals */}
                 <div className="flex justify-end avoid-break">
                   <div className="w-2/3 bg-slate-50 p-6 rounded-lg border border-slate-200 space-y-3">
-                    <div className="flex justify-between text-sm text-slate-600">
-                      <span>Base Fare</span>
-                      <span>₹{((booking.amount || 0) - (booking.gstAmount || 0)).toLocaleString("en-IN")}</span>
-                    </div>
-                    {(booking.gstAmount || 0) > 0 ? (
-                      <>
-                        <div className="flex justify-between text-sm text-slate-600">
-                          <span>CGST ({(booking.gstPercentage || 0) / 2}%)</span>
-                          <span>₹{((booking.gstAmount || 0) / 2).toLocaleString("en-IN")}</span>
-                        </div>
-                        <div className="flex justify-between text-sm text-slate-600">
-                          <span>SGST ({(booking.gstPercentage || 0) / 2}%)</span>
-                          <span>₹{((booking.gstAmount || 0) / 2).toLocaleString("en-IN")}</span>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="flex justify-between text-sm text-slate-600">
-                        <span>Tax / Fees</span>
-                        <span>₹0</span>
-                      </div>
-                    )}
+                    {(() => {
+                      const baseFare = (booking.baseAmount || ((booking.amount || 0) - (booking.gstAmount || 0)));
+                      const gstPercent = booking.gstPercentage || 0;
+                      
+                      // For past bookings where gstAmount was rounded to 0, display the calculated amount
+                      // so the UI doesn't just show ₹0
+                      const displayGst = booking.gstAmount || (baseFare * gstPercent) / 100;
+
+                      return (
+                        <>
+                          <div className="flex justify-between text-sm text-slate-600">
+                            <span>Base Fare</span>
+                            <span>₹{baseFare.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
+                          </div>
+                          {gstPercent > 0 ? (
+                            <>
+                              <div className="flex justify-between text-sm text-slate-600">
+                                <span>CGST ({gstPercent / 2}%)</span>
+                                <span>₹{(displayGst / 2).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
+                              </div>
+                              <div className="flex justify-between text-sm text-slate-600">
+                                <span>SGST ({gstPercent / 2}%)</span>
+                                <span>₹{(displayGst / 2).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="flex justify-between text-sm text-slate-600">
+                              <span>Tax / Fees</span>
+                              <span>₹0</span>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                     <div className="border-t border-slate-200 pt-3 flex flex-col gap-2">
                       <div className="flex justify-between items-center">
                         <span className="font-bold text-slate-800 uppercase tracking-wider">Total Amount</span>
-                        <span className="text-xl font-bold text-emerald-600">₹{booking.amount?.toLocaleString("en-IN") || 0}</span>
+                        <span className="text-xl font-bold text-emerald-600">₹{booking.amount?.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) || 0}</span>
                       </div>
                       {booking.paymentType === 'part' && (
                         <>
                           <div className="flex justify-between items-center text-sm">
                             <span className="font-bold text-slate-600 uppercase tracking-wider">Amount Paid</span>
-                            <span className="font-bold text-emerald-600">₹{booking.paidAmount?.toLocaleString("en-IN") || 0}</span>
+                            <span className="font-bold text-emerald-600">₹{booking.paidAmount?.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) || 0}</span>
                           </div>
                           {booking.pendingAmount > 0 && (
                             <div className="flex justify-between items-center text-sm">
                               <span className="font-bold text-slate-600 uppercase tracking-wider">Pending Balance</span>
-                              <span className="font-bold text-red-600">₹{booking.pendingAmount?.toLocaleString("en-IN") || 0}</span>
+                              <span className="font-bold text-red-600">₹{booking.pendingAmount?.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) || 0}</span>
                             </div>
                           )}
                         </>
@@ -256,13 +271,17 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
 
                 {/* Footer / Signature Block */}
                 <div className="relative z-10 pt-8 border-t-2 border-slate-200 flex justify-between items-end bg-white mt-12 avoid-break">
-                  <div className="text-xs text-slate-500 space-y-1 w-1/2">
+                  <div className="text-xs text-slate-500 space-y-1 w-1/3">
                     <p className="font-bold text-slate-700">Terms & Conditions:</p>
                     <p>1. Please retain this invoice for your records.</p>
                     <p>2. Subject to standard cancellation policies.</p>
                     <p>3. This is a computer generated invoice and does not require a physical signature.</p>
                   </div>
-                  <div className="text-center w-64 space-y-4">
+                  <div className="text-center w-1/3 space-y-2">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Powered and Managed By:</p>
+                    <img src="/images/swastik-logo.png" alt="Swastik Tripline" className="h-12 mx-auto grayscale opacity-80" />
+                  </div>
+                  <div className="text-center w-1/3 space-y-4">
                     <div className="h-16 border-b border-slate-400 flex items-center justify-center relative">
                       <div className="absolute opacity-20 rotate-[-15deg] font-heading font-black text-4xl text-emerald-600 border-4 border-emerald-600 p-2 rounded inline-block">
                         APPROVED
