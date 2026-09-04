@@ -19,15 +19,15 @@ export async function POST(req: NextRequest) {
     
     const bookingId = await adminDb.runTransaction(async (transaction: Transaction) => {
       const counterDoc = await transaction.get(counterRef as any) as any;
-      let newCount = 1;
+      let newCount = 10001;
       
       if (counterDoc.exists) {
-        newCount = (counterDoc.data()?.count || 0) + 1;
+        newCount = Math.max(10001, (counterDoc.data()?.count || 0) + 1);
       }
       
       transaction.set(counterRef, { count: newCount }, { merge: true });
       
-      const generatedId = `QUICKTRIP${newCount}`;
+      const generatedId = `QTN-${newCount}`;
       const bookingRef = adminDb.collection("bookings").doc(generatedId);
       
       transaction.set(bookingRef, {
