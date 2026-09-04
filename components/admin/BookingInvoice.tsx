@@ -127,8 +127,22 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                     <tbody>
                       <tr className="border-b border-slate-200">
                         <td className="py-4 px-4 font-medium text-slate-800">
-                          {booking.vehicleName || booking.packageType || booking.packageName || "Custom Travel Package"}
-                          {booking.vehicleName && <span className="block text-xs text-slate-500 mt-1 font-normal">Vehicle Booking (x{booking.vehicleQty || 1})</span>}
+                          {booking.type === 'tour' || booking.type === 'package' ? (
+                            <>
+                              <span className="block">{booking.packageName || booking.packageType || "Custom Travel Package"}</span>
+                              {booking.vehicleName && <span className="block text-xs text-slate-500 mt-1 font-normal">Vehicle: {booking.vehicleName} (x{booking.vehicleQty || 1})</span>}
+                            </>
+                          ) : booking.type === 'vehicle' || booking.type === 'cab' ? (
+                            <>
+                              <span className="block">Private Transfer: {booking.pickup || "Route"} to {booking.dropoff || "Destination"}</span>
+                              {booking.vehicleName && <span className="block text-xs text-slate-500 mt-1 font-normal">Vehicle: {booking.vehicleName} (x{booking.vehicleQty || 1})</span>}
+                            </>
+                          ) : (
+                            <>
+                              {booking.vehicleName || booking.packageType || booking.packageName || "Custom Travel Package"}
+                              {booking.vehicleName && <span className="block text-xs text-slate-500 mt-1 font-normal">Vehicle Booking (x{booking.vehicleQty || 1})</span>}
+                            </>
+                          )}
                         </td>
                         <td className="py-4 px-4 text-slate-600">{booking.date || booking.travelDate || "N/A"}</td>
                         <td className="py-4 px-4 text-slate-600">{booking.travelers?.length || 1} Person(s)</td>

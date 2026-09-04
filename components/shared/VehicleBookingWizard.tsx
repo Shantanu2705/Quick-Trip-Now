@@ -842,8 +842,10 @@ export function VehicleBookingWizard({
 
                    {/* Hidden Invoice for Printing */}
                    {confirmedBooking && (
-                     <div className="hidden" ref={printRef}>
-                       <BookingInvoice booking={confirmedBooking} />
+                     <div className="hidden">
+                       <div ref={printRef}>
+                         <BookingInvoice booking={confirmedBooking} />
+                       </div>
                      </div>
                    )}
                 </motion.div>
