@@ -584,7 +584,7 @@ export function BookingWizard({
 
                   <div className="flex justify-between items-center pb-4 border-b border-border/50">
                     <span className="text-muted-foreground">GST ({gstPercent}%)</span>
-                    <span className="font-semibold text-right">₹{Math.round(gstAmount).toLocaleString("en-IN")}</span>
+                    <span className="font-semibold text-right">₹{Number(gstAmount.toFixed(2)).toLocaleString("en-IN")}</span>
                   </div>
 
                   {userData && (

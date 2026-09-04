@@ -35,7 +35,7 @@ export function PackagePriceDisplay({
           )}
           <span className="text-xl font-bold">₹{displayPrice}</span>
           {gstPercentage > 0 && (
-            <span className="text-xs font-medium text-muted-foreground/60 mt-0.5">+ ₹{Math.round(gstAmount)} GST</span>
+            <span className="text-xs font-medium text-muted-foreground/60 mt-0.5">+ ₹{Number(gstAmount.toFixed(2))} GST</span>
           )}
         </div>
       </div>
@@ -52,7 +52,7 @@ export function PackagePriceDisplay({
         <div className="flex flex-col">
           <span className="text-4xl font-heading font-bold text-primary">₹{displayPrice}</span>
           {gstPercentage > 0 && (
-            <span className="text-sm font-medium text-muted-foreground/60 mt-0.5">+ ₹{Math.round(gstAmount)} GST</span>
+            <span className="text-sm font-medium text-muted-foreground/60 mt-0.5">+ ₹{Number(gstAmount.toFixed(2))} GST</span>
           )}
         </div>
       </div>

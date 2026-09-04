@@ -574,7 +574,7 @@ export function VehicleBookingWizard({
                                 <span className="font-bold text-xl text-primary">₹{v.price * qtyRequired}</span>
                                 {cabRouteData?.gstPercentage || v.gstPercentage ? (
                                   <span className="text-xs font-medium text-muted-foreground/60 mb-0.5 mt-[-2px]">
-                                    + ₹{Math.round((v.price * qtyRequired) * (cabRouteData?.gstPercentage || v.gstPercentage) / 100)} GST
+                                    + ₹{Number(((v.price * qtyRequired) * (cabRouteData?.gstPercentage || v.gstPercentage) / 100).toFixed(2))} GST
                                   </span>
                                 ) : null}
                                 <div className="text-xs text-muted-foreground">Total Fare (x{qtyRequired})</div>
@@ -724,7 +724,7 @@ export function VehicleBookingWizard({
                     </div>
                     <div className="flex justify-between items-center pb-4 border-b border-border/50">
                       <span className="text-muted-foreground">GST ({gstPercent}%)</span>
-                      <span className="font-semibold text-right">₹{Math.round(gstAmount).toLocaleString("en-IN")}</span>
+                      <span className="font-semibold text-right">₹{Number(gstAmount.toFixed(2)).toLocaleString("en-IN")}</span>
                     </div>
 
                     {userData && (
