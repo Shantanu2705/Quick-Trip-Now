@@ -16,13 +16,16 @@ async function userBookingsHandler(req: AuthenticatedRequest) {
     // Fetch bookings for this specific user
     const snapshot = await adminDb.collection('bookings')
       .where('userId', '==', userId)
-      .orderBy('createdAt', 'desc')
       .get();
       
     const bookings = snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data()
-    }));
+    })).sort((a: any, b: any) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
 
     return NextResponse.json({
       success: true,
