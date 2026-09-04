@@ -65,10 +65,6 @@ export function PackageBookingClient({
           hasValidSeason = false;
         }
       }
-        if (validPriceObj) {
-          currentPrice = validPriceObj.price;
-        }
-      }
 
       const calculateCars = () => {
         let cars = 0;
