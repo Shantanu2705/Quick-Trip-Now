@@ -59,6 +59,8 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
         });
       }
       
+      packageData.gstPercentage = packageData.gstPercentage || (settings?.taxRate || 0);
+      
       availableVehicles = allVehicles;
     } catch (error) {
       console.error("Error fetching package data:", error);
@@ -102,6 +104,8 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
           return updatedV;
         });
       }
+      
+      cabRouteData.gstPercentage = cabRouteData.gstPercentage || (settings?.taxRate || 0);
 
       availableVehicles = allVehicles;
     } catch (error) {
@@ -114,22 +118,24 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
 
   // Apply seasonal pricing overrides based on selectedDate
   if (parsedDate && availableVehicles.length > 0) {
-    const selectedTime = parsedDate.getTime();
     availableVehicles = availableVehicles.map(v => {
+      let hasValidSeason = true;
       if (v.seasonalPrices && v.seasonalPrices.length > 0) {
         const activeSeason = v.seasonalPrices.find((sp: any) => {
           // Normalize dates to ignore time of day for exact matching
           const start = new Date(sp.startDate).setHours(0,0,0,0);
           const end = new Date(sp.endDate).setHours(23,59,59,999);
-          const current = new Date(parsedDate).setHours(12,0,0,0); // Use middle of day to avoid timezone edge cases
+          const current = new Date(parsedDate!).setHours(12,0,0,0); // Use middle of day to avoid timezone edge cases
           return current >= start && current <= end;
         });
         if (activeSeason) {
-          return { ...v, price: activeSeason.price, pricePerDay: activeSeason.price };
+          return { ...v, price: activeSeason.price, pricePerDay: activeSeason.price, hasValidSeason: true };
+        } else {
+          return { ...v, hasValidSeason: false };
         }
       }
-      return v;
-    });
+      return { ...v, hasValidSeason: true };
+    }).filter(v => v.hasValidSeason);
   }
 
   return (

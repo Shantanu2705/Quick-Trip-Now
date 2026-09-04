@@ -55,9 +55,16 @@ export function PackageBookingClient({
 
     return availableVehicles.map(v => {
       let currentPrice = v.price || 0;
-      if (date && v.seasonalPrices) {
+      let hasValidSeason = true;
+      if (date && v.seasonalPrices && v.seasonalPrices.length > 0) {
         const dateStr = format(date, "yyyy-MM-dd");
         const validPriceObj = v.seasonalPrices.find((sp: any) => dateStr >= sp.startDate && dateStr <= sp.endDate);
+        if (validPriceObj) {
+          currentPrice = validPriceObj.price;
+        } else {
+          hasValidSeason = false;
+        }
+      }
         if (validPriceObj) {
           currentPrice = validPriceObj.price;
         }
@@ -93,8 +100,8 @@ export function PackageBookingClient({
       };
 
       const qtyRequired = calculateCars();
-      return { ...v, qtyRequired, currentPrice };
-    });
+      return { ...v, qtyRequired, currentPrice, hasValidSeason };
+    }).filter(v => v.hasValidSeason);
   }, [vehicles, adults, children, infants, date]);
 
   const selectedVehicle = processedVehicles.find(v => v.id === selectedVehicleId);
