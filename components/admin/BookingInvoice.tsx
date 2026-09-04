@@ -77,7 +77,7 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                   <div>
                     <Logo variant="bare" className="h-14 w-56 mb-4 origin-left" />
                     <div className="text-slate-500 text-sm mt-4 leading-relaxed">
-                      <p className="font-bold text-slate-700">QuickTripNow Travel Services</p>
+                      <p className="font-bold text-slate-700">Quick Trip Now</p>
                       <p>Bagdogra, Bhujiyapani, Darjeeling,</p>
                       <p>West Bengal, India, Pin: 734017.</p>
                       <p className="text-primary font-medium mt-1">quicktripnow1@gmail.com | +91 7047399677</p>
