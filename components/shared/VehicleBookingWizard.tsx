@@ -103,11 +103,11 @@ export function VehicleBookingWizard({
   
   const gstPercent = cabRouteData?.gstPercentage || selectedVehicle?.gstPercentage || 0;
   const gstAmount = (priceAfterCoupon * gstPercent) / 100;
-  const finalPrice = Math.round(priceAfterCoupon + gstAmount);
+  const finalPrice = priceAfterCoupon + gstAmount;
 
   const currentVehiclePartPayment = (selectedVehicle && cabRouteData?.vehiclePartPayments?.[selectedVehicle.id]) || { enabled: false, percentage: 50 };
   const amountToPay = paymentSelection === "part" && currentVehiclePartPayment.enabled
-    ? Math.round((finalPrice * (currentVehiclePartPayment.percentage || 50)) / 100)
+    ? (finalPrice * (currentVehiclePartPayment.percentage || 50)) / 100
     : finalPrice;
 
   const applyCoupon = async () => {
@@ -154,7 +154,7 @@ export function VehicleBookingWizard({
       paymentType: paymentSelection,
       baseAmount: baseFare,
       gstPercentage: gstPercent,
-      gstAmount: Math.round(gstAmount),
+      gstAmount: Number(gstAmount.toFixed(2)),
       type: 'vehicle',
       adultsCount: localAdults,
       childrenCount: localChildren,
@@ -778,7 +778,7 @@ export function VehicleBookingWizard({
 
                     <div className="flex justify-between items-center pt-2">
                       <span className="text-lg font-bold text-foreground">Total Amount</span>
-                      <span className="text-2xl font-bold text-primary">₹{finalPrice.toLocaleString("en-IN")}</span>
+                      <span className="text-2xl font-bold text-primary">₹{Number(finalPrice.toFixed(2)).toLocaleString("en-IN")}</span>
                     </div>
 
                     {currentVehiclePartPayment.enabled && (
@@ -789,14 +789,14 @@ export function VehicleBookingWizard({
                             <input type="radio" name="paymentOption" checked={paymentSelection === "full"} onChange={() => setPaymentSelection("full")} className="w-4 h-4 text-primary" />
                             <div className="flex flex-col">
                               <span className="font-semibold text-sm">Pay Full Amount</span>
-                              <span className="text-xs text-muted-foreground">₹{finalPrice.toLocaleString("en-IN")}</span>
+                              <span className="text-xs text-muted-foreground">₹{Number(finalPrice.toFixed(2)).toLocaleString("en-IN")}</span>
                             </div>
                           </label>
                           <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${paymentSelection === "part" ? "bg-primary/5 border-primary text-primary" : "bg-background border-border"}`}>
                             <input type="radio" name="paymentOption" checked={paymentSelection === "part"} onChange={() => setPaymentSelection("part")} className="w-4 h-4 text-primary" />
                             <div className="flex flex-col">
                               <span className="font-semibold text-sm">Pay Part Amount ({currentVehiclePartPayment.percentage}%)</span>
-                              <span className="text-xs text-muted-foreground">₹{Math.round((finalPrice * (currentVehiclePartPayment.percentage || 50)) / 100).toLocaleString("en-IN")}</span>
+                              <span className="text-xs text-muted-foreground">₹{Number(((finalPrice * (currentVehiclePartPayment.percentage || 50)) / 100).toFixed(2)).toLocaleString("en-IN")}</span>
                             </div>
                           </label>
                         </div>
@@ -873,7 +873,7 @@ export function VehicleBookingWizard({
             disabled={paymentStatus !== "idle" || (currentStep === 0 && !selectedVehicle)}
             className="rounded-xl px-8 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all"
           >
-            {paymentStatus === "verifying" ? "Processing..." : (currentStep === STEPS.length - 1 ? (!userData ? "Login to Pay" : `Pay ₹${amountToPay.toLocaleString("en-IN")}`) : "Continue")} 
+            {paymentStatus === "verifying" ? "Processing..." : (currentStep === STEPS.length - 1 ? (!userData ? "Login to Pay" : `Pay ₹${Number(amountToPay.toFixed(2)).toLocaleString("en-IN")}`) : "Continue")} 
             {paymentStatus === "idle" && <ChevronRight className="w-4 h-4 ml-2" />}
           </Button>
         </div>

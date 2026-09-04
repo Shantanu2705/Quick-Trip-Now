@@ -23,7 +23,6 @@ export function PackagePriceDisplay({
   const finalPrice = basePrice * discountMultiplier;
   const displayPrice = finalPrice * multiplier;
   const gstAmount = (displayPrice * gstPercentage) / 100;
-  const totalPriceWithGst = Math.round(displayPrice + gstAmount);
 
   if (isTotal) {
     return (
