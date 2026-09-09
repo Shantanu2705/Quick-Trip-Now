@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarDays, Package, MapPin, Car, FileText, User, Download } from "lucide-react";
 import { format } from "date-fns";
-import { useReactToPrint } from "react-to-print";
+
 import { BookingInvoice } from "@/components/admin/BookingInvoice";
 
 export default function UserBookingsPage() {
@@ -17,25 +17,39 @@ export default function UserBookingsPage() {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: printingBooking ? `Booking_${printingBooking.id}` : "Booking_Invoice",
-    onAfterPrint: () => {
-      setGeneratingPdf(false);
-      setTimeout(() => setPrintingBooking(null), 100);
-    },
-    onPrintError: () => {
-      setGeneratingPdf(false);
-      setTimeout(() => setPrintingBooking(null), 100);
-    },
-  });
-
-  const handleDownloadPdf = (booking: any) => {
+  const handleDownloadPdf = async (booking: any) => {
     setPrintingBooking(booking);
     setGeneratingPdf(true);
-    setTimeout(() => {
-      if (handlePrint) handlePrint();
-    }, 150);
+    
+    // Allow React state to update and render the component
+    setTimeout(async () => {
+      if (!printRef.current) {
+        setGeneratingPdf(false);
+        setPrintingBooking(null);
+        return;
+      }
+      
+      try {
+        const html2canvas = (await import('html2canvas')).default;
+        const jsPDF = (await import('jspdf')).default;
+        
+        const element = printRef.current;
+        const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false });
+        
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`Booking_${booking.id}.pdf`);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setGeneratingPdf(false);
+        setPrintingBooking(null);
+      }
+    }, 300);
   };
 
   useEffect(() => {
@@ -282,7 +296,7 @@ export default function UserBookingsPage() {
 
       {/* Hidden Invoice Template for PDF Generation */}
       {printingBooking && (
-        <div className="hidden">
+        <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
           <div ref={printRef}>
             <BookingInvoice booking={printingBooking} id="booking-invoice-pdf" />
           </div>

@@ -8,7 +8,7 @@ import { BookingInvoice } from "@/components/admin/BookingInvoice";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
-import { useReactToPrint } from 'react-to-print';
+import * as XLSX from 'xlsx';
 
 export default function AdminBookingsPage() {
   const { user } = useAuth();
@@ -21,20 +21,57 @@ export default function AdminBookingsPage() {
 
   const printRef = useRef<HTMLDivElement>(null);
 
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: selectedBooking ? `Booking_${selectedBooking.id}` : "Booking_Invoice",
-    onAfterPrint: () => setGeneratingPdf(false),
-    onPrintError: () => setGeneratingPdf(false),
-  });
-
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
+    if (!printRef.current || !selectedBooking) return;
     setGeneratingPdf(true);
-    if (handlePrint) {
-      handlePrint();
-    } else {
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const jsPDF = (await import('jspdf')).default;
+      
+      const element = printRef.current;
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Booking_${selectedBooking.id}.pdf`);
+    } catch (err) {
+      console.error(err);
+    } finally {
       setGeneratingPdf(false);
     }
+  };
+
+  const handleExportExcel = () => {
+    const data = bookings.map(b => {
+      const baseFare = (b.baseAmount || ((b.amount || 0) - (b.gstAmount || 0)));
+      const gstPercent = b.gstPercentage || 0;
+      const displayGst = b.gstAmount || (baseFare * gstPercent) / 100;
+      return {
+        "Bill no": b.id,
+        "date": b.createdAt ? new Date(b.createdAt).toLocaleDateString() : b.date || "N/A",
+        "Gst no": "19DHGPR6231C1ZB",
+        "Traveller name": b.customerName || b.fullName || b.travelers?.[0]?.fullName || "Valued Customer",
+        "Taxable value": baseFare,
+        "Gst rate": gstPercent,
+        "Gst": displayGst,
+        "Invoice value": b.amount || 0
+      };
+    });
+    
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Bookings");
+    XLSX.writeFile(wb, "bookings.xlsx");
+  };
+
+  const getTravelersCount = (b: any) => {
+    return b.travelers?.length > 1 
+      ? b.travelers.length 
+      : ((b.adultsCount || 0) + (b.childrenCount || 0) + (b.infantsCount || 0)) || 1;
   };
 
   const fetchBookings = async () => {
@@ -110,6 +147,9 @@ export default function AdminBookingsPage() {
           <p className="text-muted-foreground">Search and manage all customer and agent bookings using their Unique ID.</p>
         </div>
         <div className="flex items-center gap-3">
+          <button onClick={handleExportExcel} className="p-2 bg-primary text-primary-foreground rounded-full hover:bg-primary/80 transition-all shadow-sm flex items-center justify-center" title="Export Excel">
+            <Download className="w-5 h-5" />
+          </button>
           <button onClick={fetchBookings} className="p-2 bg-secondary text-secondary-foreground rounded-full hover:bg-secondary/80 transition-all shadow-sm">
             <RefreshCw className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
           </button>
@@ -361,7 +401,7 @@ export default function AdminBookingsPage() {
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground mt-2 px-1">
-                    Total Party Size: <span className="font-semibold text-foreground">{selectedBooking.travelers?.length || 1} Person(s)</span>
+                    Total Party Size: <span className="font-semibold text-foreground">{getTravelersCount(selectedBooking)} Person(s)</span>
                   </div>
                 </div>
 
@@ -382,7 +422,7 @@ export default function AdminBookingsPage() {
       
       {/* Hidden Invoice Template for PDF Generation */}
       {selectedBooking && (
-        <div className="hidden">
+        <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
           <div ref={printRef}>
             <BookingInvoice booking={selectedBooking} id="booking-invoice-pdf" />
           </div>

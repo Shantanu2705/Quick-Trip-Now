@@ -147,7 +147,12 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                           <span className="block text-xs text-slate-500 mt-1 font-normal">SAC: 998552</span>
                         </td>
                         <td className="py-4 px-4 text-slate-600">{booking.date || booking.travelDate || "N/A"}</td>
-                        <td className="py-4 px-4 text-slate-600">{booking.travelers?.length || 1} Person(s)</td>
+                        <td className="py-4 px-4 text-slate-600">
+                          {booking.travelers?.length > 1 
+                            ? booking.travelers.length 
+                            : ((booking.adultsCount || 0) + (booking.childrenCount || 0) + (booking.infantsCount || 0)) || 1
+                          } Person(s)
+                        </td>
                         <td className="py-4 px-4 text-right font-bold text-slate-800">₹{booking.amount?.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) || 0}</td>
                       </tr>
                     </tbody>
