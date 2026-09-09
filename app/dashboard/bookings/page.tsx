@@ -30,18 +30,19 @@ export default function UserBookingsPage() {
       }
       
       try {
-        const html2pdf = (await import('html2pdf.js')).default;
+        const html2canvas = (await import('html2canvas')).default;
+        const { jsPDF } = await import('jspdf');
         
         const element = printRef.current;
-        const opt: any = {
-          margin:       0,
-          filename:     `Booking_${booking.id}.pdf`,
-          image:        { type: 'jpeg', quality: 0.98 },
-          html2canvas:  { scale: 2, useCORS: true, logging: false },
-          jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-        };
+        const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false });
         
-        await html2pdf().set(opt).from(element).save();
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`Booking_${booking.id}.pdf`);
       } catch (err) {
         console.error("PDF generation error:", err);
         alert("Failed to generate PDF. Please try again.");
@@ -296,7 +297,7 @@ export default function UserBookingsPage() {
 
       {/* Hidden Invoice Template for PDF Generation */}
       {printingBooking && (
-        <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, zIndex: -9999, pointerEvents: 'none' }}>
           <div ref={printRef} style={{ width: '800px', backgroundColor: 'white' }}>
             <BookingInvoice booking={printingBooking} id="booking-invoice-pdf" />
           </div>
