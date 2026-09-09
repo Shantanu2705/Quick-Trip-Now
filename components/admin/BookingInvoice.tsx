@@ -8,49 +8,49 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
   return (
     <div 
       id={id} 
-      className="bg-white text-slate-800 font-sans relative w-full" 
-      style={{ fontFamily: 'Inter, sans-serif' }}
+      className="bg-white text-slate-800 relative w-full" 
+      style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}
     >
       <style dangerouslySetInnerHTML={{__html: `
         @media print {
           @page {
             size: A4 portrait;
-            margin: 0; /* setting margin to 0 forces the browser to hide URL/Date headers and footers! */
+            margin: 0;
           }
           body {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
             background: white !important;
           }
-          
-          /* Native repeating borders on all pages */
-          .print-border {
-            position: fixed;
-            top: 12mm;
-            bottom: 12mm;
-            left: 12mm;
-            right: 12mm;
-            border: 2px solid #cbd5e1; /* slate-300 */
-            border-radius: 8px;
-            z-index: -10;
-            pointer-events: none;
-          }
-          
-          /* Native repeating watermark on all pages */
-          .print-watermark {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            opacity: 0.05;
-            z-index: -20;
-            pointer-events: none;
-          }
-          
-          .avoid-break {
-            page-break-inside: avoid;
-            break-inside: avoid;
-          }
+        }
+        
+        /* Apply border to the relative container for both print and html-to-image */
+        .print-border {
+          position: absolute;
+          top: 12mm;
+          bottom: 12mm;
+          left: 12mm;
+          right: 12mm;
+          border: 2px solid #cbd5e1; /* slate-300 */
+          border-radius: 8px;
+          z-index: 0;
+          pointer-events: none;
+        }
+        
+        /* Apply watermark to the center of the relative container */
+        .print-watermark {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          opacity: 0.05;
+          z-index: 0;
+          pointer-events: none;
+        }
+        
+        .avoid-break {
+          page-break-inside: avoid;
+          break-inside: avoid;
         }
       `}} />
 
