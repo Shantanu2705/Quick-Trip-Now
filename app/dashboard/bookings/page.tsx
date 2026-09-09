@@ -33,7 +33,7 @@ export default function UserBookingsPage() {
         const html2pdf = (await import('html2pdf.js')).default;
         
         const element = printRef.current;
-        const opt = {
+        const opt: any = {
           margin:       0,
           filename:     `Booking_${booking.id}.pdf`,
           image:        { type: 'jpeg', quality: 0.98 },
