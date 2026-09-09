@@ -31,13 +31,14 @@ export default function UserBookingsPage() {
       
       try {
         const html2canvas = (await import('html2canvas')).default;
-        const jsPDF = (await import('jspdf')).default;
+        const jspdfModule = await import('jspdf');
+        const JsPDF = jspdfModule.default?.jsPDF || jspdfModule.default || jspdfModule.jsPDF;
         
         const element = printRef.current;
         const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false });
         
         const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdf = new (JsPDF as any)('p', 'mm', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
         
@@ -296,8 +297,8 @@ export default function UserBookingsPage() {
 
       {/* Hidden Invoice Template for PDF Generation */}
       {printingBooking && (
-        <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
-          <div ref={printRef}>
+        <div style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', zIndex: -9999, top: 0, left: 0 }}>
+          <div ref={printRef} style={{ width: '800px', backgroundColor: 'white' }}>
             <BookingInvoice booking={printingBooking} id="booking-invoice-pdf" />
           </div>
         </div>
