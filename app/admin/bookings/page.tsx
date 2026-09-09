@@ -9,7 +9,7 @@ import { BookingInvoice } from "@/components/admin/BookingInvoice";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 import * as XLSX from 'xlsx';
-import html2canvas from 'html2canvas';
+import * as htmlToImage from "html-to-image";
 import { jsPDF } from 'jspdf';
 
 export default function AdminBookingsPage() {
@@ -28,12 +28,15 @@ export default function AdminBookingsPage() {
     setGeneratingPdf(true);
     try {
       const element = printRef.current;
-      const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false });
+      if (!element) return;
       
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = await htmlToImage.toPng(element, { pixelRatio: 2, backgroundColor: '#ffffff' });
+      
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      const elementWidth = element.offsetWidth || 800;
+      const elementHeight = element.offsetHeight || 1000;
+      const pdfHeight = (elementHeight * pdfWidth) / elementWidth;
       
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`Booking_${selectedBooking.id}.pdf`);

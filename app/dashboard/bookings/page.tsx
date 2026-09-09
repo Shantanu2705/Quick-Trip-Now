@@ -5,9 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarDays, Package, MapPin, Car, FileText, User, Download } from "lucide-react";
 import { format } from "date-fns";
-
 import { BookingInvoice } from "@/components/admin/BookingInvoice";
-import html2canvas from "html2canvas";
+import * as htmlToImage from "html-to-image";
 import { jsPDF } from "jspdf";
 
 export default function UserBookingsPage() {
@@ -33,12 +32,15 @@ export default function UserBookingsPage() {
       
       try {
         const element = printRef.current;
-        const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false });
+        if (!element) return;
+
+        const imgData = await htmlToImage.toPng(element, { pixelRatio: 2, backgroundColor: '#ffffff' });
         
-        const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        const elementWidth = element.offsetWidth || 800;
+        const elementHeight = element.offsetHeight || 1000;
+        const pdfHeight = (elementHeight * pdfWidth) / elementWidth;
         
         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
         pdf.save(`Booking_${booking.id}.pdf`);
