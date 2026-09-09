@@ -30,22 +30,21 @@ export default function UserBookingsPage() {
       }
       
       try {
-        const html2canvas = (await import('html2canvas')).default;
-        const jspdfModule = (await import('jspdf')) as any;
-        const JsPDF = jspdfModule.default?.jsPDF || jspdfModule.default || jspdfModule.jsPDF;
+        const html2pdf = (await import('html2pdf.js')).default;
         
         const element = printRef.current;
-        const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false });
+        const opt = {
+          margin:       0,
+          filename:     `Booking_${booking.id}.pdf`,
+          image:        { type: 'jpeg', quality: 0.98 },
+          html2canvas:  { scale: 2, useCORS: true, logging: false },
+          jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
         
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new (JsPDF as any)('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`Booking_${booking.id}.pdf`);
+        await html2pdf().set(opt).from(element).save();
       } catch (err) {
-        console.error(err);
+        console.error("PDF generation error:", err);
+        alert("Failed to generate PDF. Please try again.");
       } finally {
         setGeneratingPdf(false);
         setPrintingBooking(null);
@@ -297,7 +296,7 @@ export default function UserBookingsPage() {
 
       {/* Hidden Invoice Template for PDF Generation */}
       {printingBooking && (
-        <div style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', zIndex: -9999, top: 0, left: 0 }}>
+        <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
           <div ref={printRef} style={{ width: '800px', backgroundColor: 'white' }}>
             <BookingInvoice booking={printingBooking} id="booking-invoice-pdf" />
           </div>
