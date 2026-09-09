@@ -36,11 +36,14 @@ export default function UserBookingsPage() {
 
         const imgData = await htmlToImage.toPng(element, { pixelRatio: 2, backgroundColor: '#ffffff' });
         
+        // Get actual image dimensions to prevent aspect ratio distortion
+        const img = new window.Image();
+        img.src = imgData;
+        await new Promise((resolve) => { img.onload = resolve; });
+        
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
-        const elementWidth = element.offsetWidth || 800;
-        const elementHeight = element.offsetHeight || 1000;
-        const pdfHeight = (elementHeight * pdfWidth) / elementWidth;
+        const pdfHeight = (img.height * pdfWidth) / img.width;
         
         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
         pdf.save(`Booking_${booking.id}.pdf`);
