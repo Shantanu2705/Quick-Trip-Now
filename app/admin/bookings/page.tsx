@@ -26,7 +26,7 @@ export default function AdminBookingsPage() {
     setGeneratingPdf(true);
     try {
       const html2canvas = (await import('html2canvas')).default;
-      const jspdfModule = await import('jspdf');
+      const jspdfModule = (await import('jspdf')) as any;
       const JsPDF = jspdfModule.default?.jsPDF || jspdfModule.default || jspdfModule.jsPDF;
       
       const element = printRef.current;
