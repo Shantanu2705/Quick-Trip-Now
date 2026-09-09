@@ -43,9 +43,24 @@ export default function UserBookingsPage() {
         
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (img.height * pdfWidth) / img.width;
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const imgHeightInPdf = (img.height * pdfWidth) / img.width;
         
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        let heightLeft = imgHeightInPdf;
+        let position = 0;
+        
+        // Add first page
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeightInPdf);
+        heightLeft -= pageHeight;
+        
+        // Add subsequent pages if the content overflows A4
+        while (heightLeft > 0) {
+          position -= pageHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeightInPdf);
+          heightLeft -= pageHeight;
+        }
+        
         pdf.save(`Booking_${booking.id}.pdf`);
       } catch (err: any) {
         console.error("PDF generation error:", err);
