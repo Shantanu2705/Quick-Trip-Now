@@ -9,6 +9,8 @@ import { BookingInvoice } from "@/components/admin/BookingInvoice";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 import * as XLSX from 'xlsx';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 export default function AdminBookingsPage() {
   const { user } = useAuth();
@@ -25,9 +27,6 @@ export default function AdminBookingsPage() {
     if (!printRef.current || !selectedBooking) return;
     setGeneratingPdf(true);
     try {
-      const html2canvas = (await import('html2canvas')).default;
-      const { jsPDF } = await import('jspdf');
-      
       const element = printRef.current;
       const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false });
       
@@ -38,9 +37,9 @@ export default function AdminBookingsPage() {
       
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`Booking_${selectedBooking.id}.pdf`);
-    } catch (err) {
+    } catch (err: any) {
       console.error("PDF generation error:", err);
-      alert("Failed to generate PDF. Please try again.");
+      alert(`Failed to generate PDF: ${err?.message || err}. Please try again.`);
     } finally {
       setGeneratingPdf(false);
     }
