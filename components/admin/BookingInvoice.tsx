@@ -266,8 +266,8 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                       </div>
                     )}
                     {booking.terms && (
-                      <div className="mt-8 text-slate-600 whitespace-pre-wrap leading-relaxed text-[11px]">
-                        <h4 className="font-bold text-slate-700 uppercase tracking-wider mb-3 text-xs avoid-break">Specific Terms & Conditions</h4>
+                      <div className="mt-8 text-slate-600 whitespace-pre-wrap leading-relaxed text-[11px] avoid-break">
+                        <h4 className="font-bold text-slate-700 uppercase tracking-wider mb-3 text-xs">Specific Terms & Conditions</h4>
                         {booking.terms}
                       </div>
                     )}

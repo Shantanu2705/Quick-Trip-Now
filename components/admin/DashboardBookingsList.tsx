@@ -4,8 +4,7 @@ import { useState, useRef } from "react";
 import { Eye, Download, Receipt, Users, CalendarDays } from "lucide-react";
 import { BookingInvoice } from "@/components/admin/BookingInvoice";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import * as htmlToImage from "html-to-image";
-import { jsPDF } from 'jspdf';
+import html2pdf from 'html2pdf.js';
 import { useRouter } from "next/navigation";
 
 export function DashboardBookingsList({ bookings }: { bookings: any[] }) {
@@ -22,31 +21,16 @@ export function DashboardBookingsList({ bookings }: { bookings: any[] }) {
       const element = printRef.current;
       if (!element) return;
       
-      const imgData = await htmlToImage.toPng(element, { pixelRatio: 2, backgroundColor: '#ffffff' });
-      
-      const img = new window.Image();
-      img.src = imgData;
-      await new Promise((resolve) => { img.onload = resolve; });
-      
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgHeightInPdf = (img.height * pdfWidth) / img.width;
-      
-      let heightLeft = imgHeightInPdf;
-      let position = 0;
-      
-      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeightInPdf);
-      heightLeft -= pageHeight;
-      
-      while (heightLeft > 0) {
-        position -= pageHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeightInPdf);
-        heightLeft -= pageHeight;
-      }
-      
-      pdf.save(`Booking_${selectedBooking.id}.pdf`);
+      const opt = {
+        margin:       0,
+        filename:     `Booking_${selectedBooking.id}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak:    { mode: ['css', 'legacy'] }
+      };
+
+      await html2pdf().set(opt).from(element).save();
     } catch (err: any) {
       console.error("PDF generation error:", err);
       alert(`Failed to generate PDF: ${err?.message || err}. Please try again.`);
