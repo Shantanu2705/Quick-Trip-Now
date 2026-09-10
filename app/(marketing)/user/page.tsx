@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, MapPin, CreditCard, ChevronRight, CheckCircle2, Navigation, Package, User, Ticket, XCircle } from "lucide-react";
+import { Calendar, MapPin, CreditCard, ChevronRight, CheckCircle2, Navigation, Package, User, Ticket, XCircle, Download } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { format } from "date-fns";
+import { BookingInvoice } from "@/components/admin/BookingInvoice";
+import * as htmlToImage from "html-to-image";
+import { jsPDF } from "jspdf";
 
 export default function UserDashboard() {
   const router = useRouter();
@@ -15,6 +18,62 @@ export default function UserDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [popupCoupon, setPopupCoupon] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [printingBooking, setPrintingBooking] = useState<any>(null);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const handleDownloadPdf = async (booking: any) => {
+    setPrintingBooking(booking);
+    setGeneratingPdf(true);
+    
+    // Allow React state to update and render the component
+    setTimeout(async () => {
+      if (!printRef.current) {
+        setGeneratingPdf(false);
+        setPrintingBooking(null);
+        return;
+      }
+      
+      try {
+        const element = printRef.current;
+        if (!element) return;
+
+        const imgData = await htmlToImage.toPng(element, { pixelRatio: 2, backgroundColor: '#ffffff' });
+        
+        const img = new window.Image();
+        img.src = imgData;
+        await new Promise((resolve) => { img.onload = resolve; });
+        
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const imgHeightInPdf = (img.height * pdfWidth) / img.width;
+        
+        let heightLeft = imgHeightInPdf;
+        let position = 0;
+        
+        // Add first page
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeightInPdf);
+        heightLeft -= pageHeight;
+        
+        // Add subsequent pages if the content overflows A4
+        while (heightLeft > 0) {
+          position -= pageHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeightInPdf);
+          heightLeft -= pageHeight;
+        }
+        
+        pdf.save(`Booking_${booking.id}.pdf`);
+      } catch (err: any) {
+        console.error("PDF generation error:", err);
+        alert(`Failed to generate PDF: ${err?.message || err}. Please try again.`);
+      } finally {
+        setGeneratingPdf(false);
+        setPrintingBooking(null);
+      }
+    }, 300);
+  };
 
   useEffect(() => {
     if (authLoading) return;
@@ -163,6 +222,14 @@ export default function UserDashboard() {
                       <p className="text-3xl font-bold font-heading text-foreground mb-4">
                         ₹{booking.amount?.toLocaleString("en-IN")}
                       </p>
+                      <button 
+                        onClick={() => handleDownloadPdf(booking)}
+                        disabled={generatingPdf && printingBooking?.id === booking.id}
+                        className="px-4 py-2 bg-background border border-border text-foreground text-sm font-bold rounded-lg hover:bg-muted transition-colors flex items-center justify-center gap-2 w-full shadow-sm disabled:opacity-50 mt-2"
+                      >
+                        <Download className="w-4 h-4" />
+                        {generatingPdf && printingBooking?.id === booking.id ? "Generating..." : "Download Invoice"}
+                      </button>
                     </div>
                   </div>
                 </motion.div>
@@ -213,6 +280,15 @@ export default function UserDashboard() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Hidden Invoice Template for PDF Generation */}
+      {printingBooking && (
+        <div style={{ position: 'absolute', top: 0, left: 0, zIndex: -9999, pointerEvents: 'none' }}>
+          <div ref={printRef} style={{ width: '800px', backgroundColor: 'white' }}>
+            <BookingInvoice booking={printingBooking} id="booking-invoice-pdf" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

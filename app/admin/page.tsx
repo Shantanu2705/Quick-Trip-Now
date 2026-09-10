@@ -2,6 +2,7 @@ import { Users, TrendingUp, CalendarDays, IndianRupee, ShieldAlert } from "lucid
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { adminDb } from "@/lib/firebase-admin";
 import Link from "next/link";
+import { DashboardBookingsList } from "@/components/admin/DashboardBookingsList";
 
 export const dynamic = 'force-dynamic';
 
@@ -94,8 +95,7 @@ export default async function AdminDashboardPage({
           const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
           const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
           return dateB - dateA;
-        })
-        .slice(0, 10);
+        });
     }
   } catch (error) {
     console.error("Error fetching dashboard data:", error);
@@ -164,27 +164,7 @@ export default async function AdminDashboardPage({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                {recentBookings.length > 0 ? recentBookings.map((booking) => (
-                  <div key={booking.id} className="flex items-center justify-between border-b border-border/50 pb-4 last:border-0 last:pb-0">
-                    <div>
-                      <p className="font-medium">{booking.itemTitle || "Booking"}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Booked by {booking.customerName || "Customer"} 
-                        {booking.date && ` • ${new Date(booking.date).toLocaleDateString()}`}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">₹{(booking.amount || 0).toLocaleString("en-IN")}</p>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-                        {booking.status || "Confirmed"}
-                      </span>
-                    </div>
-                  </div>
-                )) : (
-                  <p className="text-muted-foreground text-sm">No recent bookings found.</p>
-                )}
-              </div>
+              <DashboardBookingsList bookings={recentBookings} />
             </CardContent>
           </Card>
         </div>

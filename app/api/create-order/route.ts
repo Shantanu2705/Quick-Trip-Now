@@ -9,8 +9,8 @@ async function createOrderHandler(req: AuthenticatedRequest) {
     const { amount, bookingDetails, upiId } = body;
 
     // Validate input
-    if (!amount || amount <= 0) {
-      return NextResponse.json({ success: false, message: "Invalid amount", error: "INVALID_AMOUNT" }, { status: 400 });
+    if (!amount || amount < 1) {
+      return NextResponse.json({ success: false, message: "Amount must be at least ₹1", error: "INVALID_AMOUNT" }, { status: 400 });
     }
 
     if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
@@ -67,7 +67,7 @@ async function createOrderHandler(req: AuthenticatedRequest) {
   } catch (error: any) {
     console.error("Razorpay Order Error:", error);
     return NextResponse.json(
-      { success: false, message: "Failed to create Razorpay order.", error: error.message },
+      { success: false, message: "Failed to create Razorpay order.", error: error.message || error.error?.description || "Unknown error" },
       { status: 500 }
     );
   }

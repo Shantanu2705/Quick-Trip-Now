@@ -53,5 +53,27 @@ async function updateBookingHandler(req: AuthenticatedRequest) {
   }
 }
 
+async function deleteBookingHandler(req: AuthenticatedRequest) {
+  try {
+    if (!adminDb) return NextResponse.json({ success: false, message: 'Firebase Admin not configured' }, { status: 500 });
+
+    const url = new URL(req.url);
+    const id = url.searchParams.get('id');
+    if (!id) return NextResponse.json({ success: false, message: 'Missing booking ID' }, { status: 400 });
+
+    const docRef = adminDb.collection('bookings').doc(id);
+    const doc = await docRef.get();
+    if (!doc.exists) return NextResponse.json({ success: false, message: 'Booking not found' }, { status: 404 });
+
+    await docRef.delete();
+
+    return NextResponse.json({ success: true, message: 'Booking deleted successfully' });
+  } catch (error: any) {
+    console.error('Delete booking error:', error);
+    return NextResponse.json({ success: false, message: 'Internal server error', error: error.message }, { status: 500 });
+  }
+}
+
 export const GET = (req: NextRequest) => withAuth(req, listBookingsHandler, true);
 export const PUT = (req: NextRequest) => withAuth(req, updateBookingHandler, true);
+export const DELETE = (req: NextRequest) => withAuth(req, deleteBookingHandler, true);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, RefreshCw, Eye, CalendarDays, Receipt, Users, Download } from "lucide-react";
+import { Search, RefreshCw, Eye, CalendarDays, Receipt, Users, Download, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { BookingInvoice } from "@/components/admin/BookingInvoice";
@@ -20,8 +20,40 @@ export default function AdminBookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportStartDate, setExportStartDate] = useState("");
+  const [exportEndDate, setExportEndDate] = useState("");
 
   const printRef = useRef<HTMLDivElement>(null);
+
+  const handleDeleteBooking = async (bookingId: string) => {
+    if (!confirm("Are you sure you want to delete this booking? This action cannot be undone.")) return;
+    setDeleting(bookingId);
+    try {
+      const authModule = await import("@/lib/firebase");
+      const currentUser = authModule.auth?.currentUser;
+      if (!currentUser) return;
+      const token = await currentUser.getIdToken();
+
+      const res = await fetch(`/api/admin/bookings?id=${bookingId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchBookings(); // Refresh the list
+      } else {
+        alert("Failed to delete booking: " + data.message);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred while deleting the booking.");
+    } finally {
+      setDeleting(null);
+    }
+  };
 
   const handleDownloadPdf = async () => {
     if (!printRef.current || !selectedBooking) return;
@@ -67,7 +99,21 @@ export default function AdminBookingsPage() {
   };
 
   const handleExportExcel = () => {
-    const data = bookings.map(b => {
+    let exportData = bookings;
+    
+    if (exportStartDate && exportEndDate) {
+      const start = new Date(exportStartDate).getTime();
+      const end = new Date(exportEndDate);
+      end.setHours(23, 59, 59, 999);
+      const endTime = end.getTime();
+      
+      exportData = exportData.filter(b => {
+        const d = new Date(b.date || b.travelDate || b.createdAt).getTime();
+        return d >= start && d <= endTime;
+      });
+    }
+
+    const data = exportData.map(b => {
       const baseFare = (b.baseAmount || ((b.amount || 0) - (b.gstAmount || 0)));
       const gstPercent = b.gstPercentage || 0;
       const displayGst = b.gstAmount || (baseFare * gstPercent) / 100;
@@ -87,6 +133,8 @@ export default function AdminBookingsPage() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Bookings");
     XLSX.writeFile(wb, "bookings.xlsx");
+    
+    setShowExportModal(false);
   };
 
   const getTravelersCount = (b: any) => {
@@ -160,6 +208,13 @@ export default function AdminBookingsPage() {
     b.email?.toLowerCase().includes(search.toLowerCase())
   );
 
+  // Sort by date descending
+  const sortedBookings = [...filteredBookings].sort((a, b) => {
+    const dateA = new Date(a.date || a.travelDate || a.createdAt || 0).getTime();
+    const dateB = new Date(b.date || b.travelDate || b.createdAt || 0).getTime();
+    return dateB - dateA;
+  });
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -168,7 +223,7 @@ export default function AdminBookingsPage() {
           <p className="text-muted-foreground">Search and manage all customer and agent bookings using their Unique ID.</p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={handleExportExcel} className="p-2 bg-primary text-primary-foreground rounded-full hover:bg-primary/80 transition-all shadow-sm flex items-center justify-center" title="Export Excel">
+          <button onClick={() => setShowExportModal(true)} className="p-2 bg-primary text-primary-foreground rounded-full hover:bg-primary/80 transition-all shadow-sm flex items-center justify-center" title="Export Excel">
             <Download className="w-5 h-5" />
           </button>
           <button onClick={fetchBookings} className="p-2 bg-secondary text-secondary-foreground rounded-full hover:bg-secondary/80 transition-all shadow-sm">
@@ -209,7 +264,7 @@ export default function AdminBookingsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredBookings.map((booking) => (
+                {sortedBookings.map((booking) => (
                   <tr key={booking.id} className="border-b border-border/50 last:border-0 hover:bg-muted/10 transition-colors">
                     <td className="px-6 py-4">
                       <span className="font-mono text-xs bg-muted px-2 py-1 rounded text-muted-foreground">{booking.id}</span>
@@ -249,17 +304,27 @@ export default function AdminBookingsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => setSelectedBooking(booking)}
-                        className="p-2 hover:bg-primary/10 rounded-lg text-muted-foreground hover:text-primary transition-colors" 
-                        title="View Details"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button 
+                          onClick={() => setSelectedBooking(booking)}
+                          className="p-2 hover:bg-primary/10 rounded-lg text-muted-foreground hover:text-primary transition-colors" 
+                          title="View Details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteBooking(booking.id)}
+                          disabled={deleting === booking.id}
+                          className="p-2 hover:bg-red-500/10 rounded-lg text-muted-foreground hover:text-red-500 transition-colors disabled:opacity-50" 
+                          title="Delete Booking"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
-                {filteredBookings.length === 0 && !loading && (
+                {sortedBookings.length === 0 && !loading && (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center justify-center text-muted-foreground">
@@ -438,6 +503,53 @@ export default function AdminBookingsPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Export Excel Modal */}
+      <Dialog open={showExportModal} onOpenChange={setShowExportModal}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Export Bookings to Excel</DialogTitle>
+            <DialogDescription>
+              Select a date range to filter the bookings by travel date. Leave blank to export all bookings.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Start Date</label>
+              <input 
+                type="date" 
+                value={exportStartDate}
+                onChange={(e) => setExportStartDate(e.target.value)}
+                className="w-full bg-background border border-border rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">End Date</label>
+              <input 
+                type="date" 
+                value={exportEndDate}
+                onChange={(e) => setExportEndDate(e.target.value)}
+                className="w-full bg-background border border-border rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <button 
+              onClick={() => setShowExportModal(false)}
+              className="px-4 py-2 rounded-xl text-sm font-medium border border-border hover:bg-muted transition-colors"
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={handleExportExcel}
+              className="px-4 py-2 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Export
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
       

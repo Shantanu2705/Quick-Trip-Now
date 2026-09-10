@@ -11,6 +11,8 @@ import { useRef } from "react";
 import { useReactToPrint } from "react-to-print";
 import { BookingInvoice } from "@/components/admin/BookingInvoice";
 import { Download } from "lucide-react";
+import * as htmlToImage from "html-to-image";
+import { jsPDF } from "jspdf";
 
 const STEPS = ["Select Vehicle", "Travel Details", "Payment"];
 
@@ -48,10 +50,51 @@ export function VehicleBookingWizard({
   const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
   
   const printRef = useRef<HTMLDivElement>(null);
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: confirmedBooking ? `Invoice_${confirmedBooking.id}` : "Invoice",
-  });
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    if (!printRef.current || !confirmedBooking) return;
+    setGeneratingPdf(true);
+    
+    // Allow React state to update and render the component
+    setTimeout(async () => {
+      try {
+        const element = printRef.current;
+        if (!element) return;
+
+        const imgData = await htmlToImage.toPng(element, { pixelRatio: 2, backgroundColor: '#ffffff' });
+        
+        const img = new window.Image();
+        img.src = imgData;
+        await new Promise((resolve) => { img.onload = resolve; });
+        
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const imgHeightInPdf = (img.height * pdfWidth) / img.width;
+        
+        let heightLeft = imgHeightInPdf;
+        let position = 0;
+        
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeightInPdf);
+        heightLeft -= pageHeight;
+        
+        while (heightLeft > 0) {
+          position -= pageHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeightInPdf);
+          heightLeft -= pageHeight;
+        }
+        
+        pdf.save(`Invoice_${confirmedBooking.id}.pdf`);
+      } catch (err: any) {
+        console.error("PDF generation error:", err);
+        alert(`Failed to generate PDF: ${err?.message || err}. Please try again.`);
+      } finally {
+        setGeneratingPdf(false);
+      }
+    }, 300);
+  };
 
   const [localAdults, setLocalAdults] = useState(adultsCount);
   const [localChildren, setLocalChildren] = useState(childrenCount);
@@ -244,9 +287,9 @@ export function VehicleBookingWizard({
         }), 
       }).then((t) => t.json());
 
-      if (data.error) {
+      if (!data.success) {
         setPaymentStatus("idle");
-        return setError(`Server Error: ${data.error}`);
+        return setError(`Server Error: ${data.message || data.error || "Failed to create order"}`);
       }
 
       const options = {
@@ -831,8 +874,8 @@ export function VehicleBookingWizard({
                    
                    <div className="mt-6 flex flex-wrap justify-center gap-4">
                      {confirmedBooking && (
-                       <Button onClick={() => handlePrint()} variant="default" className="rounded-xl px-6 bg-emerald-600 hover:bg-emerald-700 text-white">
-                         <Download className="w-4 h-4 mr-2" /> Download Bill
+                       <Button onClick={handleDownloadPdf} disabled={generatingPdf} variant="default" className="rounded-xl px-6 bg-emerald-600 hover:bg-emerald-700 text-white">
+                         <Download className="w-4 h-4 mr-2" /> {generatingPdf ? "Generating..." : "Download Bill"}
                        </Button>
                      )}
                      <Link href="/user">
