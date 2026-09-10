@@ -11,7 +11,6 @@ import { useRef } from "react";
 import { useReactToPrint } from "react-to-print";
 import { BookingInvoice } from "@/components/admin/BookingInvoice";
 import { Download } from "lucide-react";
-import html2pdf from 'html2pdf.js';
 
 const STEPS = ["Select Vehicle", "Travel Details", "Payment"];
 
@@ -60,6 +59,8 @@ export function VehicleBookingWizard({
       try {
         const element = printRef.current;
         if (!element) return;
+
+        const html2pdf = (await import('html2pdf.js')).default;
 
         const opt: any = {
           margin:       0,

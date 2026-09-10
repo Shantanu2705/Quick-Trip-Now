@@ -4,7 +4,6 @@ import { useState, useRef } from "react";
 import { Eye, Download, Receipt, Users, CalendarDays } from "lucide-react";
 import { BookingInvoice } from "@/components/admin/BookingInvoice";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import html2pdf from 'html2pdf.js';
 import { useRouter } from "next/navigation";
 
 export function DashboardBookingsList({ bookings }: { bookings: any[] }) {
@@ -20,6 +19,8 @@ export function DashboardBookingsList({ bookings }: { bookings: any[] }) {
     try {
       const element = printRef.current;
       if (!element) return;
+      
+      const html2pdf = (await import('html2pdf.js')).default;
       
       const opt: any = {
         margin:       0,

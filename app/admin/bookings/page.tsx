@@ -9,7 +9,6 @@ import { BookingInvoice } from "@/components/admin/BookingInvoice";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 import * as XLSX from 'xlsx';
-import html2pdf from 'html2pdf.js';
 
 export default function AdminBookingsPage() {
   const { user } = useAuth();
@@ -60,6 +59,8 @@ export default function AdminBookingsPage() {
     try {
       const element = printRef.current;
       if (!element) return;
+      
+      const html2pdf = (await import('html2pdf.js')).default;
       
       const opt: any = {
         margin:       0,

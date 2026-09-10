@@ -9,7 +9,6 @@ import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { format } from "date-fns";
 import { BookingInvoice } from "@/components/admin/BookingInvoice";
-import html2pdf from 'html2pdf.js';
 
 export default function UserDashboard() {
   const router = useRouter();
@@ -36,6 +35,8 @@ export default function UserDashboard() {
       try {
         const element = printRef.current;
         if (!element) return;
+        
+        const html2pdf = (await import('html2pdf.js')).default;
 
         const opt: any = {
           margin:       0,
