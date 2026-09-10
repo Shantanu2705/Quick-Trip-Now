@@ -24,8 +24,10 @@ export const downloadPdf = async (
         backgroundColor: '#ffffff'
       });
       
+      const scaledHeight = (pageElement.offsetHeight * pdfWidth) / pageElement.offsetWidth;
+      
       if (i > 0) pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, scaledHeight);
     }
     
     pdf.save(filename);
