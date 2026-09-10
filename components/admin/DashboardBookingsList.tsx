@@ -21,7 +21,7 @@ export function DashboardBookingsList({ bookings }: { bookings: any[] }) {
       const element = printRef.current;
       if (!element) return;
       
-      const opt = {
+      const opt: any = {
         margin:       0,
         filename:     `Booking_${selectedBooking.id}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
