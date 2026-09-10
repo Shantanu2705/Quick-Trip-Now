@@ -244,8 +244,9 @@ export function DashboardBookingsList({ bookings }: { bookings: any[] }) {
       </Dialog>
       
       {/* Hidden Invoice Template for PDF Generation */}
-      {selectedBooking && <div style={{ position: 'absolute', top: 0, left: 0, opacity: 0, zIndex: -9999, pointerEvents: 'none' }}>
-            <div ref={printRef}>
+      {selectedBooking && (
+        <div style={{ position: 'absolute', top: 0, left: 0, opacity: 0, zIndex: -9999, pointerEvents: 'none' }}>
+          <div ref={printRef}>
             <BookingInvoice booking={selectedBooking} id="dashboard-booking-invoice-pdf" />
           </div>
         </div>
