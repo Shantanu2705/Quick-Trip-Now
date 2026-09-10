@@ -54,30 +54,13 @@ export default function AdminBookingsPage() {
   };
 
   const handleDownloadPdf = async () => {
-    if (!printRef.current || !selectedBooking) return;
-    setGeneratingPdf(true);
-    try {
-      const element = printRef.current;
-      if (!element) return;
-      
-      const html2pdf = (await import('html2pdf.js')).default;
-      
-      const opt: any = {
-        margin:       0,
-        filename:     `Booking_${selectedBooking.id}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak:    { mode: ['css', 'legacy'] }
-      };
-
-      await html2pdf().set(opt).from(element).save();
-    } catch (err: any) {
-      console.error("PDF generation error:", err);
-      alert(`Failed to generate PDF: ${err?.message || err}. Please try again.`);
-    } finally {
-      setGeneratingPdf(false);
-    }
+    if (!selectedBooking) return;
+    
+    // Allow React state to update and render the component
+    setTimeout(async () => {
+      const { downloadPdf } = await import("@/lib/downloadPdf");
+      await downloadPdf(printRef, `Booking_${selectedBooking.id}.pdf`, setGeneratingPdf);
+    }, 500);
   };
 
   const handleExportExcel = () => {
@@ -336,7 +319,7 @@ export default function AdminBookingsPage() {
       <Dialog open={!!selectedBooking} onOpenChange={(open) => !open && setSelectedBooking(null)}>
         <DialogContent className="max-w-4xl sm:max-w-4xl md:max-w-4xl max-h-[85vh] overflow-y-auto rounded-3xl p-0 border-none">
           {selectedBooking && (
-            <div className="bg-background" id="booking-details-pdf">
+            <div className="bg-background">
               <div className="bg-primary/5 border-b border-border p-6 md:p-8 flex flex-col md:flex-row md:justify-between md:items-start gap-4">
                 <DialogHeader className="text-left">
                   <DialogTitle className="text-2xl font-heading font-bold">Booking Details</DialogTitle>
@@ -448,7 +431,6 @@ export default function AdminBookingsPage() {
                         </div>
                       </div>
                     ) : (
-                      // Fallback for older bookings without travelers array
                       <div className="bg-background border border-border rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-2 shadow-sm">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
@@ -537,8 +519,8 @@ export default function AdminBookingsPage() {
       
       {/* Hidden Invoice Template for PDF Generation */}
       {selectedBooking && (
-        <div style={{ position: 'absolute', top: 0, left: 0, zIndex: -9999, pointerEvents: 'none' }}>
-          <div ref={printRef} style={{ width: '800px', backgroundColor: 'white' }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, opacity: 0, zIndex: -9999, pointerEvents: 'none' }}>
+          <div ref={printRef}>
             <BookingInvoice booking={selectedBooking} id="booking-invoice-pdf" />
           </div>
         </div>

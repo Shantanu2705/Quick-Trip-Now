@@ -14,30 +14,13 @@ export function DashboardBookingsList({ bookings }: { bookings: any[] }) {
   const router = useRouter();
 
   const handleDownloadPdf = async () => {
-    if (!printRef.current || !selectedBooking) return;
-    setGeneratingPdf(true);
-    try {
-      const element = printRef.current;
-      if (!element) return;
-      
-      const html2pdf = (await import('html2pdf.js')).default;
-      
-      const opt: any = {
-        margin:       0,
-        filename:     `Booking_${selectedBooking.id}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak:    { mode: ['css', 'legacy'] }
-      };
-
-      await html2pdf().set(opt).from(element).save();
-    } catch (err: any) {
-      console.error("PDF generation error:", err);
-      alert(`Failed to generate PDF: ${err?.message || err}. Please try again.`);
-    } finally {
-      setGeneratingPdf(false);
-    }
+    if (!selectedBooking) return;
+    
+    // Allow React state to update and render the component
+    setTimeout(async () => {
+      const { downloadPdf } = await import("@/lib/downloadPdf");
+      await downloadPdf(printRef, `Booking_${selectedBooking.id}.pdf`, setGeneratingPdf);
+    }, 500);
   };
 
   const getTravelersCount = (b: any) => {
@@ -261,9 +244,8 @@ export function DashboardBookingsList({ bookings }: { bookings: any[] }) {
       </Dialog>
       
       {/* Hidden Invoice Template for PDF Generation */}
-      {selectedBooking && (
-        <div style={{ position: 'absolute', top: 0, left: 0, zIndex: -9999, pointerEvents: 'none' }}>
-          <div ref={printRef} style={{ width: '800px', backgroundColor: 'white' }}>
+      {selectedBooking && <div style={{ position: 'absolute', top: 0, left: 0, opacity: 0, zIndex: -9999, pointerEvents: 'none' }}>
+            <div ref={printRef}>
             <BookingInvoice booking={selectedBooking} id="dashboard-booking-invoice-pdf" />
           </div>
         </div>
