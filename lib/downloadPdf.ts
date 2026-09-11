@@ -1,4 +1,4 @@
-import html2canvas from "html2canvas";
+import * as htmlToImage from "html-to-image";
 import { jsPDF } from "jspdf";
 
 export const downloadPdf = async (
@@ -18,14 +18,23 @@ export const downloadPdf = async (
     for (let i = 0; i < pages.length; i++) {
       const pageElement = pages[i] as HTMLElement;
       
-      const canvas = await html2canvas(pageElement, { 
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff'
-      });
+      let imgData = "";
+      // Retry logic for html-to-image blank returns
+      for (let attempt = 0; attempt < 3; attempt++) {
+        imgData = await htmlToImage.toPng(pageElement, { 
+          pixelRatio: 2, 
+          backgroundColor: '#ffffff',
+          skipFonts: true,
+        });
+        if (imgData && imgData.length > 50) break;
+        await new Promise(r => setTimeout(r, 500));
+      }
       
-      const imgData = canvas.toDataURL('image/png');
-      const scaledHeight = (canvas.height * pdfWidth) / canvas.width;
+      if (!imgData || imgData.length < 50 || imgData === "data:,") {
+         throw new Error("Failed to render PDF page. Image generation timed out.");
+      }
+      
+      const scaledHeight = (pageElement.offsetHeight * pdfWidth) / pageElement.offsetWidth;
       
       if (i > 0) pdf.addPage();
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, scaledHeight);
