@@ -1,4 +1,4 @@
-import * as htmlToImage from "html-to-image";
+import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 
 export const downloadPdf = async (
@@ -14,17 +14,18 @@ export const downloadPdf = async (
 
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
 
     for (let i = 0; i < pages.length; i++) {
       const pageElement = pages[i] as HTMLElement;
       
-      const imgData = await htmlToImage.toPng(pageElement, { 
-        pixelRatio: 2, 
+      const canvas = await html2canvas(pageElement, { 
+        scale: 2,
+        useCORS: true,
         backgroundColor: '#ffffff'
       });
       
-      const scaledHeight = (pageElement.offsetHeight * pdfWidth) / pageElement.offsetWidth;
+      const imgData = canvas.toDataURL('image/png');
+      const scaledHeight = (canvas.height * pdfWidth) / canvas.width;
       
       if (i > 0) pdf.addPage();
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, scaledHeight);
