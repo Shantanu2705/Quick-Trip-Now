@@ -186,12 +186,7 @@ export function VehicleBookingWizard({
       console.error("Failed to save vehicle booking to db", err);
     }
 
-    setTimeout(() => {
-      const leadTraveler = travelers[0];
-      const message = `*New Vehicle Booking Request*\n\n*Vehicle Type:* ${selectedVehicle.name}\n*Route:* ${cabRouteData.title}\n*Date & Time:* ${selectedDate ? format(selectedDate, "PPP") : ""}\n\n*Lead Customer Details*\n*Name:* ${leadTraveler.fullName}\n*Email:* ${leadTraveler.email}\n*Phone:* ${leadTraveler.phone}\n\n*Status:* Payment Confirmed via Razorpay`;
-      const encodedMessage = encodeURIComponent(message);
-      window.open(`https://wa.me/917047399677?text=${encodedMessage}`, '_blank');
-    }, 1500);
+    // WhatsApp notification is handled by the backend webhooks
   };
 
   const initializeRazorpay = () => {
@@ -836,8 +831,8 @@ export function VehicleBookingWizard({
                    </div>
                    <h3 className="text-4xl font-heading font-bold text-emerald-600 dark:text-emerald-400">Payment Successful!</h3>
                    <p className="text-lg text-muted-foreground max-w-md">Your vehicle booking has been secured.</p>
-                   <div className="mt-8 p-4 bg-muted/50 rounded-xl animate-pulse">
-                     <p className="text-sm font-medium">Redirecting to WhatsApp to send final details to owner...</p>
+                   <div className="mt-8 p-4 bg-muted/50 rounded-xl">
+                     <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">A confirmation has been sent to your WhatsApp.</p>
                    </div>
                    
                    <div className="mt-6 flex flex-wrap justify-center gap-4">
