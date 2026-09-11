@@ -72,14 +72,21 @@ export async function POST(req: NextRequest) {
 
     // Update order status based on payment
     if (eventType === "payment.captured") {
-      // Fetch order to get the date
+      // Fetch order to get the date and details
       const orderDocRef = adminDb.collection("orders").doc(orderId);
       const orderDocSnapshot = await orderDocRef.get();
       let tripDate = "your scheduled date";
+      let packageName = "Quick Trip Now Package";
+      let customerName = "Customer";
+      let totalAmount = 0;
       
       if (orderDocSnapshot.exists) {
         const orderData = orderDocSnapshot.data();
-        tripDate = orderData?.bookingDetails?.date || orderData?.bookingDetails?.tripDate || orderData?.bookingDetails?.startDate || "your scheduled date";
+        const details = orderData?.bookingDetails || {};
+        tripDate = details.date || details.tripDate || details.startDate || "your scheduled date";
+        packageName = details.package || details.packageName || details.service || "Quick Trip Now Package";
+        customerName = details.name || details.customerName || details.firstName || orderData?.email?.split('@')[0] || "Customer";
+        totalAmount = details.totalAmount || details.amount || 0;
       }
 
       await orderDocRef.update({
@@ -100,8 +107,11 @@ export async function POST(req: NextRequest) {
       await sendBookingNotification({
         orderId,
         amount: paymentData.amount / 100, // convert paise to rupees
+        totalAmount: totalAmount,
         contact: paymentData.contact,
-        date: tripDate
+        date: tripDate,
+        package: packageName,
+        name: customerName
       }, 'payment_captured');
       
     } else if (eventType === "payment.failed") {

@@ -50,8 +50,11 @@ export async function POST(req: NextRequest) {
     await sendBookingNotification({
       id: bookingId,
       phone: data.phone || data.customerPhone || data.contact,
-      amount: data.totalAmount || data.amount,
-      date: data.date || data.tripDate || data.startDate || data.pickupDate || "your scheduled date"
+      amount: data.paidAmount || data.amount || 0,
+      totalAmount: data.totalAmount || data.amount || 0,
+      date: data.date || data.tripDate || data.startDate || data.pickupDate || "your scheduled date",
+      package: data.package || data.packageName || data.service || "Quick Trip Now Package",
+      name: data.name || data.customerName || data.firstName || "Customer"
     }, 'direct');
 
     return NextResponse.json({ success: true, bookingId });
