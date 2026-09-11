@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { adminDb } from "@/lib/firebase-admin";
+import { sendBookingNotification } from "@/lib/notification-service";
 export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
@@ -71,12 +72,21 @@ export async function POST(req: NextRequest) {
 
     // Update order status based on payment
     if (eventType === "payment.captured") {
-      await adminDb.collection("orders").doc(orderId).update({
+      // Fetch order to get the date
+      const orderDocRef = adminDb.collection("orders").doc(orderId);
+      const orderDocSnapshot = await orderDocRef.get();
+      let tripDate = "your scheduled date";
+      
+      if (orderDocSnapshot.exists) {
+        const orderData = orderDocSnapshot.data();
+        tripDate = orderData?.bookingDetails?.date || orderData?.bookingDetails?.tripDate || orderData?.bookingDetails?.startDate || "your scheduled date";
+      }
+
+      await orderDocRef.update({
         status: "paid",
         paymentId: paymentId,
         updatedAt: new Date().toISOString(),
       });
-
 
       // Log success
       await adminDb.collection("activityLogs").add({
@@ -85,6 +95,14 @@ export async function POST(req: NextRequest) {
         paymentId,
         timestamp: new Date().toISOString(),
       });
+      
+      // Send WhatsApp notification
+      await sendBookingNotification({
+        orderId,
+        amount: paymentData.amount / 100, // convert paise to rupees
+        contact: paymentData.contact,
+        date: tripDate
+      }, 'payment_captured');
       
     } else if (eventType === "payment.failed") {
       await adminDb.collection("orders").doc(orderId).update({

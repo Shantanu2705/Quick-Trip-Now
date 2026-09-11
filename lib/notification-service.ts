@@ -5,66 +5,53 @@ export async function sendBookingNotification(bookingDetails: any, type: 'direct
     if (!adminDb) return;
     
     const doc = await adminDb.collection('settings').doc('platform').get();
-    if (!doc.exists) return;
     
-    const settings = doc.data();
-    if (!settings?.enableBookingNotifications || !settings?.adminNotificationPhone) {
-      console.log('Booking notifications are disabled or phone number is missing.');
-      return;
-    }
-
-    const toNumber = settings.adminNotificationPhone;
-    
-    let message = `New Booking Alert! 🚀\n`;
-    if (type === 'direct') {
-       message += `A new booking has been confirmed.\n`;
-       if (bookingDetails.id || bookingDetails.bookingId) {
-         message += `Booking ID: ${bookingDetails.id || bookingDetails.bookingId}\n`;
-       }
+    // Get the customer phone number
+    let toNumber = "";
+    if (bookingDetails.phone || bookingDetails.contact) {
+      toNumber = bookingDetails.phone || bookingDetails.contact;
     } else {
-       message += `A new order payment was successful.\nOrder ID: ${bookingDetails.orderId}\n`;
-    }
-    
-    if (bookingDetails.amount) {
-       message += `Amount: ₹${bookingDetails.amount}\n`;
-    }
-
-    const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-    const twilioToken = process.env.TWILIO_AUTH_TOKEN;
-    const twilioFrom = process.env.TWILIO_FROM_NUMBER;
-
-    if (!twilioSid || !twilioToken || !twilioFrom) {
-      console.warn('Twilio credentials missing. Cannot send notification. Please configure TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_FROM_NUMBER in your .env file.');
+      console.log('Customer phone number is missing. Cannot send WhatsApp message.');
       return;
     }
 
-    const isWhatsApp = twilioFrom.startsWith('whatsapp:');
-    const to = isWhatsApp && !toNumber.startsWith('whatsapp:') ? `whatsapp:${toNumber}` : toNumber;
+    // WhatsApp expects number without '+' and non-digit characters
+    toNumber = toNumber.replace(/\D/g, '');
+    
+    const bookingId = bookingDetails.id || bookingDetails.bookingId || bookingDetails.orderId || "Pending";
+    const tripDate = bookingDetails.date || "your scheduled date";
 
-    const auth = Buffer.from(`${twilioSid}:${twilioToken}`).toString('base64');
-    const body = new URLSearchParams({
-      To: to,
-      From: twilioFrom,
-      Body: message
-    });
+    const message = `Thank you for choosing Quick Trip Now your booking Id is ${bookingId}, your trip date is ${tripDate} our team will connect you within 24 hours`;
 
-    const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`, {
+    const whastappToken = process.env.WHATSAPP_ACCESS_TOKEN || "EAAhK3sNV3LUBSZAXXMiLNLHIrIAnh0pLFXUkFyZBDgzS6yXGlxwYkRNUAUytOSVfnSUdGxifF4GajhVpZBDSZAZAupLI6o8V286GteMnYVgU8iyF5Bf3ZCTGcfZCr3MMZA5NXC9xqSrTNwJZBy82iWMXwOq6CzIdQvxJ1yK6aWUGfrXfj019wV848FzaR2ZBaHrwZDZD";
+    const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID || "1257696557433340";
+
+    const response = await fetch(`https://graph.facebook.com/v17.0/${phoneNumberId}/messages`, {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${auth}`,
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Authorization': `Bearer ${whastappToken}`,
+        'Content-Type': 'application/json'
       },
-      body: body.toString()
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: toNumber,
+        type: "text",
+        text: {
+          preview_url: false,
+          body: message
+        }
+      })
     });
 
     const data = await response.json();
     if (!response.ok) {
-      console.error('Twilio Error:', data);
+      console.error('WhatsApp API Error:', data);
     } else {
-      console.log('Notification sent successfully:', data.sid);
+      console.log('WhatsApp notification sent successfully:', data);
     }
 
   } catch (error) {
-    console.error('Error sending booking notification:', error);
+    console.error('Error sending WhatsApp booking notification:', error);
   }
 }

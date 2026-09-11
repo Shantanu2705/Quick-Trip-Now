@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { FieldValue, Transaction } from "firebase-admin/firestore";
+import { sendBookingNotification } from "@/lib/notification-service";
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
@@ -45,6 +46,13 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Send WhatsApp notification
+    await sendBookingNotification({
+      id: bookingId,
+      phone: data.phone || data.customerPhone || data.contact,
+      amount: data.totalAmount || data.amount,
+      date: data.date || data.tripDate || data.startDate || data.pickupDate || "your scheduled date"
+    }, 'direct');
 
     return NextResponse.json({ success: true, bookingId });
   } catch (error: any) {
