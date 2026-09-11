@@ -345,7 +345,7 @@ export function VehicleBookingWizard({
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
-      <div style={{ position: 'absolute', top: 0, left: 0, opacity: 0, zIndex: -9999, pointerEvents: 'none' }}>
+      <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
         <div ref={printRef}>
           {confirmedBooking && <BookingInvoice booking={confirmedBooking} />}
         </div>
@@ -846,14 +846,7 @@ export function VehicleBookingWizard({
                      </Link>
                    </div>
 
-                   {/* Hidden Invoice for Printing */}
-                   {confirmedBooking && (
-                     <div className="hidden">
-                       <div ref={printRef}>
-                         <BookingInvoice booking={confirmedBooking} />
-                       </div>
-                     </div>
-                   )}
+
                 </motion.div>
               )}
             </motion.div>
