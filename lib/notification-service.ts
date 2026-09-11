@@ -55,6 +55,17 @@ export async function sendBookingNotification(bookingDetails: any, type: 'direct
           },
           components: [
             {
+              type: "header",
+              parameters: [
+                {
+                  type: "image",
+                  image: {
+                    link: "https://www.quicktripnow.com/images/logo_transparent.png"
+                  }
+                }
+              ]
+            },
+            {
               type: "body",
               parameters: [
                 { type: "text", text: String(customerName) },
