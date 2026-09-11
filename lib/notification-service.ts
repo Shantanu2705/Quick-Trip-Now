@@ -34,18 +34,6 @@ export async function sendBookingNotification(bookingDetails: any, type: 'direct
         amountString = `${paidAmount} (Full payment)`;
     }
 
-    const message = `Hello ${customerName} 👋
-
-Your booking with Quick Trip Now has been Confirmed ✅
-
-Booking ID: ${bookingId}
-Package: ${packageName}
-Travel Date: ${tripDate}
-Amount Paid: ₹${amountString}
-
-Our team will contact you shortly with your cab and travel details.
-
-Thank you for choosing Quick Trip Now. We wish you a happy journey! 🌄`;
     const whastappToken = process.env.WHATSAPP_ACCESS_TOKEN || "EAAhK3sNV3LUBSZAXXMiLNLHIrIAnh0pLFXUkFyZBDgzS6yXGlxwYkRNUAUytOSVfnSUdGxifF4GajhVpZBDSZAZAupLI6o8V286GteMnYVgU8iyF5Bf3ZCTGcfZCr3MMZA5NXC9xqSrTNwJZBy82iWMXwOq6CzIdQvxJ1yK6aWUGfrXfj019wV848FzaR2ZBaHrwZDZD";
     const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID || "1257696557433340";
 
@@ -59,10 +47,24 @@ Thank you for choosing Quick Trip Now. We wish you a happy journey! 🌄`;
         messaging_product: "whatsapp",
         recipient_type: "individual",
         to: toNumber,
-        type: "text",
-        text: {
-          preview_url: false,
-          body: message
+        type: "template",
+        template: {
+          name: "booking_confirmation",
+          language: {
+            code: "en"
+          },
+          components: [
+            {
+              type: "body",
+              parameters: [
+                { type: "text", text: String(customerName) },
+                { type: "text", text: String(bookingId) },
+                { type: "text", text: String(packageName) },
+                { type: "text", text: String(tripDate) },
+                { type: "text", text: String(amountString) }
+              ]
+            }
+          ]
         }
       })
     });
