@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { adminDb } from "@/lib/firebase-admin";
-import { sendBookingNotification } from "@/lib/notification-service";
 export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
@@ -102,17 +101,6 @@ export async function POST(req: NextRequest) {
         paymentId,
         timestamp: new Date().toISOString(),
       });
-      
-      // Send WhatsApp notification
-      await sendBookingNotification({
-        orderId,
-        amount: paymentData.amount / 100, // convert paise to rupees
-        totalAmount: totalAmount,
-        contact: paymentData.contact,
-        date: tripDate,
-        package: packageName,
-        name: customerName
-      }, 'payment_captured');
       
     } else if (eventType === "payment.failed") {
       await adminDb.collection("orders").doc(orderId).update({

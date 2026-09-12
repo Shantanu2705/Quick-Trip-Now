@@ -547,7 +547,7 @@ export function BookingWizard({
               </div>
             )}
 
-            {currentStep === 2 && paymentStatus === "idle" && (
+            {currentStep === 2 && (paymentStatus === "idle" || paymentStatus === "verifying") && (
               <div className="space-y-6 flex-1 flex flex-col items-center justify-center py-4">
                 <h3 className="text-3xl font-heading font-bold text-center">Secure Payment</h3>
                 <p className="text-muted-foreground text-center max-w-md">
@@ -676,13 +676,7 @@ export function BookingWizard({
               </div>
             )}
 
-            {currentStep === 2 && paymentStatus === "verifying" && (
-              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6 flex-1 flex flex-col items-center justify-center py-8 text-center">
-                 <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-                 <h3 className="text-3xl font-heading font-bold text-primary">Processing Payment...</h3>
-                 <p className="text-muted-foreground max-w-md">Please do not close this window.</p>
-              </motion.div>
-            )}
+
             
             {currentStep === 2 && paymentStatus === "success" && (
               <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6 flex-1 flex flex-col items-center justify-center py-8 text-center">
