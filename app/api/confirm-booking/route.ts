@@ -16,17 +16,26 @@ export async function POST(req: NextRequest) {
       status: "confirmed"
     };
 
-    const counterRef = adminDb.collection('counters').doc('bookings');
+    const lockRef = adminDb.collection('counters').doc('bookings_lock');
     
     const bookingId = await adminDb.runTransaction(async (transaction: Transaction) => {
-      const counterDoc = await transaction.get(counterRef as any) as any;
+      // Lock for concurrent writes
+      await transaction.get(lockRef as any);
+      
+      const query = adminDb.collection("bookings").orderBy("id", "desc").limit(1);
+      const snapshot = await transaction.get(query as any);
+      
       let newCount = 10001;
       
-      if (counterDoc.exists) {
-        newCount = Math.max(10001, (counterDoc.data()?.count || 0) + 1);
+      if (!snapshot.empty) {
+        const lastId = snapshot.docs[0].id;
+        const match = lastId.match(/QTN-(\d+)/);
+        if (match) {
+          newCount = Math.max(10001, parseInt(match[1], 10) + 1);
+        }
       }
       
-      transaction.set(counterRef, { count: newCount }, { merge: true });
+      transaction.set(lockRef, { lastUpdated: new Date().toISOString() }, { merge: true });
       
       const generatedId = `QTN-${newCount}`;
       const bookingRef = adminDb.collection("bookings").doc(generatedId);

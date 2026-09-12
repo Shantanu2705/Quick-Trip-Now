@@ -92,6 +92,11 @@ export default async function AdminDashboardPage({
       
       recentBookings = filteredBookings
         .sort((a: any, b: any) => {
+          if (filter === 'future') {
+            const dateA = a.date ? new Date(a.date).getTime() : 0;
+            const dateB = b.date ? new Date(b.date).getTime() : 0;
+            return dateA - dateB;
+          }
           const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
           const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
           return dateB - dateA;
