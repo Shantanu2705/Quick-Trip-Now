@@ -1,5 +1,4 @@
-import * as htmlToImage from "html-to-image";
-import { jsPDF } from "jspdf";
+import html2pdf from "html2pdf.js";
 
 export const downloadPdf = async (
   containerRef: React.RefObject<HTMLElement | null | any>, 
@@ -8,58 +7,23 @@ export const downloadPdf = async (
 ) => {
   if (!containerRef.current) return;
   setGeneratingPdf(true);
+  
   try {
-    const pages = containerRef.current.querySelectorAll('.pdf-page');
-    if (pages.length === 0) throw new Error("No PDF pages found.");
-
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-
-    for (let i = 0; i < pages.length; i++) {
-      const pageElement = pages[i] as HTMLElement;
-      
-      let imgData = "";
-      // Retry logic for html-to-image blank returns
-      for (let attempt = 0; attempt < 3; attempt++) {
-        imgData = await htmlToImage.toPng(pageElement, { 
-          pixelRatio: 2, 
-          backgroundColor: '#ffffff',
-          skipFonts: true,
-        });
-        if (imgData && imgData.length > 50) break;
-        await new Promise(r => setTimeout(r, 500));
-      }
-      
-      if (!imgData || imgData.length < 50 || imgData === "data:,") {
-         throw new Error("Failed to render PDF page. Image generation timed out.");
-      }
-      
-      // Get actual image dimensions to prevent aspect ratio distortion or NaN errors if DOM element is hidden
-      const img = new window.Image();
-      img.src = imgData;
-      await new Promise((resolve) => { img.onload = resolve; });
-      
-      const scaledHeight = (img.height * pdfWidth) / img.width;
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      
-      let finalWidth = pdfWidth;
-      let finalHeight = scaledHeight;
-      
-      // If the page content naturally exceeded A4 proportions, gracefully scale it down to fit on one page rather than slicing text in half
-      if (scaledHeight > pdfHeight) {
-        const ratio = pdfHeight / scaledHeight;
-        finalWidth = pdfWidth * ratio;
-        finalHeight = pdfHeight;
-      }
-      
-      // Center horizontally if downscaled
-      const xOffset = (pdfWidth - finalWidth) / 2;
-
-      if (i > 0) pdf.addPage();
-      pdf.addImage(imgData, 'PNG', xOffset, 0, finalWidth, finalHeight);
-    }
+    const element = containerRef.current;
     
-    pdf.save(filename);
+    // Configure html2pdf to use smart page breaks (avoiding slicing elements in half)
+    const opt = {
+      margin:       10, // 10mm margin around the page
+      filename:     filename,
+      image:        { type: 'jpeg' as const, quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+    
+    // Generate and save the PDF
+    await html2pdf().set(opt).from(element).save();
+    
   } catch (err: any) {
     console.error("PDF generation error:", err);
     alert(`Failed to generate PDF: ${err?.message || err}. Please try again.`);
