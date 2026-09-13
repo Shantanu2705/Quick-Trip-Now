@@ -14,28 +14,19 @@ export default function AdminVehiclesPage() {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const [inclusions, setInclusions] = useState([{ text: "", included: true }]);
-
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
-  const [unavailableDateInput, setUnavailableDateInput] = useState("");
-  const [seasonalInput, setSeasonalInput] = useState({ startDate: "", endDate: "", price: 0 });
 
   const [formData, setFormData] = useState({
     name: "",
     type: "SUV",
     image: "",
-    price: 0,
     seats: 4,
     maxAdults: 4,
     maxChildren: 0,
     maxChildAge: 12,
     ac: true,
-    status: "Active",
-    unavailableDates: [] as string[],
-    seasonalPrices: [] as { startDate: string, endDate: string, price: number }[],
-    termsAndConditions: "",
-    gstPercentage: 0,
+    status: "Active"
   });
 
   const fetchVehicles = async () => {
@@ -70,19 +61,13 @@ export default function AdminVehiclesPage() {
       name: v.name || "",
       type: v.type || "SUV",
       image: v.image || "",
-      price: v.price || v.pricePerDay || 0,
       seats: v.seats || 4,
       maxAdults: v.maxAdults || 4,
       maxChildren: v.maxChildren || 0,
       maxChildAge: v.maxChildAge || 12,
       ac: v.ac !== undefined ? v.ac : true,
-      status: v.status || "Active",
-      unavailableDates: v.unavailableDates || [],
-      seasonalPrices: v.seasonalPrices || [],
-      termsAndConditions: v.termsAndConditions || "",
-      gstPercentage: v.gstPercentage || 0,
+      status: v.status || "Active"
     });
-    setInclusions(v.inclusions && v.inclusions.length > 0 ? v.inclusions : [{ text: "", included: true }]);
     setImageFile(null);
     setImagePreview(v.image || "");
     setIsModalOpen(true);
@@ -175,7 +160,6 @@ export default function AdminVehiclesPage() {
       const payload = {
         ...(editingId ? { id: editingId } : {}),
         ...formData,
-        inclusions,
         image: imageUrl
       };
       const method = editingId ? "PUT" : "POST";
@@ -209,65 +193,11 @@ export default function AdminVehiclesPage() {
     setImageFile(null);
     setImagePreview("");
     setFormData({
-      name: "", type: "SUV", image: "", price: 0, seats: 4, maxAdults: 4, maxChildren: 0, maxChildAge: 12, ac: true, status: "Active", unavailableDates: [], seasonalPrices: [], termsAndConditions: "", gstPercentage: 0
-    });
-    setInclusions([{ text: "", included: true }]);
-    setUnavailableDateInput("");
-  };
-
-  const handleAddUnavailableDate = () => {
-    if (!unavailableDateInput) return;
-    if (!formData.unavailableDates.includes(unavailableDateInput)) {
-      setFormData({
-        ...formData,
-        unavailableDates: [...formData.unavailableDates, unavailableDateInput].sort()
-      });
-    }
-    setUnavailableDateInput("");
-  };
-
-  const handleRemoveUnavailableDate = (date: string) => {
-    setFormData({
-      ...formData,
-      unavailableDates: formData.unavailableDates.filter(d => d !== date)
+      name: "", type: "SUV", image: "", seats: 4, maxAdults: 4, maxChildren: 0, maxChildAge: 12, ac: true, status: "Active"
     });
   };
 
-  const handleAddSeasonalPrice = () => {
-    if (!seasonalInput.startDate || !seasonalInput.endDate || seasonalInput.price <= 0) return;
-    
-    // Check for overlap
-    const newStart = new Date(seasonalInput.startDate).getTime();
-    const newEnd = new Date(seasonalInput.endDate).getTime();
-    
-    if (newEnd < newStart) {
-      alert("End date cannot be before start date");
-      return;
-    }
 
-    const hasOverlap = formData.seasonalPrices.some(season => {
-      const existingStart = new Date(season.startDate).getTime();
-      const existingEnd = new Date(season.endDate).getTime();
-      return (newStart <= existingEnd && newEnd >= existingStart);
-    });
-
-    if (hasOverlap) {
-      alert("This date range overlaps with an existing seasonal price. No overlaps allowed.");
-      return;
-    }
-
-    setFormData({
-      ...formData,
-      seasonalPrices: [...formData.seasonalPrices, { ...seasonalInput }].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
-    });
-    setSeasonalInput({ startDate: "", endDate: "", price: 0 });
-  };
-
-  const handleRemoveSeasonalPrice = (index: number) => {
-    const newPrices = [...formData.seasonalPrices];
-    newPrices.splice(index, 1);
-    setFormData({ ...formData, seasonalPrices: newPrices });
-  };
 
   return (
     <div className="space-y-6">
@@ -335,14 +265,7 @@ export default function AdminVehiclesPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Route Price (₹)</label>
-                  <input type="number" required value={formData.price} onChange={e => setFormData({...formData, price: Number(e.target.value)})} className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">GST Percentage (%)</label>
-                  <input type="number" value={formData.gstPercentage} onChange={e => setFormData({...formData, gstPercentage: Number(e.target.value)})} className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary" placeholder="e.g. 12" />
-                </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Total Seats</label>
                   <input type="number" required value={formData.seats} onChange={e => setFormData({...formData, seats: Number(e.target.value)})} className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary" />
@@ -367,108 +290,6 @@ export default function AdminVehiclesPage() {
                   </select>
                 </div>
 
-                <div className="md:col-span-2 bg-muted/10 p-4 rounded-xl border border-border/50">
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Unavailable Dates</label>
-                  <div className="flex items-center gap-2 mb-3">
-                    <input 
-                      type="date" 
-                      value={unavailableDateInput} 
-                      onChange={e => setUnavailableDateInput(e.target.value)}
-                      className="bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary flex-1 max-w-[200px]"
-                    />
-                    <Button type="button" onClick={handleAddUnavailableDate} variant="secondary" className="rounded-xl">Add Date</Button>
-                  </div>
-                  {formData.unavailableDates.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {formData.unavailableDates.map((date, idx) => (
-                        <div key={idx} className="bg-destructive/10 text-destructive text-sm px-3 py-1 rounded-full flex items-center gap-1 border border-destructive/20">
-                          {date}
-                          <button type="button" onClick={() => handleRemoveUnavailableDate(date)} className="hover:text-destructive/70"><XCircle className="w-3.5 h-3.5" /></button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">No unavailable dates set. This vehicle is available every day.</p>
-                  )}
-                </div>
-
-                <div className="md:col-span-2 bg-muted/10 p-4 rounded-xl border border-border/50">
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Seasonal Pricing</label>
-                  <p className="text-xs text-muted-foreground mb-3">Set custom prices for specific date ranges. Overlaps are not permitted.</p>
-                  <div className="flex flex-col md:flex-row items-center gap-2 mb-3">
-                    <div className="flex-1 flex gap-2 w-full">
-                      <input 
-                        type="date" 
-                        value={seasonalInput.startDate} 
-                        onChange={e => setSeasonalInput({...seasonalInput, startDate: e.target.value})}
-                        className="bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary flex-1"
-                        placeholder="Start Date"
-                      />
-                      <input 
-                        type="date" 
-                        value={seasonalInput.endDate} 
-                        onChange={e => setSeasonalInput({...seasonalInput, endDate: e.target.value})}
-                        className="bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary flex-1"
-                        placeholder="End Date"
-                      />
-                    </div>
-                    <div className="flex gap-2 w-full md:w-auto">
-                      <input 
-                        type="number" 
-                        min="1"
-                        placeholder="Price (₹)"
-                        value={seasonalInput.price || ""} 
-                        onChange={e => setSeasonalInput({...seasonalInput, price: Number(e.target.value)})}
-                        className="bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary w-full md:w-32"
-                      />
-                      <Button type="button" onClick={handleAddSeasonalPrice} variant="secondary" className="rounded-xl whitespace-nowrap">Add</Button>
-                    </div>
-                  </div>
-                  {formData.seasonalPrices && formData.seasonalPrices.length > 0 ? (
-                    <div className="flex flex-col gap-2">
-                      {formData.seasonalPrices.map((season, idx) => (
-                        <div key={idx} className="bg-primary/10 text-primary text-sm px-4 py-2 rounded-lg flex items-center justify-between border border-primary/20">
-                          <div>
-                            <span className="font-semibold">{season.startDate}</span> to <span className="font-semibold">{season.endDate}</span> : 
-                            <span className="font-bold ml-2">₹{season.price}</span>
-                          </div>
-                          <button type="button" onClick={() => handleRemoveSeasonalPrice(idx)} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">No seasonal prices set. Base price applies year-round.</p>
-                  )}
-                </div>
-
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Terms & Conditions</label>
-                  <textarea 
-                    value={formData.termsAndConditions} onChange={e => setFormData({...formData, termsAndConditions: e.target.value})}
-                    className="w-full bg-muted/30 border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary transition-all min-h-[100px]"
-                    placeholder="Enter vehicle-specific terms and conditions here..."
-                  />
-                </div>
-              </div>
-
-              {/* Inclusions */}
-              <div className="border-t border-border pt-4">
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-bold">Inclusions / Exclusions</h3>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setInclusions([...inclusions, { text: "", included: true }])}>+ Add Item</Button>
-                </div>
-                <div className="space-y-2">
-                  {inclusions.map((item, index) => (
-                    <div key={index} className="flex gap-2 items-center bg-muted/10 p-2 rounded-xl border border-border/50">
-                      <select value={item.included ? "true" : "false"} onChange={e => { const newInc = [...inclusions]; newInc[index].included = e.target.value === "true"; setInclusions(newInc); }} className="bg-background border border-border rounded-lg py-2 px-2 text-sm focus:outline-none">
-                        <option value="true">Included</option>
-                        <option value="false">Excluded</option>
-                      </select>
-                      <input type="text" placeholder="e.g. Fuel, Toll Taxes" value={item.text} onChange={e => { const newInc = [...inclusions]; newInc[index].text = e.target.value; setInclusions(newInc); }} className="flex-1 bg-background border border-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-primary" />
-                      <button type="button" onClick={() => setInclusions(inclusions.filter((_, i) => i !== index))} className="p-2 text-destructive hover:bg-destructive/10 rounded-lg"><Trash2 className="w-4 h-4" /></button>
-                    </div>
-                  ))}
-                </div>
               </div>
 
               <button type="submit" disabled={saving} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl py-3 mt-4 disabled:opacity-70">
@@ -486,7 +307,7 @@ export default function AdminVehiclesPage() {
               <tr>
                 <th className="px-6 py-4 font-semibold tracking-wider">Vehicle</th>
                 <th className="px-6 py-4 font-semibold tracking-wider">Type</th>
-                <th className="px-6 py-4 font-semibold tracking-wider">Route Price</th>
+
                 <th className="px-6 py-4 font-semibold tracking-wider">Seats</th>
                 <th className="px-6 py-4 font-semibold tracking-wider text-right">Actions</th>
               </tr>
@@ -505,7 +326,7 @@ export default function AdminVehiclesPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-muted-foreground">{v.type}</td>
-                  <td className="px-6 py-4 font-bold">₹{v.price || v.pricePerDay}</td>
+
                   <td className="px-6 py-4 text-muted-foreground">
                     <div>{v.seats} Seats</div>
                     <div className="text-xs text-foreground/60">{v.maxAdults} Adults, {v.maxChildren} Children (Max age {v.maxChildAge || 12})</div>
