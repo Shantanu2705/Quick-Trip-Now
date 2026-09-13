@@ -44,21 +44,22 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
   const hasTerms = allTerms.length > 0;
   const hasItinerary = booking.itinerary && booking.itinerary.length > 0;
   
-  // Chunk itinerary: 6 days per page to avoid overflow
+  // Chunk itinerary: 3 days per page to avoid overflow
   const itineraryChunks = [];
   if (hasItinerary) {
-    for (let i = 0; i < booking.itinerary.length; i += 6) {
-      itineraryChunks.push(booking.itinerary.slice(i, i + 6));
+    for (let i = 0; i < booking.itinerary.length; i += 3) {
+      itineraryChunks.push(booking.itinerary.slice(i, i + 3));
     }
   }
 
-  // Chunk terms: first page can take 20 lines (if inclusions present, less), subsequent take 30
-  const termsPage1Limit = hasInclusions ? 0 : 25; // If inclusions, they take up page 1 of terms
+  // Chunk terms: much smaller limits to guarantee we don't overflow and squash text.
+  // Inclusions can be long, so if they exist, 0 terms on page 1. Otherwise, 10 terms.
+  const termsPage1Limit = hasInclusions ? 0 : 10; 
   const termsPage1 = allTerms.slice(0, termsPage1Limit);
   const remainingTerms = allTerms.slice(termsPage1Limit);
   const termsChunks = [];
-  for (let i = 0; i < remainingTerms.length; i += 30) {
-    termsChunks.push(remainingTerms.slice(i, i + 30));
+  for (let i = 0; i < remainingTerms.length; i += 12) {
+    termsChunks.push(remainingTerms.slice(i, i + 12));
   }
 
   return (
