@@ -66,13 +66,13 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
             <h1 className="text-5xl font-black text-primary tracking-tight uppercase" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>Invoice</h1>
             <h2 className="text-xl text-slate-500 font-bold tracking-widest mt-2 uppercase" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>Booking Receipt</h2>
             
-            <div className="mt-8 space-y-3 text-sm bg-[rgba(245, 130, 32, 0.03)] p-5 rounded-xl border border-[rgba(245, 130, 32, 0.15)] inline-block text-left ml-auto min-w-[320px] shadow-sm">
+            <div className="mt-8 space-y-3 text-sm bg-[rgba(245,130,32,0.03)] p-5 rounded-xl border border-[rgba(245,130,32,0.15)] inline-block text-left ml-auto min-w-[320px] shadow-sm">
               <div className="flex justify-between items-center gap-6">
-                <span className="text-[rgba(245, 130, 32, 0.9)] font-bold uppercase tracking-wider text-xs">Booking ID:</span>
+                <span className="text-[rgba(245,130,32,0.9)] font-bold uppercase tracking-wider text-xs">Booking ID:</span>
                 <span className="font-black text-primary text-lg">{booking.id}</span>
               </div>
-              <div className="flex justify-between items-center gap-6 pt-3 border-t border-[rgba(245, 130, 32, 0.15)]">
-                <span className="text-[rgba(245, 130, 32, 0.9)] font-bold uppercase tracking-wider text-xs">Date Issued:</span>
+              <div className="flex justify-between items-center gap-6 pt-3 border-t border-[rgba(245,130,32,0.15)]">
+                <span className="text-[rgba(245,130,32,0.9)] font-bold uppercase tracking-wider text-xs">Date Issued:</span>
                 <span className="font-bold text-slate-700">{format(new Date(), 'MMM dd, yyyy')}</span>
               </div>
             </div>
@@ -80,11 +80,11 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
         </div>
 
         {/* Separator Line */}
-        <div className="w-full border-b-2 border-[rgba(245, 130, 32, 0.2)] my-2 shrink-0"></div>
+        <div className="w-full border-b-2 border-[rgba(245,130,32,0.2)] my-2 shrink-0"></div>
 
         <div className="space-y-10 mt-8">
           {/* Customer Info */}
-          <div className="bg-[rgba(245, 130, 32, 0.03)] p-6 rounded-xl border border-[rgba(245, 130, 32, 0.15)] relative overflow-hidden break-inside-avoid shadow-sm w-full">
+          <div className="bg-[rgba(245,130,32,0.03)] p-6 rounded-xl border border-[rgba(245,130,32,0.15)] relative overflow-hidden break-inside-avoid shadow-sm w-full">
             <div className="absolute top-0 left-0 w-2 h-full bg-primary"></div>
             <h3 className="text-xs font-black text-primary uppercase tracking-widest mb-4" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>Billed To</h3>
             <div className="text-sm space-y-1.5">
@@ -229,7 +229,7 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
       {/* TRIP DETAILS & ITINERARY */}
       {(booking.description || hasItinerary) && (
         <div className="mt-8">
-          <h3 className="text-2xl font-heading font-black text-primary uppercase tracking-widest mb-6 border-b-4 border-[rgba(245, 130, 32, 0.2)] pb-4">Trip Itinerary & Details</h3>
+          <h3 className="text-2xl font-heading font-black text-primary uppercase tracking-widest mb-6 border-b-4 border-[rgba(245,130,32,0.2)] pb-4">Trip Itinerary & Details</h3>
           
           {booking.description && (
             <div className="mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-100 break-inside-avoid">
@@ -245,7 +245,7 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
               {booking.itinerary.map((item: any, idx: number) => (
                 <div key={idx} className="flex gap-4 items-start break-inside-avoid">
                   {item.day && (
-                    <div className="shrink-0 bg-[rgba(245, 130, 32, 0.1)] text-primary w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg border border-[rgba(245, 130, 32, 0.2)]">
+                    <div className="shrink-0 bg-[rgba(245,130,32,0.1)] text-primary w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg border border-[rgba(245,130,32,0.2)]">
                       D{item.day}
                     </div>
                   )}
@@ -267,13 +267,13 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
       {/* TERMS & INCLUSIONS */}
       {(hasInclusions || hasTerms) && (
         <div className="mt-8">
-          <h3 className="text-2xl font-heading font-black text-slate-800 uppercase tracking-widest mb-8 border-b-4 border-[rgba(245, 130, 32, 0.2)] pb-4">Terms & Inclusions</h3>
+          <h3 className="text-2xl font-heading font-black text-slate-800 uppercase tracking-widest mb-8 border-b-4 border-[rgba(245,130,32,0.2)] pb-4">Terms & Inclusions</h3>
         
           <div className="flex-1">
             {hasInclusions && (
               <div className="grid grid-cols-2 gap-8 mb-10 break-inside-avoid">
                 {booking.inclusions.some((i: any) => String(i.included) === "true") && (
-                  <div className="bg-[#ecfdf580] p-6 rounded-2xl border border-emerald-100">
+                  <div className="bg-[rgba(236,253,245,0.5)] p-6 rounded-2xl border border-emerald-100">
                     <h4 className="font-black text-emerald-700 uppercase tracking-wider mb-4 flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Inclusions
                     </h4>
@@ -290,7 +290,7 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                   </div>
                 )}
                 {booking.inclusions.some((i: any) => String(i.included) === "false") && (
-                  <div className="bg-[#fef2f280] p-6 rounded-2xl border border-red-100">
+                  <div className="bg-[rgba(254,242,242,0.5)] p-6 rounded-2xl border border-red-100">
                     <h4 className="font-black text-red-700 uppercase tracking-wider mb-4 flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-red-500"></span> Exclusions
                     </h4>
