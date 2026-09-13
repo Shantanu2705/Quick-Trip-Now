@@ -208,61 +208,90 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
         </div>
       </div>
 
-      {/* PAGE 2 */}
-      {hasPage2 && (
-        <div className="pdf-page bg-white relative w-[794px] min-h-[600px] h-max p-[20mm] shrink-0 overflow-hidden shadow-lg mt-8">
-          <BackgroundElements />
-          
-          <div className="relative z-10 flex flex-col h-full">
-            <h3 className="text-xl font-heading font-black text-slate-800 uppercase tracking-widest mb-8 border-b-2 border-primary/20 pb-4">Terms & Inclusions</h3>
-            
-            <div className="flex-1 text-xs">
-              {booking.inclusions && booking.inclusions.length > 0 && (
-                <div className="grid grid-cols-2 gap-8 mb-6">
-                  {booking.inclusions.some((i: any) => String(i.included) === "true") && (
-                    <div>
-                      <h4 className="font-bold text-emerald-700 uppercase tracking-wider mb-3">Inclusions</h4>
-                      <ul className="list-disc pl-4 text-slate-600 space-y-1.5 leading-relaxed">
-                        {Array.from(new Set(booking.inclusions.filter((i: any) => String(i.included) === "true").map((item: any) => item.text))).map((text: any, idx: number) => {
-                          if (text.includes('•')) {
-                            return text.split('•').map((p: string) => p.trim()).filter(Boolean).map((p: string, i: number) => (
-                              <li key={`${idx}-${i}`}>{p}</li>
-                            ));
-                          }
-                          return <li key={idx}>{text}</li>;
-                        })}
-                      </ul>
+      {/* PAGE 2 AND BEYOND */}
+      {hasPage2 && (() => {
+        const allTerms = booking.terms ? booking.terms.split('\n').filter((t: string) => t.trim().length > 0) : [];
+        const termsPage1 = allTerms.slice(0, 18);
+        const remainingTerms = allTerms.slice(18);
+        
+        const additionalPages = [];
+        for (let i = 0; i < remainingTerms.length; i += 35) {
+          additionalPages.push(remainingTerms.slice(i, i + 35));
+        }
+
+        return (
+          <>
+            <div className="pdf-page bg-white relative w-[794px] min-h-[1123px] h-max p-[20mm] shrink-0 overflow-hidden shadow-lg mt-8">
+              <BackgroundElements />
+              
+              <div className="relative z-10 flex flex-col h-full">
+                <h3 className="text-xl font-heading font-black text-slate-800 uppercase tracking-widest mb-8 border-b-2 border-primary/20 pb-4">Terms & Inclusions</h3>
+                
+                <div className="flex-1 text-xs">
+                  {booking.inclusions && booking.inclusions.length > 0 && (
+                    <div className="grid grid-cols-2 gap-8 mb-6">
+                      {booking.inclusions.some((i: any) => String(i.included) === "true") && (
+                        <div>
+                          <h4 className="font-bold text-emerald-700 uppercase tracking-wider mb-3">Inclusions</h4>
+                          <ul className="list-disc pl-4 text-slate-600 space-y-1.5 leading-relaxed">
+                            {Array.from(new Set(booking.inclusions.filter((i: any) => String(i.included) === "true").map((item: any) => item.text))).map((text: any, idx: number) => {
+                              if (text.includes('•')) {
+                                return text.split('•').map((p: string) => p.trim()).filter(Boolean).map((p: string, i: number) => (
+                                  <li key={`${idx}-${i}`}>{p}</li>
+                                ));
+                              }
+                              return <li key={idx}>{text}</li>;
+                            })}
+                          </ul>
+                        </div>
+                      )}
+                      {booking.inclusions.some((i: any) => String(i.included) === "false") && (
+                        <div>
+                          <h4 className="font-bold text-red-700 uppercase tracking-wider mb-3">Exclusions</h4>
+                          <ul className="list-disc pl-4 text-slate-600 space-y-1.5 leading-relaxed">
+                            {Array.from(new Set(booking.inclusions.filter((i: any) => String(i.included) === "false").map((item: any) => item.text))).map((text: any, idx: number) => {
+                              if (text.includes('•')) {
+                                return text.split('•').map((p: string) => p.trim()).filter(Boolean).map((p: string, i: number) => (
+                                  <li key={`${idx}-${i}`}>{p}</li>
+                                ));
+                              }
+                              return <li key={idx}>{text}</li>;
+                            })}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   )}
-                  {booking.inclusions.some((i: any) => String(i.included) === "false") && (
-                    <div>
-                      <h4 className="font-bold text-red-700 uppercase tracking-wider mb-3">Exclusions</h4>
-                      <ul className="list-disc pl-4 text-slate-600 space-y-1.5 leading-relaxed">
-                        {Array.from(new Set(booking.inclusions.filter((i: any) => String(i.included) === "false").map((item: any) => item.text))).map((text: any, idx: number) => {
-                          if (text.includes('•')) {
-                            return text.split('•').map((p: string) => p.trim()).filter(Boolean).map((p: string, i: number) => (
-                              <li key={`${idx}-${i}`}>{p}</li>
-                            ));
-                          }
-                          return <li key={idx}>{text}</li>;
-                        })}
-                      </ul>
+                  {termsPage1.length > 0 && (
+                    <div className="mt-8 text-slate-600 leading-relaxed text-[11px] space-y-2">
+                      <h4 className="font-bold text-slate-700 uppercase tracking-wider mb-3 text-xs">Specific Terms & Conditions</h4>
+                      {termsPage1.map((term: string, idx: number) => (
+                        <p key={idx}>{term}</p>
+                      ))}
                     </div>
                   )}
                 </div>
-              )}
-              {booking.terms && (
-                <div className="mt-8 text-slate-600 whitespace-pre-wrap leading-relaxed text-[11px]">
-                  <h4 className="font-bold text-slate-700 uppercase tracking-wider mb-3 text-xs">Specific Terms & Conditions</h4>
-                  {booking.terms}
-                </div>
-              )}
+                
+                {additionalPages.length === 0 && <SignatureBlock />}
+              </div>
             </div>
-            
-            <SignatureBlock />
-          </div>
-        </div>
-      )}
+
+            {additionalPages.map((pageTerms, pageIdx) => (
+              <div key={pageIdx} className="pdf-page bg-white relative w-[794px] min-h-[1123px] h-max p-[20mm] shrink-0 overflow-hidden shadow-lg mt-8">
+                <BackgroundElements />
+                <div className="relative z-10 flex flex-col h-full">
+                  <div className="flex-1 text-xs text-slate-600 leading-relaxed text-[11px] space-y-2">
+                    {pageTerms.map((term: string, idx: number) => (
+                      <p key={idx}>{term}</p>
+                    ))}
+                  </div>
+                  {pageIdx === additionalPages.length - 1 && <SignatureBlock />}
+                </div>
+              </div>
+            ))}
+          </>
+        );
+      })()}
     </div>
   );
 }
