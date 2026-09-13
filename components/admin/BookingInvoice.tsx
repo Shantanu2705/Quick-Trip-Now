@@ -211,24 +211,27 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
       {/* PAGE 2 AND BEYOND */}
       {hasPage2 && (() => {
         const allTerms = booking.terms ? booking.terms.split('\n').filter((t: string) => t.trim().length > 0) : [];
-        const termsPage1 = allTerms.slice(0, 18);
-        const remainingTerms = allTerms.slice(18);
+        const hasInclusions = booking.inclusions && booking.inclusions.length > 0;
+        
+        // To absolutely guarantee no text slicing, we isolate Inclusions and strictly chunk Terms
+        const termsPage1 = hasInclusions ? [] : allTerms.slice(0, 25);
+        const remainingTerms = hasInclusions ? allTerms : allTerms.slice(25);
         
         const additionalPages = [];
-        for (let i = 0; i < remainingTerms.length; i += 35) {
-          additionalPages.push(remainingTerms.slice(i, i + 35));
+        for (let i = 0; i < remainingTerms.length; i += 25) {
+          additionalPages.push(remainingTerms.slice(i, i + 25));
         }
 
         return (
           <>
-            <div className="pdf-page bg-white relative w-[794px] min-h-[1123px] h-max p-[20mm] shrink-0 overflow-hidden shadow-lg mt-8">
+            <div className="pdf-page bg-white relative w-[794px] min-h-[600px] h-max p-[20mm] shrink-0 overflow-hidden shadow-lg mt-8">
               <BackgroundElements />
               
               <div className="relative z-10 flex flex-col h-full">
                 <h3 className="text-xl font-heading font-black text-slate-800 uppercase tracking-widest mb-8 border-b-2 border-primary/20 pb-4">Terms & Inclusions</h3>
                 
                 <div className="flex-1 text-xs">
-                  {booking.inclusions && booking.inclusions.length > 0 && (
+                  {hasInclusions && (
                     <div className="grid grid-cols-2 gap-8 mb-6">
                       {booking.inclusions.some((i: any) => String(i.included) === "true") && (
                         <div>
@@ -277,9 +280,12 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
             </div>
 
             {additionalPages.map((pageTerms, pageIdx) => (
-              <div key={pageIdx} className="pdf-page bg-white relative w-[794px] min-h-[1123px] h-max p-[20mm] shrink-0 overflow-hidden shadow-lg mt-8">
+              <div key={pageIdx} className="pdf-page bg-white relative w-[794px] min-h-[600px] h-max p-[20mm] shrink-0 overflow-hidden shadow-lg mt-8">
                 <BackgroundElements />
                 <div className="relative z-10 flex flex-col h-full">
+                  {pageIdx === 0 && hasInclusions && (
+                    <h4 className="font-bold text-slate-700 uppercase tracking-wider mb-6 text-xs">Specific Terms & Conditions</h4>
+                  )}
                   <div className="flex-1 text-xs text-slate-600 leading-relaxed text-[11px] space-y-2">
                     {pageTerms.map((term: string, idx: number) => (
                       <p key={idx}>{term}</p>
