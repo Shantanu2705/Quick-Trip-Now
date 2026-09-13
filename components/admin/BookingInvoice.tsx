@@ -87,7 +87,7 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
 
         {/* Separator Line */}
         <div className="w-full flex items-center justify-center my-4 opacity-70 shrink-0">
-          <div className="h-0.5 flex-grow bg-gradient-to-r from-transparent via-[rgba(245,130,32,0.5)] to-transparent"></div>
+          <div className="h-0.5 w-full bg-[rgba(245,130,32,0.2)]"></div>
         </div>
 
         <div className="space-y-12 mt-6">
