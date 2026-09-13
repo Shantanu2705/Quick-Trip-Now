@@ -43,7 +43,7 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
       {/* INVOICE SUMMARY SECTION */}
       <div className="relative z-10 flex flex-col">
         {/* Header */}
-        <div className="flex justify-between items-start border-b-4 border-[#F5822033] pb-8 shrink-0">
+        <div className="flex justify-between items-start border-b-4 border-[rgba(245, 130, 32, 0.2)] pb-8 shrink-0">
           <div>
             <Logo variant="bare" className="h-14 w-56 mb-4 origin-left" />
             <div className="text-slate-500 text-sm mt-4 leading-relaxed">
@@ -59,13 +59,13 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
             <h1 className="text-5xl font-black text-primary tracking-tight uppercase">Invoice</h1>
             <h2 className="text-xl text-slate-500 font-bold tracking-widest mt-2 uppercase">Booking Receipt</h2>
             
-            <div className="mt-8 space-y-3 text-sm bg-[#F582200D] p-4 rounded-xl border border-[#F582201A] inline-block text-left ml-auto min-w-[280px] shadow-sm">
+            <div className="mt-8 space-y-3 text-sm bg-[rgba(245, 130, 32, 0.05)] p-4 rounded-xl border border-[rgba(245, 130, 32, 0.1)] inline-block text-left ml-auto min-w-[280px] shadow-sm">
               <div className="flex justify-between items-center gap-6">
-                <span className="text-[#F58220B3] font-bold uppercase tracking-wider text-xs">Booking ID:</span>
+                <span className="text-[rgba(245, 130, 32, 0.7)] font-bold uppercase tracking-wider text-xs">Booking ID:</span>
                 <span className="font-mono font-black text-primary text-base">{booking.id}</span>
               </div>
-              <div className="flex justify-between items-center gap-6 pt-3 border-t border-[#F582201A]">
-                <span className="text-[#F58220B3] font-bold uppercase tracking-wider text-xs">Date Issued:</span>
+              <div className="flex justify-between items-center gap-6 pt-3 border-t border-[rgba(245, 130, 32, 0.1)]">
+                <span className="text-[rgba(245, 130, 32, 0.7)] font-bold uppercase tracking-wider text-xs">Date Issued:</span>
                 <span className="font-bold text-slate-700">{format(new Date(), 'MMM dd, yyyy')}</span>
               </div>
             </div>
@@ -74,7 +74,7 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
 
         <div className="space-y-10 mt-10">
           {/* Customer Info */}
-          <div className="bg-[#F582200D] p-6 rounded-xl border border-[#F582201A] relative overflow-hidden break-inside-avoid">
+          <div className="bg-[rgba(245, 130, 32, 0.05)] p-6 rounded-xl border border-[rgba(245, 130, 32, 0.1)] relative overflow-hidden break-inside-avoid">
             <div className="absolute top-0 left-0 w-1.5 h-full bg-primary"></div>
             <h3 className="text-xs font-black text-primary uppercase tracking-widest mb-4">Billed To</h3>
             <div className="text-sm space-y-1">
@@ -216,7 +216,7 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
       {/* TRIP DETAILS & ITINERARY */}
       {(booking.description || hasItinerary) && (
         <div className="mt-8">
-          <h3 className="text-2xl font-heading font-black text-primary uppercase tracking-widest mb-6 border-b-4 border-[#F5822033] pb-4">Trip Itinerary & Details</h3>
+          <h3 className="text-2xl font-heading font-black text-primary uppercase tracking-widest mb-6 border-b-4 border-[rgba(245, 130, 32, 0.2)] pb-4">Trip Itinerary & Details</h3>
           
           {booking.description && (
             <div className="mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-100 break-inside-avoid">
@@ -232,7 +232,7 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
               {booking.itinerary.map((item: any, idx: number) => (
                 <div key={idx} className="flex gap-4 items-start break-inside-avoid">
                   {item.day && (
-                    <div className="shrink-0 bg-[#F582201A] text-primary w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg border border-[#F5822033]">
+                    <div className="shrink-0 bg-[rgba(245, 130, 32, 0.1)] text-primary w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg border border-[rgba(245, 130, 32, 0.2)]">
                       D{item.day}
                     </div>
                   )}
@@ -254,7 +254,7 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
       {/* TERMS & INCLUSIONS */}
       {(hasInclusions || hasTerms) && (
         <div className="mt-8">
-          <h3 className="text-2xl font-heading font-black text-slate-800 uppercase tracking-widest mb-8 border-b-4 border-[#F5822033] pb-4">Terms & Inclusions</h3>
+          <h3 className="text-2xl font-heading font-black text-slate-800 uppercase tracking-widest mb-8 border-b-4 border-[rgba(245, 130, 32, 0.2)] pb-4">Terms & Inclusions</h3>
         
           <div className="flex-1">
             {hasInclusions && (
