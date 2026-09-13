@@ -173,11 +173,14 @@ export default function AdminBookingsPage() {
     b.email?.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Sort by date descending
+  // Sort by Booking ID descending
   const sortedBookings = [...filteredBookings].sort((a, b) => {
-    const dateA = new Date(a.date || a.travelDate || a.createdAt || 0).getTime();
-    const dateB = new Date(b.date || b.travelDate || b.createdAt || 0).getTime();
-    return dateB - dateA;
+    const getIdNum = (id: string) => {
+      if (!id) return 0;
+      const match = id.match(/QTN-(\d+)/);
+      return match ? parseInt(match[1], 10) : 0;
+    };
+    return getIdNum(b.id) - getIdNum(a.id);
   });
 
   return (

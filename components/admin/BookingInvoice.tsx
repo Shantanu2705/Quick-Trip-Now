@@ -39,12 +39,32 @@ const BackgroundElements = () => (
 export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
   if (!booking) return null;
 
-  const hasPage2 = booking.terms || (booking.inclusions && booking.inclusions.length > 0);
+  const hasInclusions = booking.inclusions && booking.inclusions.length > 0;
+  const allTerms = booking.terms ? booking.terms.split('\n').filter((t: string) => t.trim().length > 0) : [];
+  const hasTerms = allTerms.length > 0;
+  const hasItinerary = booking.itinerary && booking.itinerary.length > 0;
+  
+  // Chunk itinerary: 6 days per page to avoid overflow
+  const itineraryChunks = [];
+  if (hasItinerary) {
+    for (let i = 0; i < booking.itinerary.length; i += 6) {
+      itineraryChunks.push(booking.itinerary.slice(i, i + 6));
+    }
+  }
+
+  // Chunk terms: first page can take 20 lines (if inclusions present, less), subsequent take 30
+  const termsPage1Limit = hasInclusions ? 0 : 25; // If inclusions, they take up page 1 of terms
+  const termsPage1 = allTerms.slice(0, termsPage1Limit);
+  const remainingTerms = allTerms.slice(termsPage1Limit);
+  const termsChunks = [];
+  for (let i = 0; i < remainingTerms.length; i += 30) {
+    termsChunks.push(remainingTerms.slice(i, i + 30));
+  }
 
   return (
-    <div id={id} className="bg-slate-100 flex flex-col gap-8 w-max" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+    <div id={id} className="bg-slate-100 flex flex-col gap-8 w-max pb-8" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
       
-      {/* PAGE 1 */}
+      {/* PAGE 1: INVOICE SUMMARY */}
       <div className="pdf-page bg-white relative w-[794px] min-h-[1123px] h-max p-[20mm] shrink-0 overflow-hidden shadow-lg">
         <BackgroundElements />
         
@@ -91,16 +111,15 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
               </div>
             </div>
 
-            {/* Trip Details */}
+            {/* Trip Details (Summary Table Only) */}
             <div>
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Trip Summary</h3>
               <table className="w-full text-left text-sm border-collapse">
                 <thead>
                   <tr className="border-b-2 border-slate-800 text-slate-800">
-                    <th className="py-3 px-4 font-bold">Description</th>
+                    <th className="py-3 px-4 font-bold w-1/2">Description</th>
                     <th className="py-3 px-4 font-bold">Travel Date</th>
                     <th className="py-3 px-4 font-bold">Travelers</th>
-                    <th className="py-3 px-4 font-bold text-right">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -108,61 +127,24 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                     <td className="py-4 px-4 font-medium text-slate-800">
                       {booking.type === 'tour' || booking.type === 'package' ? (
                         <>
-                          <span className="block font-bold text-base">{booking.packageName || booking.packageType || "Custom Travel Package"}</span>
-                          {booking.vehicleName && <span className="block text-xs text-slate-500 mt-1 font-normal">Vehicle: {booking.vehicleName} (x{booking.vehicleQty || 1})</span>}
+                          <span className="block font-bold text-base text-primary">{booking.packageName || booking.packageType || "Custom Travel Package"}</span>
+                          {booking.vehicleName && <span className="block text-xs text-slate-500 mt-1 font-normal">Vehicle Included: {booking.vehicleName} (x{booking.vehicleQty || 1})</span>}
                         </>
                       ) : booking.type === 'vehicle' || booking.type === 'cab' ? (
                         <>
-                          <span className="block font-bold text-base">Private Transfer</span>
-                          {!booking.description && <span className="block text-sm text-slate-600 mt-1">Route: {booking.pickup || "Origin"} to {booking.dropoff || "Destination"}</span>}
+                          <span className="block font-bold text-base text-primary">Private Transfer</span>
+                          <span className="block text-sm text-slate-600 mt-1">Route: {booking.pickup || "Origin"} to {booking.dropoff || "Destination"}</span>
                           {booking.vehicleName && <span className="block text-xs text-slate-500 mt-1 font-normal">Vehicle: {booking.vehicleName} (x{booking.vehicleQty || 1})</span>}
                         </>
                       ) : (
                         <>
-                          <span className="block font-bold text-base">{booking.vehicleName || booking.packageType || booking.packageName || "Custom Travel Package"}</span>
+                          <span className="block font-bold text-base text-primary">{booking.vehicleName || booking.packageType || booking.packageName || "Custom Travel Package"}</span>
                           {booking.vehicleName && <span className="block text-xs text-slate-500 mt-1 font-normal">Vehicle Booking (x{booking.vehicleQty || 1})</span>}
                         </>
                       )}
-
-                      {booking.description && (
-                        <div className="mt-4">
-                          <span className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Description</span>
-                          <span className="block text-sm text-slate-600 font-normal leading-relaxed whitespace-pre-wrap">
-                            {booking.description}
-                          </span>
-                        </div>
-                      )}
-
-                      {booking.itinerary && booking.itinerary.length > 0 && (
-                        <div className="mt-4">
-                          <span className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Itinerary</span>
-                          <div className="space-y-1.5">
-                            {booking.itinerary.map((item: any, idx: number) => {
-                              if (item.day) {
-                                return (
-                                  <div key={idx} className="text-xs text-slate-600">
-                                    <span className="font-bold text-slate-700">Day {item.day}: {item.title}</span>
-                                    {item.desc && <span className="block mt-0.5">{item.desc}</span>}
-                                  </div>
-                                );
-                              }
-                              if (item.location) {
-                                return (
-                                  <div key={idx} className="text-xs text-slate-600 flex items-center gap-1.5">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-primary/60 inline-block shrink-0"></span>
-                                    <span>{item.location}</span>
-                                  </div>
-                                );
-                              }
-                              return null;
-                            })}
-                          </div>
-                        </div>
-                      )}
-                      
-                      <span className="block text-xs text-slate-500 mt-4 font-normal">SAC: 998552</span>
+                      <span className="block text-xs text-slate-400 mt-3 font-normal">SAC: 998552</span>
                     </td>
-                    <td className="py-4 px-4 text-slate-600">{booking.date || booking.travelDate || "N/A"}</td>
+                    <td className="py-4 px-4 text-slate-600 font-semibold">{booking.date || booking.travelDate || "N/A"}</td>
                     <td className="py-4 px-4 text-slate-600">
                       {[ 
                         booking.adultsCount ? `${booking.adultsCount} Adult(s)` : null, 
@@ -170,15 +152,14 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                         booking.infantsCount ? `${booking.infantsCount} Infant(s)` : null 
                       ].filter(Boolean).join(', ') || (booking.travelers?.length ? `${booking.travelers.length} Person(s)` : "1 Person(s)")}
                     </td>
-                    <td className="py-4 px-4 text-right font-bold text-slate-800">₹{booking.amount?.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) || 0}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
             {/* Summary & Totals */}
-            <div className="flex justify-end">
-              <div className="w-2/3 bg-slate-50 p-6 rounded-lg border border-slate-200 space-y-3">
+            <div className="flex justify-end mt-12">
+              <div className="w-2/3 bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
                 {(() => {
                   const baseFare = (booking.baseAmount || ((booking.amount || 0) - (booking.gstAmount || 0)));
                   const gstPercent = booking.gstPercentage || 0;
@@ -189,34 +170,34 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                   return (
                     <>
                       <div className="flex justify-between text-sm text-slate-600">
-                        <span>Base Fare</span>
-                        <span>₹{baseFare.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
+                        <span className="font-medium">Base Fare</span>
+                        <span className="font-semibold">₹{baseFare.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
                       </div>
                       {gstPercent > 0 ? (
                         <>
                           <div className="flex justify-between text-sm text-slate-600">
-                            <span>CGST ({gstPercent / 2}%)</span>
-                            <span>₹{(displayGst / 2).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
+                            <span className="font-medium">CGST ({gstPercent / 2}%)</span>
+                            <span className="font-semibold">₹{(displayGst / 2).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
                           </div>
                           <div className="flex justify-between text-sm text-slate-600">
-                            <span>SGST ({gstPercent / 2}%)</span>
-                            <span>₹{(displayGst / 2).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
+                            <span className="font-medium">SGST ({gstPercent / 2}%)</span>
+                            <span className="font-semibold">₹{(displayGst / 2).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
                           </div>
                         </>
                       ) : (
                         <div className="flex justify-between text-sm text-slate-600">
-                          <span>Tax / Fees</span>
-                          <span>₹0</span>
+                          <span className="font-medium">Tax / Fees</span>
+                          <span className="font-semibold">₹0</span>
                         </div>
                       )}
                       
                       {booking.couponCode && discountAmount > 0.01 && (
                         <>
-                          <div className="flex justify-between text-sm font-semibold text-slate-700 mt-2 pt-2 border-t border-slate-200 border-dashed">
+                          <div className="flex justify-between text-sm font-semibold text-slate-700 mt-3 pt-3 border-t border-slate-200 border-dashed">
                             <span>Sub Total</span>
                             <span>₹{subTotal.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
                           </div>
-                          <div className="flex justify-between text-sm font-bold text-emerald-600">
+                          <div className="flex justify-between text-sm font-bold text-emerald-600 mt-1">
                             <span>Coupon Applied ({booking.couponCode})</span>
                             <span>-₹{discountAmount.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
                           </div>
@@ -225,31 +206,31 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                     </>
                   );
                 })()}
-                <div className="border-t border-slate-200 pt-3 flex flex-col gap-2">
+                <div className="border-t-2 border-slate-200 pt-4 mt-2 flex flex-col gap-3">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold text-slate-800 uppercase tracking-wider">Total Amount</span>
-                    <span className="text-xl font-bold text-emerald-600">₹{booking.amount?.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) || 0}</span>
+                    <span className="font-black text-slate-800 uppercase tracking-wider">Total Amount</span>
+                    <span className="text-2xl font-black text-emerald-600">₹{booking.amount?.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) || 0}</span>
                   </div>
                   {booking.paymentType === 'part' && (
                     <>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="font-bold text-slate-600 uppercase tracking-wider">Amount Paid</span>
-                        <span className="font-bold text-emerald-600">₹{booking.paidAmount?.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) || 0}</span>
+                      <div className="flex justify-between items-center text-sm bg-emerald-50 p-2 rounded-lg">
+                        <span className="font-bold text-emerald-800 uppercase tracking-wider">Amount Paid</span>
+                        <span className="font-black text-emerald-700">₹{booking.paidAmount?.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) || 0}</span>
                       </div>
                       {booking.pendingAmount > 0 && (
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="font-bold text-slate-600 uppercase tracking-wider">Pending Balance</span>
-                          <span className="font-bold text-red-600">₹{booking.pendingAmount?.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) || 0}</span>
+                        <div className="flex justify-between items-center text-sm bg-red-50 p-2 rounded-lg">
+                          <span className="font-bold text-red-800 uppercase tracking-wider">Pending Balance</span>
+                          <span className="font-black text-red-700">₹{booking.pendingAmount?.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) || 0}</span>
                         </div>
                       )}
                     </>
                   )}
                 </div>
-                <div className="pt-2 flex justify-between items-center text-xs">
-                  <span className="text-slate-500 font-semibold uppercase tracking-wider">Payment Status</span>
-                  <span className={`px-2 py-1 rounded font-bold uppercase tracking-wider ${
-                    booking.status === 'confirmed' || booking.status === 'paid' ? 'bg-emerald-100 text-emerald-800' : 
-                    booking.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'
+                <div className="pt-4 flex justify-between items-center text-xs">
+                  <span className="text-slate-500 font-bold uppercase tracking-wider">Payment Status</span>
+                  <span className={`px-3 py-1.5 rounded-md font-black uppercase tracking-widest shadow-sm ${
+                    booking.status === 'confirmed' || booking.status === 'paid' ? 'bg-emerald-500 text-white' : 
+                    booking.status === 'pending' ? 'bg-amber-500 text-white' : 'bg-red-500 text-white'
                   }`}>
                     {booking.status || 'pending'}
                   </span>
@@ -258,102 +239,161 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
             </div>
           </div>
 
-          {!hasPage2 && <SignatureBlock />}
+          <SignatureBlock />
         </div>
       </div>
 
-      {/* PAGE 2 AND BEYOND */}
-      {hasPage2 && (() => {
-        const allTerms = booking.terms ? booking.terms.split('\n').filter((t: string) => t.trim().length > 0) : [];
-        const hasInclusions = booking.inclusions && booking.inclusions.length > 0;
-        
-        // To absolutely guarantee no text slicing, we isolate Inclusions and strictly chunk Terms
-        const termsPage1 = hasInclusions ? [] : allTerms.slice(0, 25);
-        const remainingTerms = hasInclusions ? allTerms : allTerms.slice(25);
-        
-        const additionalPages = [];
-        for (let i = 0; i < remainingTerms.length; i += 25) {
-          additionalPages.push(remainingTerms.slice(i, i + 25));
-        }
-
-        return (
-          <>
-            {(booking.terms || (booking.inclusions && booking.inclusions.length > 0)) && (
-              <div className="pdf-page bg-white relative w-[794px] min-h-[600px] h-max p-[20mm] shrink-0 overflow-hidden shadow-lg mt-8">
-                <BackgroundElements />
-                
-                <div className="relative z-10 flex flex-col h-full">
-                  <h3 className="text-xl font-heading font-black text-slate-800 uppercase tracking-widest mb-8 border-b-2 border-primary/20 pb-4">Terms & Inclusions</h3>
-                
-                <div className="flex-1 text-xs">
-                  {hasInclusions && (
-                    <div className="grid grid-cols-2 gap-8 mb-6">
-                      {booking.inclusions.some((i: any) => String(i.included) === "true") && (
-                        <div>
-                          <h4 className="font-bold text-emerald-700 uppercase tracking-wider mb-3">Inclusions</h4>
-                          <ul className="list-disc pl-4 text-slate-600 space-y-1.5 leading-relaxed">
-                            {Array.from(new Set(booking.inclusions.filter((i: any) => String(i.included) === "true").map((item: any) => item.text))).map((text: any, idx: number) => {
-                              if (text.includes('•')) {
-                                return text.split('•').map((p: string) => p.trim()).filter(Boolean).map((p: string, i: number) => (
-                                  <li key={`${idx}-${i}`}>{p}</li>
-                                ));
-                              }
-                              return <li key={idx}>{text}</li>;
-                            })}
-                          </ul>
-                        </div>
-                      )}
-                      {booking.inclusions.some((i: any) => String(i.included) === "false") && (
-                        <div>
-                          <h4 className="font-bold text-red-700 uppercase tracking-wider mb-3">Exclusions</h4>
-                          <ul className="list-disc pl-4 text-slate-600 space-y-1.5 leading-relaxed">
-                            {Array.from(new Set(booking.inclusions.filter((i: any) => String(i.included) === "false").map((item: any) => item.text))).map((text: any, idx: number) => {
-                              if (text.includes('•')) {
-                                return text.split('•').map((p: string) => p.trim()).filter(Boolean).map((p: string, i: number) => (
-                                  <li key={`${idx}-${i}`}>{p}</li>
-                                ));
-                              }
-                              return <li key={idx}>{text}</li>;
-                            })}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {termsPage1.length > 0 && (
-                    <div className="mt-8 text-slate-600 leading-relaxed text-[11px] space-y-2">
-                      <h4 className="font-bold text-slate-700 uppercase tracking-wider mb-3 text-xs">Specific Terms & Conditions</h4>
-                      {termsPage1.map((term: string, idx: number) => (
-                        <p key={idx}>{term}</p>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                
-                {additionalPages.length === 0 && <SignatureBlock />}
+      {/* PAGE(S) 2+: ITINERARY & DESCRIPTION (IF APPLICABLE) */}
+      {(booking.description || hasItinerary) && (
+        <div className="pdf-page bg-white relative w-[794px] min-h-[1123px] h-max p-[20mm] shrink-0 overflow-hidden shadow-lg">
+          <BackgroundElements />
+          <div className="relative z-10 flex flex-col h-full">
+            <h3 className="text-2xl font-heading font-black text-primary uppercase tracking-widest mb-6 border-b-4 border-primary/20 pb-4">Trip Itinerary & Details</h3>
+            
+            {booking.description && (
+              <div className="mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                <h4 className="text-sm font-black text-slate-800 uppercase tracking-wider mb-3">Overview</h4>
+                <p className="text-sm text-slate-600 font-medium leading-relaxed whitespace-pre-wrap">
+                  {booking.description}
+                </p>
               </div>
-            </div>
             )}
 
-            {additionalPages.map((pageTerms, pageIdx) => (
-              <div key={pageIdx} className="pdf-page bg-white relative w-[794px] min-h-[600px] h-max p-[20mm] shrink-0 overflow-hidden shadow-lg mt-8">
-                <BackgroundElements />
-                <div className="relative z-10 flex flex-col h-full">
-                  {pageIdx === 0 && hasInclusions && (
-                    <h4 className="font-bold text-slate-700 uppercase tracking-wider mb-6 text-xs">Specific Terms & Conditions</h4>
-                  )}
-                  <div className="flex-1 text-xs text-slate-600 leading-relaxed text-[11px] space-y-2">
-                    {pageTerms.map((term: string, idx: number) => (
-                      <p key={idx}>{term}</p>
-                    ))}
+            {hasItinerary && (
+              <div className="space-y-6">
+                {itineraryChunks[0].map((item: any, idx: number) => (
+                  <div key={idx} className="flex gap-4 items-start">
+                    {item.day && (
+                      <div className="shrink-0 bg-primary/10 text-primary w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg border border-primary/20">
+                        D{item.day}
+                      </div>
+                    )}
+                    <div className="pt-1">
+                      {item.title ? (
+                        <h4 className="font-bold text-slate-800 text-base">{item.title}</h4>
+                      ) : (
+                        <h4 className="font-bold text-slate-800 text-base">{item.location}</h4>
+                      )}
+                      {item.desc && <p className="text-sm text-slate-600 mt-2 leading-relaxed">{item.desc}</p>}
+                    </div>
                   </div>
-                  {pageIdx === additionalPages.length - 1 && <SignatureBlock />}
-                </div>
+                ))}
               </div>
-            ))}
-          </>
-        );
-      })()}
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ADDITIONAL ITINERARY PAGES (IF OVER 6 DAYS) */}
+      {hasItinerary && itineraryChunks.slice(1).map((chunk, pageIdx) => (
+        <div key={`itinerary-${pageIdx}`} className="pdf-page bg-white relative w-[794px] min-h-[1123px] h-max p-[20mm] shrink-0 overflow-hidden shadow-lg">
+          <BackgroundElements />
+          <div className="relative z-10 flex flex-col h-full">
+            <h3 className="text-2xl font-heading font-black text-primary uppercase tracking-widest mb-6 border-b-4 border-primary/20 pb-4">Trip Itinerary (Cont.)</h3>
+            <div className="space-y-6 mt-4">
+              {chunk.map((item: any, idx: number) => (
+                <div key={idx} className="flex gap-4 items-start">
+                  {item.day && (
+                    <div className="shrink-0 bg-primary/10 text-primary w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg border border-primary/20">
+                      D{item.day}
+                    </div>
+                  )}
+                  <div className="pt-1">
+                    {item.title ? (
+                      <h4 className="font-bold text-slate-800 text-base">{item.title}</h4>
+                    ) : (
+                      <h4 className="font-bold text-slate-800 text-base">{item.location}</h4>
+                    )}
+                    {item.desc && <p className="text-sm text-slate-600 mt-2 leading-relaxed">{item.desc}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {/* TERMS & INCLUSIONS PAGES */}
+      {(hasInclusions || termsPage1.length > 0) && (
+        <div className="pdf-page bg-white relative w-[794px] min-h-[1123px] h-max p-[20mm] shrink-0 overflow-hidden shadow-lg">
+          <BackgroundElements />
+          <div className="relative z-10 flex flex-col h-full">
+            <h3 className="text-2xl font-heading font-black text-slate-800 uppercase tracking-widest mb-8 border-b-4 border-primary/20 pb-4">Terms & Inclusions</h3>
+          
+            <div className="flex-1">
+              {hasInclusions && (
+                <div className="grid grid-cols-2 gap-8 mb-10">
+                  {booking.inclusions.some((i: any) => String(i.included) === "true") && (
+                    <div className="bg-emerald-50/50 p-6 rounded-2xl border border-emerald-100">
+                      <h4 className="font-black text-emerald-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Inclusions
+                      </h4>
+                      <ul className="list-none text-slate-700 space-y-2.5 text-sm font-medium">
+                        {Array.from(new Set(booking.inclusions.filter((i: any) => String(i.included) === "true").map((item: any) => item.text))).map((text: any, idx: number) => {
+                          if (text.includes('•')) {
+                            return text.split('•').map((p: string) => p.trim()).filter(Boolean).map((p: string, i: number) => (
+                              <li key={`${idx}-${i}`} className="flex items-start gap-2"><span className="text-emerald-500 mt-1">✓</span> {p}</li>
+                            ));
+                          }
+                          return <li key={idx} className="flex items-start gap-2"><span className="text-emerald-500 mt-1">✓</span> {text}</li>;
+                        })}
+                      </ul>
+                    </div>
+                  )}
+                  {booking.inclusions.some((i: any) => String(i.included) === "false") && (
+                    <div className="bg-red-50/50 p-6 rounded-2xl border border-red-100">
+                      <h4 className="font-black text-red-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-red-500"></span> Exclusions
+                      </h4>
+                      <ul className="list-none text-slate-700 space-y-2.5 text-sm font-medium">
+                        {Array.from(new Set(booking.inclusions.filter((i: any) => String(i.included) === "false").map((item: any) => item.text))).map((text: any, idx: number) => {
+                          if (text.includes('•')) {
+                            return text.split('•').map((p: string) => p.trim()).filter(Boolean).map((p: string, i: number) => (
+                              <li key={`${idx}-${i}`} className="flex items-start gap-2"><span className="text-red-400 mt-1">✗</span> {p}</li>
+                            ));
+                          }
+                          return <li key={idx} className="flex items-start gap-2"><span className="text-red-400 mt-1">✗</span> {text}</li>;
+                        })}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {termsPage1.length > 0 && (
+                <div className="text-slate-600 leading-relaxed text-xs space-y-2.5 mt-4">
+                  <h4 className="font-black text-slate-800 uppercase tracking-wider mb-4 text-sm border-l-4 border-primary pl-3">Specific Terms & Conditions</h4>
+                  {termsPage1.map((term: string, idx: number) => (
+                    <p key={idx} className="flex gap-2">
+                      <span className="text-slate-400 shrink-0">{idx + 1}.</span> 
+                      <span>{term}</span>
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADDITIONAL TERMS PAGES */}
+      {termsChunks.map((pageTerms, pageIdx) => (
+        <div key={`terms-${pageIdx}`} className="pdf-page bg-white relative w-[794px] min-h-[1123px] h-max p-[20mm] shrink-0 overflow-hidden shadow-lg">
+          <BackgroundElements />
+          <div className="relative z-10 flex flex-col h-full">
+            <h4 className="font-black text-slate-800 uppercase tracking-wider mb-8 text-sm border-l-4 border-primary pl-3">Terms & Conditions (Cont.)</h4>
+            <div className="flex-1 text-xs text-slate-600 leading-relaxed space-y-2.5">
+              {pageTerms.map((term: string, idx: number) => (
+                <p key={idx} className="flex gap-2">
+                  <span className="text-slate-400 shrink-0">{termsPage1.length + (pageIdx * 30) + idx + 1}.</span> 
+                  <span>{term}</span>
+                </p>
+              ))}
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
+

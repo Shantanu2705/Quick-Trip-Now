@@ -194,8 +194,8 @@ export function BookingWizard({
       vehicleName: selectedVehicle?.name,
       vehicleQty: selectedVehicle?.qtyRequired,
       couponCode: appliedCoupon?.code,
-      terms: [packageData?.terms, selectedVehicle?.termsAndConditions || selectedVehicle?.terms].filter(Boolean).join('\n\n---\n\nVehicle Terms:\n'),
-      inclusions: [...(packageData?.inclusions || []), ...(selectedVehicle?.inclusions || [])],
+      terms: packageData?.termsAndConditions || packageData?.terms || "",
+      inclusions: packageData?.inclusions || [],
       description: packageData?.description,
       itinerary: packageData?.itinerary
     };

@@ -167,9 +167,9 @@ export function VehicleBookingWizard({
       infantsCount: localInfants,
       travelers,
       couponCode: appliedCoupon?.code,
-      terms: [cabRouteData?.terms, selectedVehicle?.termsAndConditions || selectedVehicle?.terms].filter(Boolean).join('\n\n---\n\nVehicle Terms:\n'),
+      terms: [cabRouteData?.termsAndConditions || cabRouteData?.terms, selectedVehicle?.termsAndConditions || selectedVehicle?.terms].filter(Boolean).join('\n\n---\n\nVehicle Terms:\n'),
       inclusions: [...(cabRouteData?.inclusions || []), ...(selectedVehicle?.inclusions || [])],
-      description: cabRouteData?.description,
+      description: cabRouteData?.description || cabRouteData?.destination,
       itinerary: cabRouteData?.itinerary
     };
 
