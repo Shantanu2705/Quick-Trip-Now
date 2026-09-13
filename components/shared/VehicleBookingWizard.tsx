@@ -610,27 +610,27 @@ export function VehicleBookingWizard({
                         animate={{ opacity: 1, y: 0 }}
                         className="mt-8 p-6 bg-muted/20 border border-border rounded-2xl"
                       >
-                        <h4 className="font-bold text-lg mb-3">Vehicle Terms & Conditions</h4>
+                        <h4 className="font-bold text-lg mb-3">Terms & Conditions</h4>
                         <div className="bg-background border border-border p-4 rounded-xl text-sm text-muted-foreground whitespace-pre-wrap max-h-60 overflow-y-auto mb-4">
-                          {selectedVehicle.termsAndConditions || selectedVehicle.terms || "Standard terms and conditions apply for this vehicle."}
+                          {cabRouteData?.terms || packageData?.terms || "Standard terms and conditions apply."}
                           
-                          {selectedVehicle.inclusions && selectedVehicle.inclusions.length > 0 && (
+                          {(cabRouteData?.inclusions || packageData?.inclusions) && (cabRouteData?.inclusions || packageData?.inclusions).length > 0 && (
                             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              {selectedVehicle.inclusions.some((i: any) => String(i.included) === "true") && (
+                              {(cabRouteData?.inclusions || packageData?.inclusions).some((i: any) => String(i.included) === "true") && (
                                 <div>
                                   <span className="font-bold text-emerald-600 block mb-1">Inclusions:</span>
                                   <ul className="list-disc pl-5 space-y-1 text-foreground/80">
-                                    {selectedVehicle.inclusions.filter((i: any) => String(i.included) === "true").map((item: any, idx: number) => (
+                                    {(cabRouteData?.inclusions || packageData?.inclusions).filter((i: any) => String(i.included) === "true").map((item: any, idx: number) => (
                                       <li key={idx}>{item.text}</li>
                                     ))}
                                   </ul>
                                 </div>
                               )}
-                              {selectedVehicle.inclusions.some((i: any) => String(i.included) === "false") && (
+                              {(cabRouteData?.inclusions || packageData?.inclusions).some((i: any) => String(i.included) === "false") && (
                                 <div>
                                   <span className="font-bold text-destructive block mb-1">Exclusions:</span>
                                   <ul className="list-disc pl-5 space-y-1 text-foreground/80">
-                                    {selectedVehicle.inclusions.filter((i: any) => String(i.included) === "false").map((item: any, idx: number) => (
+                                    {(cabRouteData?.inclusions || packageData?.inclusions).filter((i: any) => String(i.included) === "false").map((item: any, idx: number) => (
                                       <li key={idx}>{item.text}</li>
                                     ))}
                                   </ul>

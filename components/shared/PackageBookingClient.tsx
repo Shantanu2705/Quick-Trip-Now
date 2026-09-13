@@ -173,29 +173,29 @@ export function PackageBookingClient({
               <label className="block text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">Travelers</label>
               <div className="flex flex-wrap gap-4">
                 <div className="flex flex-col bg-background border border-border p-3 rounded-2xl">
-                  <span className="text-xs font-semibold text-muted-foreground mb-2">Adults (Max {maxAdults})</span>
+                  <span className="text-xs font-semibold text-muted-foreground mb-2">Adults</span>
                   <div className="flex items-center gap-4">
                     <button onClick={() => setAdults(Math.max(1, adults - 1))} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center font-bold hover:bg-primary/20 hover:text-primary transition-colors">-</button>
                     <span className="w-4 text-center font-bold">{adults}</span>
-                    <button onClick={() => setAdults(Math.min(maxAdults, adults + 1))} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center font-bold hover:bg-primary/20 hover:text-primary transition-colors">+</button>
+                    <button onClick={() => setAdults(adults + 1)} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center font-bold hover:bg-primary/20 hover:text-primary transition-colors">+</button>
                   </div>
                 </div>
 
                 <div className="flex flex-col bg-background border border-border p-3 rounded-2xl">
-                  <span className="text-xs font-semibold text-muted-foreground mb-2">Children (Max {maxChildren})</span>
+                  <span className="text-xs font-semibold text-muted-foreground mb-2">Children</span>
                   <div className="flex items-center gap-4">
                     <button onClick={() => setChildren(Math.max(0, children - 1))} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center font-bold hover:bg-primary/20 hover:text-primary transition-colors">-</button>
                     <span className="w-4 text-center font-bold">{children}</span>
-                    <button onClick={() => setChildren(Math.min(maxChildren, children + 1))} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center font-bold hover:bg-primary/20 hover:text-primary transition-colors">+</button>
+                    <button onClick={() => setChildren(children + 1)} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center font-bold hover:bg-primary/20 hover:text-primary transition-colors">+</button>
                   </div>
                 </div>
 
                 <div className="flex flex-col bg-background border border-border p-3 rounded-2xl">
-                  <span className="text-xs font-semibold text-muted-foreground mb-2">Infants (Max {maxInfants})</span>
+                  <span className="text-xs font-semibold text-muted-foreground mb-2">Infants</span>
                   <div className="flex items-center gap-4">
                     <button onClick={() => setInfants(Math.max(0, infants - 1))} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center font-bold hover:bg-primary/20 hover:text-primary transition-colors">-</button>
                     <span className="w-4 text-center font-bold">{infants}</span>
-                    <button onClick={() => setInfants(Math.min(maxInfants, infants + 1))} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center font-bold hover:bg-primary/20 hover:text-primary transition-colors">+</button>
+                    <button onClick={() => setInfants(infants + 1)} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center font-bold hover:bg-primary/20 hover:text-primary transition-colors">+</button>
                   </div>
                 </div>
               </div>
@@ -252,23 +252,23 @@ export function PackageBookingClient({
               </div>
             </div>
 
-            {/* Selected Vehicle Details */}
+            {/* Package Terms & Details */}
             {selectedVehicle && (
               <div className="mt-6 bg-background rounded-2xl border border-border/50 overflow-hidden">
                 <div className="bg-muted/30 px-6 py-4 border-b border-border/50">
                   <h4 className="font-bold flex items-center gap-2">
                     <Car className="w-5 h-5 text-primary" /> 
-                    {selectedVehicle.name} Details
+                    Package Details & Terms
                   </h4>
                 </div>
                 <div className="p-6 space-y-6">
                   
-                  {/* Vehicle Inclusions/Exclusions */}
-                  {(selectedVehicle.inclusions && selectedVehicle.inclusions.length > 0) && (
+                  {/* Package Inclusions/Exclusions */}
+                  {(packageData?.inclusions && packageData.inclusions.length > 0) && (
                     <div>
-                      <h5 className="text-sm font-bold text-foreground mb-3">Vehicle Inclusions & Exclusions</h5>
+                      <h5 className="text-sm font-bold text-foreground mb-3">Package Inclusions & Exclusions</h5>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {selectedVehicle.inclusions.map((item: any, idx: number) => (
+                        {packageData.inclusions.map((item: any, idx: number) => (
                           <div key={idx} className="flex items-start gap-2">
                             {item.included ? (
                               <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
@@ -284,18 +284,18 @@ export function PackageBookingClient({
                     </div>
                   )}
 
-                  {/* Vehicle Terms */}
-                  {selectedVehicle.termsAndConditions && (
+                  {/* Package Terms */}
+                  {packageData?.terms && (
                     <div>
-                      <h5 className="text-sm font-bold text-foreground mb-2">Vehicle Terms & Conditions</h5>
+                      <h5 className="text-sm font-bold text-foreground mb-2">Package Terms & Conditions</h5>
                       <div className="text-sm text-muted-foreground whitespace-pre-wrap p-4 bg-muted/20 rounded-xl">
-                        {selectedVehicle.termsAndConditions}
+                        {packageData.terms}
                       </div>
                     </div>
                   )}
 
-                  {(!selectedVehicle.inclusions?.length && !selectedVehicle.termsAndConditions) && (
-                    <p className="text-sm text-muted-foreground italic">No additional details provided for this vehicle.</p>
+                  {(!packageData?.inclusions?.length && !packageData?.terms) && (
+                    <p className="text-sm text-muted-foreground italic">No additional terms provided for this package.</p>
                   )}
                 </div>
               </div>
