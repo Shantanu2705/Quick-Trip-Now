@@ -195,7 +195,9 @@ export function BookingWizard({
       vehicleQty: selectedVehicle?.qtyRequired,
       couponCode: appliedCoupon?.code,
       terms: [packageData?.terms, selectedVehicle?.termsAndConditions || selectedVehicle?.terms].filter(Boolean).join('\n\n---\n\nVehicle Terms:\n'),
-      inclusions: [...(packageData?.inclusions || []), ...(selectedVehicle?.inclusions || [])]
+      inclusions: [...(packageData?.inclusions || []), ...(selectedVehicle?.inclusions || [])],
+      description: packageData?.description,
+      itinerary: packageData?.itinerary
     };
 
     // Save to Firestore

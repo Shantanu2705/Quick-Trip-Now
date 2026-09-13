@@ -168,7 +168,9 @@ export function VehicleBookingWizard({
       travelers,
       couponCode: appliedCoupon?.code,
       terms: [cabRouteData?.terms, selectedVehicle?.termsAndConditions || selectedVehicle?.terms].filter(Boolean).join('\n\n---\n\nVehicle Terms:\n'),
-      inclusions: [...(cabRouteData?.inclusions || []), ...(selectedVehicle?.inclusions || [])]
+      inclusions: [...(cabRouteData?.inclusions || []), ...(selectedVehicle?.inclusions || [])],
+      description: cabRouteData?.description,
+      itinerary: cabRouteData?.itinerary
     };
 
     // Save to Firestore

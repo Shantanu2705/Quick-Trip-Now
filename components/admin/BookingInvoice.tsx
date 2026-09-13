@@ -104,32 +104,64 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-b border-slate-200">
-                    <td className="py-4 px-4 font-medium text-slate-800">
+                  <tr className="border-b border-slate-200 align-top">
+                    <td className="py-4 px-4 font-medium text-slate-800 max-w-[400px]">
                       {booking.type === 'tour' || booking.type === 'package' ? (
                         <>
-                          <span className="block">{booking.packageName || booking.packageType || "Custom Travel Package"}</span>
-                          {booking.vehicleName && <span className="block text-xs text-slate-500 mt-1 font-normal">Vehicle: {booking.vehicleName} (x{booking.vehicleQty || 1})</span>}
+                          <span className="block font-bold text-base">{booking.packageName || booking.packageType || "Custom Travel Package"}</span>
+                          {booking.description && <span className="block text-sm text-slate-600 mt-2 font-normal leading-relaxed">{booking.description}</span>}
+                          {booking.vehicleName && <span className="block text-xs text-slate-500 mt-2 font-normal">Vehicle: {booking.vehicleName} (x{booking.vehicleQty || 1})</span>}
                         </>
                       ) : booking.type === 'vehicle' || booking.type === 'cab' ? (
                         <>
-                          <span className="block">Private Transfer: {booking.pickup || "Route"} to {booking.dropoff || "Destination"}</span>
-                          {booking.vehicleName && <span className="block text-xs text-slate-500 mt-1 font-normal">Vehicle: {booking.vehicleName} (x{booking.vehicleQty || 1})</span>}
+                          <span className="block font-bold text-base">Private Transfer: {booking.pickup || "Route"} to {booking.dropoff || "Destination"}</span>
+                          {booking.description && <span className="block text-sm text-slate-600 mt-2 font-normal leading-relaxed">{booking.description}</span>}
+                          {booking.vehicleName && <span className="block text-xs text-slate-500 mt-2 font-normal">Vehicle: {booking.vehicleName} (x{booking.vehicleQty || 1})</span>}
                         </>
                       ) : (
                         <>
-                          <span className="block">{booking.vehicleName || booking.packageType || booking.packageName || "Custom Travel Package"}</span>
-                          {booking.vehicleName && <span className="block text-xs text-slate-500 mt-1 font-normal">Vehicle Booking (x{booking.vehicleQty || 1})</span>}
+                          <span className="block font-bold text-base">{booking.vehicleName || booking.packageType || booking.packageName || "Custom Travel Package"}</span>
+                          {booking.description && <span className="block text-sm text-slate-600 mt-2 font-normal leading-relaxed">{booking.description}</span>}
+                          {booking.vehicleName && <span className="block text-xs text-slate-500 mt-2 font-normal">Vehicle Booking (x{booking.vehicleQty || 1})</span>}
                         </>
                       )}
-                      <span className="block text-xs text-slate-500 mt-1 font-normal">SAC: 998552</span>
+                      
+                      {booking.itinerary && booking.itinerary.length > 0 && (
+                        <div className="mt-4 border-t border-slate-200 pt-3">
+                          <span className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Itinerary</span>
+                          <div className="space-y-2">
+                            {booking.itinerary.map((item: any, idx: number) => {
+                              if (item.day) {
+                                return (
+                                  <div key={idx} className="text-xs text-slate-600">
+                                    <span className="font-semibold text-slate-800">Day {item.day}: {item.title}</span>
+                                    {item.desc && <span className="block mt-0.5">{item.desc}</span>}
+                                  </div>
+                                );
+                              }
+                              if (item.location) {
+                                return (
+                                  <div key={idx} className="text-xs text-slate-600 flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary/60 inline-block"></span>
+                                    {item.location}
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <span className="block text-xs text-slate-500 mt-4 font-normal">SAC: 998552</span>
                     </td>
                     <td className="py-4 px-4 text-slate-600">{booking.date || booking.travelDate || "N/A"}</td>
                     <td className="py-4 px-4 text-slate-600">
-                      {booking.travelers?.length > 1 
-                        ? booking.travelers.length 
-                        : ((booking.adultsCount || 0) + (booking.childrenCount || 0) + (booking.infantsCount || 0)) || 1
-                      } Person(s)
+                      {[ 
+                        booking.adultsCount ? `${booking.adultsCount} Adult(s)` : null, 
+                        booking.childrenCount ? `${booking.childrenCount} Child(ren)` : null, 
+                        booking.infantsCount ? `${booking.infantsCount} Infant(s)` : null 
+                      ].filter(Boolean).join(', ') || (booking.travelers?.length ? `${booking.travelers.length} Person(s)` : "1 Person(s)")}
                     </td>
                     <td className="py-4 px-4 text-right font-bold text-slate-800">₹{booking.amount?.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) || 0}</td>
                   </tr>
