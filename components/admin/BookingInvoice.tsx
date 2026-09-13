@@ -40,13 +40,20 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
   return (
     <div id={id} className="bg-white w-[794px] p-[20mm] flex flex-col gap-10" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
       
+      {/* BACKGROUND WATERMARK */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 opacity-[0.03] grayscale mt-32">
+        <img src="/images/logo_transparent.png" alt="watermark" className="w-[600px] h-auto object-contain" />
+      </div>
+
       {/* INVOICE SUMMARY SECTION */}
       <div className="relative z-10 flex flex-col">
         {/* Header */}
-        <div className="flex justify-between items-start border-b-4 border-[rgba(245, 130, 32, 0.2)] pb-8 shrink-0">
+        <div className="flex justify-between items-start pb-6 shrink-0">
           <div>
-            <Logo variant="bare" className="h-14 w-56 mb-4 origin-left" />
-            <div className="text-slate-500 text-sm mt-4 leading-relaxed">
+            <div className="h-20 w-32 mb-2 origin-left">
+              <img src="/images/logo_transparent.png" alt="Quick Trip Now Logo" className="object-contain w-full h-full drop-shadow-sm" />
+            </div>
+            <div className="text-slate-500 text-sm mt-2 leading-relaxed">
               <p className="font-bold text-slate-700">Quick Trip Now</p>
               <p>Bagdogra, Bhujiyapani, Darjeeling,</p>
               <p>West Bengal, India, Pin: 734017.</p>
@@ -56,74 +63,80 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
             </div>
           </div>
           <div className="text-right">
-            <h1 className="text-5xl font-black text-primary tracking-tight uppercase">Invoice</h1>
-            <h2 className="text-xl text-slate-500 font-bold tracking-widest mt-2 uppercase">Booking Receipt</h2>
+            <h1 className="text-5xl font-black text-primary tracking-tight uppercase" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>Invoice</h1>
+            <h2 className="text-xl text-slate-500 font-bold tracking-widest mt-2 uppercase" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>Booking Receipt</h2>
             
-            <div className="mt-8 space-y-3 text-sm bg-[rgba(245, 130, 32, 0.05)] p-4 rounded-xl border border-[rgba(245, 130, 32, 0.1)] inline-block text-left ml-auto min-w-[280px] shadow-sm">
+            <div className="mt-8 space-y-3 text-sm bg-[rgba(245, 130, 32, 0.03)] p-5 rounded-xl border border-[rgba(245, 130, 32, 0.15)] inline-block text-left ml-auto min-w-[320px] shadow-sm">
               <div className="flex justify-between items-center gap-6">
-                <span className="text-[rgba(245, 130, 32, 0.7)] font-bold uppercase tracking-wider text-xs">Booking ID:</span>
-                <span className="font-mono font-black text-primary text-base">{booking.id}</span>
+                <span className="text-[rgba(245, 130, 32, 0.9)] font-bold uppercase tracking-wider text-xs">Booking ID:</span>
+                <span className="font-black text-primary text-lg">{booking.id}</span>
               </div>
-              <div className="flex justify-between items-center gap-6 pt-3 border-t border-[rgba(245, 130, 32, 0.1)]">
-                <span className="text-[rgba(245, 130, 32, 0.7)] font-bold uppercase tracking-wider text-xs">Date Issued:</span>
+              <div className="flex justify-between items-center gap-6 pt-3 border-t border-[rgba(245, 130, 32, 0.15)]">
+                <span className="text-[rgba(245, 130, 32, 0.9)] font-bold uppercase tracking-wider text-xs">Date Issued:</span>
                 <span className="font-bold text-slate-700">{format(new Date(), 'MMM dd, yyyy')}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="space-y-10 mt-10">
+        {/* Separator Line */}
+        <div className="w-full border-b-2 border-[rgba(245, 130, 32, 0.2)] my-2 shrink-0"></div>
+
+        <div className="space-y-10 mt-8">
           {/* Customer Info */}
-          <div className="bg-[rgba(245, 130, 32, 0.05)] p-6 rounded-xl border border-[rgba(245, 130, 32, 0.1)] relative overflow-hidden break-inside-avoid">
-            <div className="absolute top-0 left-0 w-1.5 h-full bg-primary"></div>
-            <h3 className="text-xs font-black text-primary uppercase tracking-widest mb-4">Billed To</h3>
-            <div className="text-sm space-y-1">
-              <p className="font-bold text-lg text-slate-800">{booking.customerName || booking.fullName || booking.travelers?.[0]?.fullName || "Valued Customer"}</p>
-              <p className="text-slate-600">{booking.email || booking.travelers?.[0]?.email || "N/A"}</p>
-              <p className="text-slate-600">{booking.phone || booking.travelers?.[0]?.phone || "N/A"}</p>
+          <div className="bg-[rgba(245, 130, 32, 0.03)] p-6 rounded-xl border border-[rgba(245, 130, 32, 0.15)] relative overflow-hidden break-inside-avoid shadow-sm w-full">
+            <div className="absolute top-0 left-0 w-2 h-full bg-primary"></div>
+            <h3 className="text-xs font-black text-primary uppercase tracking-widest mb-4" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>Billed To</h3>
+            <div className="text-sm space-y-1.5">
+              <p className="font-bold text-xl text-slate-800">{booking.customerName || booking.fullName || booking.travelers?.[0]?.fullName || "Valued Customer"}</p>
+              <p className="text-slate-600 text-[15px]">{booking.email || booking.travelers?.[0]?.email || "N/A"}</p>
+              <p className="text-slate-600 text-[15px]">{booking.phone || booking.travelers?.[0]?.phone || "N/A"}</p>
             </div>
           </div>
 
           {/* Trip Details (Summary Table) */}
           <div className="break-inside-avoid">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Trip Summary</h3>
-            <table className="w-full text-left text-sm border-collapse">
+            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>Trip Summary</h3>
+            <table className="w-full text-left text-[15px] border-collapse">
               <thead>
-                <tr className="border-b-2 border-slate-800 text-slate-800">
-                  <th className="py-3 px-4 font-bold w-1/2">Description</th>
-                  <th className="py-3 px-4 font-bold">Travel Date</th>
-                  <th className="py-3 px-4 font-bold">Travelers</th>
+                <tr className="border-b-2 border-slate-100 text-slate-700">
+                  <th className="py-4 px-4 font-bold w-1/2">Description</th>
+                  <th className="py-4 px-4 font-bold">Travel Date</th>
+                  <th className="py-4 px-4 font-bold">Travelers</th>
+                  <th className="py-4 px-4 font-bold text-right">Amount</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-slate-200 align-top">
-                  <td className="py-4 px-4 font-medium text-slate-800">
+                <tr className="align-top">
+                  <td className="py-6 px-4 font-medium text-slate-800">
                     {booking.type === 'tour' || booking.type === 'package' ? (
                       <>
-                        <span className="block font-bold text-base text-primary">{booking.packageName || booking.packageType || "Custom Travel Package"}</span>
-                        {booking.vehicleName && <span className="block text-xs text-slate-500 mt-1 font-normal">Vehicle Included: {booking.vehicleName} (x{booking.vehicleQty || 1})</span>}
+                        <span className="block font-bold text-lg text-slate-800 mb-1">{booking.packageName || booking.packageType || "Custom Travel Package"}</span>
+                        {booking.vehicleName && <span className="block text-sm text-slate-500 font-normal">Vehicle Included: {booking.vehicleName} (x{booking.vehicleQty || 1})</span>}
                       </>
                     ) : booking.type === 'vehicle' || booking.type === 'cab' ? (
                       <>
-                        <span className="block font-bold text-base text-primary">Private Transfer</span>
-                        <span className="block text-sm text-slate-600 mt-1">Route: {booking.pickup || "Origin"} to {booking.dropoff || "Destination"}</span>
-                        {booking.vehicleName && <span className="block text-xs text-slate-500 mt-1 font-normal">Vehicle: {booking.vehicleName} (x{booking.vehicleQty || 1})</span>}
+                        <span className="block font-bold text-lg text-slate-800 mb-1">Private Transfer</span>
+                        <span className="block text-sm text-slate-600 mb-1">Route: {booking.pickup || "Origin"} to {booking.dropoff || "Destination"}</span>
+                        {booking.vehicleName && <span className="block text-sm text-slate-500 font-normal">Vehicle: {booking.vehicleName} (x{booking.vehicleQty || 1})</span>}
                       </>
                     ) : (
                       <>
-                        <span className="block font-bold text-base text-primary">{booking.vehicleName || booking.packageType || booking.packageName || "Custom Travel Package"}</span>
-                        {booking.vehicleName && <span className="block text-xs text-slate-500 mt-1 font-normal">Vehicle Booking (x{booking.vehicleQty || 1})</span>}
+                        <span className="block font-bold text-lg text-slate-800 mb-1">{booking.vehicleName || booking.packageType || booking.packageName || "Custom Travel Package"}</span>
+                        {booking.vehicleName && <span className="block text-sm text-slate-500 font-normal">Vehicle Booking (x{booking.vehicleQty || 1})</span>}
                       </>
                     )}
-                    <span className="block text-xs text-slate-400 mt-3 font-normal">SAC: 998552</span>
                   </td>
-                  <td className="py-4 px-4 text-slate-600 font-semibold">{booking.date || booking.travelDate || "N/A"}</td>
-                  <td className="py-4 px-4 text-slate-600">
+                  <td className="py-6 px-4 text-slate-700 font-bold">{booking.date || booking.travelDate || "N/A"}</td>
+                  <td className="py-6 px-4 text-slate-700 font-bold">
                     {[ 
                       booking.adultsCount ? `${booking.adultsCount} Adult(s)` : null, 
                       booking.childrenCount ? `${booking.childrenCount} Child(ren)` : null, 
                       booking.infantsCount ? `${booking.infantsCount} Infant(s)` : null 
                     ].filter(Boolean).join(', ') || (booking.travelers?.length ? `${booking.travelers.length} Person(s)` : "1 Person(s)")}
+                  </td>
+                  <td className="py-6 px-4 text-slate-700 font-bold text-right">
+                    ₹{booking.amount?.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) || 0}
                   </td>
                 </tr>
               </tbody>
@@ -132,7 +145,7 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
 
           {/* Totals */}
           <div className="flex justify-end mt-12 break-inside-avoid">
-            <div className="w-2/3 bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+            <div className="w-[45%] p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 relative overflow-hidden bg-white">
               {(() => {
                 const baseFare = (booking.baseAmount || ((booking.amount || 0) - (booking.gstAmount || 0)));
                 const gstPercent = booking.gstPercentage || 0;
