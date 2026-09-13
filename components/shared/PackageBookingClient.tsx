@@ -238,7 +238,7 @@ export function PackageBookingClient({
                         <div className="text-sm text-muted-foreground flex justify-between items-center mt-1">
                           <span>{v.seats} Seats/Car</span>
                           <span className="font-semibold text-foreground">
-                            {date ? `₹${v.currentPrice}` : "Select date for price"}
+                            {date ? `₹${(v.currentPrice * v.qtyRequired).toLocaleString("en-IN")}` : "Select date for price"}
                           </span>
                         </div>
                       </div>
