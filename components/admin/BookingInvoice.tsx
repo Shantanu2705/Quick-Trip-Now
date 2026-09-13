@@ -39,7 +39,7 @@ const BackgroundElements = () => (
 export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
   if (!booking) return null;
 
-  const hasPage2 = booking.terms || (booking.inclusions && booking.inclusions.length > 0) || booking.description || (booking.itinerary && booking.itinerary.length > 0);
+  const hasPage2 = booking.terms || (booking.inclusions && booking.inclusions.length > 0);
 
   return (
     <div id={id} className="bg-slate-100 flex flex-col gap-8 w-max" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
@@ -114,7 +114,7 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                       ) : booking.type === 'vehicle' || booking.type === 'cab' ? (
                         <>
                           <span className="block font-bold text-base">Private Transfer</span>
-                          <span className="block text-sm text-slate-600 mt-1">Route: {booking.pickup || "Origin"} to {booking.dropoff || "Destination"}</span>
+                          {!booking.description && <span className="block text-sm text-slate-600 mt-1">Route: {booking.pickup || "Origin"} to {booking.dropoff || "Destination"}</span>}
                           {booking.vehicleName && <span className="block text-xs text-slate-500 mt-1 font-normal">Vehicle: {booking.vehicleName} (x{booking.vehicleQty || 1})</span>}
                         </>
                       ) : (
@@ -122,6 +122,42 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                           <span className="block font-bold text-base">{booking.vehicleName || booking.packageType || booking.packageName || "Custom Travel Package"}</span>
                           {booking.vehicleName && <span className="block text-xs text-slate-500 mt-1 font-normal">Vehicle Booking (x{booking.vehicleQty || 1})</span>}
                         </>
+                      )}
+
+                      {booking.description && (
+                        <div className="mt-4">
+                          <span className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Description</span>
+                          <span className="block text-sm text-slate-600 font-normal leading-relaxed whitespace-pre-wrap">
+                            {booking.description}
+                          </span>
+                        </div>
+                      )}
+
+                      {booking.itinerary && booking.itinerary.length > 0 && (
+                        <div className="mt-4">
+                          <span className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Itinerary</span>
+                          <div className="space-y-1.5">
+                            {booking.itinerary.map((item: any, idx: number) => {
+                              if (item.day) {
+                                return (
+                                  <div key={idx} className="text-xs text-slate-600">
+                                    <span className="font-bold text-slate-700">Day {item.day}: {item.title}</span>
+                                    {item.desc && <span className="block mt-0.5">{item.desc}</span>}
+                                  </div>
+                                );
+                              }
+                              if (item.location) {
+                                return (
+                                  <div key={idx} className="text-xs text-slate-600 flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary/60 inline-block shrink-0"></span>
+                                    <span>{item.location}</span>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })}
+                          </div>
+                        </div>
                       )}
                       
                       <span className="block text-xs text-slate-500 mt-4 font-normal">SAC: 998552</span>
@@ -242,53 +278,6 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
 
         return (
           <>
-            {/* NEW PAGE: Description & Itinerary */}
-            {(booking.description || (booking.itinerary && booking.itinerary.length > 0)) && (
-              <div className="pdf-page bg-white relative w-[794px] min-h-[600px] h-max p-[20mm] shrink-0 overflow-hidden shadow-lg mt-8">
-                <BackgroundElements />
-                <div className="relative z-10 flex flex-col h-full">
-                  <h3 className="text-xl font-heading font-black text-slate-800 uppercase tracking-widest mb-8 border-b-2 border-primary/20 pb-4">Package Details</h3>
-                  
-                  {booking.description && (
-                    <div className="mb-8">
-                      <h4 className="font-bold text-emerald-700 uppercase tracking-wider mb-3 text-sm">Description</h4>
-                      <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{booking.description}</p>
-                    </div>
-                  )}
-
-                  {booking.itinerary && booking.itinerary.length > 0 && (
-                    <div className="mb-8">
-                      <h4 className="font-bold text-emerald-700 uppercase tracking-wider mb-3 text-sm">Itinerary</h4>
-                      <div className="space-y-4">
-                        {booking.itinerary.map((item: any, idx: number) => {
-                          if (item.day) {
-                            return (
-                              <div key={idx} className="text-sm text-slate-600">
-                                <span className="font-bold text-slate-800">Day {item.day}: {item.title}</span>
-                                {item.desc && <p className="mt-1">{item.desc}</p>}
-                              </div>
-                            );
-                          }
-                          if (item.location) {
-                            return (
-                              <div key={idx} className="text-sm text-slate-600 flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-primary inline-block"></span>
-                                {item.location}
-                              </div>
-                            );
-                          }
-                          return null;
-                        })}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* If there are NO inclusions and NO terms, we need to put the SignatureBlock here so it isn't lost! */}
-                  {!booking.inclusions?.length && !booking.terms && <SignatureBlock />}
-                </div>
-              </div>
-            )}
-
             {(booking.terms || (booking.inclusions && booking.inclusions.length > 0)) && (
               <div className="pdf-page bg-white relative w-[794px] min-h-[600px] h-max p-[20mm] shrink-0 overflow-hidden shadow-lg mt-8">
                 <BackgroundElements />
