@@ -6,8 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarDays, Package, MapPin, Car, FileText, User, Download } from "lucide-react";
 import { format } from "date-fns";
 import { BookingInvoice } from "@/components/admin/BookingInvoice";
-import * as htmlToImage from "html-to-image";
-import { jsPDF } from "jspdf";
+import { downloadPdf } from "@/lib/downloadPdf";
 
 export default function UserBookingsPage() {
   const { user } = useAuth();
@@ -30,45 +29,8 @@ export default function UserBookingsPage() {
         return;
       }
       
-      try {
-        const element = printRef.current;
-        if (!element) return;
-
-        const imgData = await htmlToImage.toPng(element, { pixelRatio: 2, backgroundColor: '#ffffff' });
-        
-        // Get actual image dimensions to prevent aspect ratio distortion
-        const img = new window.Image();
-        img.src = imgData;
-        await new Promise((resolve) => { img.onload = resolve; });
-        
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const imgHeightInPdf = (img.height * pdfWidth) / img.width;
-        
-        let heightLeft = imgHeightInPdf;
-        let position = 0;
-        
-        // Add first page
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeightInPdf);
-        heightLeft -= pageHeight;
-        
-        // Add subsequent pages if the content overflows A4
-        while (heightLeft > 0) {
-          position -= pageHeight;
-          pdf.addPage();
-          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeightInPdf);
-          heightLeft -= pageHeight;
-        }
-        
-        pdf.save(`Booking_${booking.id}.pdf`);
-      } catch (err: any) {
-        console.error("PDF generation error:", err);
-        alert(`Failed to generate PDF: ${err?.message || err}. Please try again.`);
-      } finally {
-        setGeneratingPdf(false);
-        setPrintingBooking(null);
-      }
+      await downloadPdf(printRef, `Booking_${booking.id}.pdf`, setGeneratingPdf);
+      setPrintingBooking(null);
     }, 300);
   };
 

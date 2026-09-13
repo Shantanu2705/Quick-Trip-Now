@@ -87,6 +87,33 @@ export async function sendBookingNotification(bookingDetails: any, type: 'direct
       console.log('WhatsApp notification sent successfully:', data);
     }
 
+    // Send admin notification
+    const adminNumber = "917407373697";
+    const adminResponse = await fetch(`https://graph.facebook.com/v17.0/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${whastappToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: adminNumber,
+        type: "text",
+        text: {
+          preview_url: false,
+          body: "A booking has been done from Quick Trip Now please check it"
+        }
+      })
+    });
+    
+    const adminData = await adminResponse.json();
+    if (!adminResponse.ok) {
+      console.error('WhatsApp Admin API Error:', adminData);
+    } else {
+      console.log('WhatsApp admin notification sent successfully:', adminData);
+    }
+
   } catch (error) {
     console.error('Error sending WhatsApp booking notification:', error);
   }

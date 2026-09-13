@@ -34,10 +34,28 @@ export const downloadPdf = async (
          throw new Error("Failed to render PDF page. Image generation timed out.");
       }
       
-      const scaledHeight = (pageElement.offsetHeight * pdfWidth) / pageElement.offsetWidth;
+      // Get actual image dimensions to prevent aspect ratio distortion or NaN errors if DOM element is hidden
+      const img = new window.Image();
+      img.src = imgData;
+      await new Promise((resolve) => { img.onload = resolve; });
       
+      const scaledHeight = (img.height * pdfWidth) / img.width;
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      let heightLeft = scaledHeight;
+      let position = 0;
+
       if (i > 0) pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, scaledHeight);
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, scaledHeight);
+      heightLeft -= pdfHeight;
+
+      // Small buffer (e.g. 1) to prevent adding a blank page for negligible overlaps
+      while (heightLeft > 1) {
+        position -= pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, scaledHeight);
+        heightLeft -= pdfHeight;
+      }
     }
     
     pdf.save(filename);
