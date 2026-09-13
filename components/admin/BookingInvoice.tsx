@@ -37,6 +37,8 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
   const hasTerms = allTerms.length > 0;
   const hasItinerary = booking.itinerary && booking.itinerary.length > 0;
 
+  return (
+    <div id={id} className="bg-white w-[794px] p-[20mm] flex flex-col gap-10 relative" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
       {/* PREMIUM HEADER BORDER */}
       <div className="absolute top-0 left-0 w-full h-4 bg-primary z-20"></div>
       <div className="absolute top-4 left-0 w-full h-1 bg-[#28B9CE] z-20"></div>
