@@ -78,6 +78,7 @@ export default async function PackageDetailsPage({ params }: { params: Promise<{
 
       <PackageBookingClient 
         packageSlug={slug}
+        packageData={pkgData}
         maxAdults={maxAdults || 4}
         maxChildren={maxChildren || 2}
         maxInfants={maxInfants || 2}

@@ -12,6 +12,7 @@ import { PackagePriceDisplay } from "./PackagePriceDisplay";
 
 export function PackageBookingClient({
   packageSlug,
+  packageData,
   maxAdults,
   maxChildren,
   maxInfants,
@@ -20,6 +21,7 @@ export function PackageBookingClient({
   packageDetailsContent
 }: {
   packageSlug: string;
+  packageData?: any;
   maxAdults: number;
   maxChildren: number;
   maxInfants: number;
