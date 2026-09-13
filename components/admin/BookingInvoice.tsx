@@ -14,11 +14,13 @@ const SignatureBlock = () => (
       <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Powered and Managed By:</p>
       <img src="/images/swastik-logo.png" alt="Swastik Tripline" className="h-12 mx-auto grayscale opacity-80" />
     </div>
-    <div className="text-center w-1/3 space-y-4">
-      <div className="h-16 border-b border-slate-400 flex items-center justify-center relative">
-        <div className="absolute opacity-20 rotate-[-15deg] font-heading font-black text-4xl text-emerald-600 border-4 border-emerald-600 p-2 rounded inline-block">
-          APPROVED
-        </div>
+    <div className="text-center w-1/3 space-y-3">
+      <div className="h-20 border-b-2 border-slate-400 flex items-end justify-center relative pb-1">
+        <img 
+          src="/images/sign.png" 
+          alt="Authorized Signature" 
+          className="h-16 object-contain mix-blend-multiply opacity-90 drop-shadow-sm pointer-events-none" 
+        />
       </div>
       <div className="text-xs font-bold uppercase tracking-wider text-slate-600">
         Authorized Signature & Stamp
