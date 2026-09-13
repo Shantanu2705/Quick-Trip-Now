@@ -144,6 +144,8 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                   const baseFare = (booking.baseAmount || ((booking.amount || 0) - (booking.gstAmount || 0)));
                   const gstPercent = booking.gstPercentage || 0;
                   const displayGst = booking.gstAmount || (baseFare * gstPercent) / 100;
+                  const subTotal = baseFare + displayGst;
+                  const discountAmount = booking.couponCode ? (subTotal - (booking.amount || 0)) : 0;
 
                   return (
                     <>
@@ -167,6 +169,19 @@ export function BookingInvoice({ booking, id }: { booking: any, id?: string }) {
                           <span>Tax / Fees</span>
                           <span>₹0</span>
                         </div>
+                      )}
+                      
+                      {booking.couponCode && discountAmount > 0.01 && (
+                        <>
+                          <div className="flex justify-between text-sm font-semibold text-slate-700 mt-2 pt-2 border-t border-slate-200 border-dashed">
+                            <span>Sub Total</span>
+                            <span>₹{subTotal.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
+                          </div>
+                          <div className="flex justify-between text-sm font-bold text-emerald-600">
+                            <span>Coupon Applied ({booking.couponCode})</span>
+                            <span>-₹{discountAmount.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
+                          </div>
+                        </>
                       )}
                     </>
                   );
