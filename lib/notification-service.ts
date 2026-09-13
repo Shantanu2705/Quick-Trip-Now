@@ -102,7 +102,7 @@ export async function sendBookingNotification(bookingDetails: any, type: 'direct
         type: "text",
         text: {
           preview_url: false,
-          body: "A booking has been done from Quick Trip Now please check it"
+          body: `A booking with the booking id ${bookingId} has been done from Quick Trip Now please check it`
         }
       })
     });
