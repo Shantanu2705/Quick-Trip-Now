@@ -42,20 +42,21 @@ export const downloadPdf = async (
       const scaledHeight = (img.height * pdfWidth) / img.width;
       const pdfHeight = pdf.internal.pageSize.getHeight();
       
-      let heightLeft = scaledHeight;
-      let position = 0;
+      let finalWidth = pdfWidth;
+      let finalHeight = scaledHeight;
+      
+      // If the page content naturally exceeded A4 proportions, gracefully scale it down to fit on one page rather than slicing text in half
+      if (scaledHeight > pdfHeight) {
+        const ratio = pdfHeight / scaledHeight;
+        finalWidth = pdfWidth * ratio;
+        finalHeight = pdfHeight;
+      }
+      
+      // Center horizontally if downscaled
+      const xOffset = (pdfWidth - finalWidth) / 2;
 
       if (i > 0) pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, scaledHeight);
-      heightLeft -= pdfHeight;
-
-      // Small buffer (e.g. 1) to prevent adding a blank page for negligible overlaps
-      while (heightLeft > 1) {
-        position -= pdfHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, scaledHeight);
-        heightLeft -= pdfHeight;
-      }
+      pdf.addImage(imgData, 'PNG', xOffset, 0, finalWidth, finalHeight);
     }
     
     pdf.save(filename);
