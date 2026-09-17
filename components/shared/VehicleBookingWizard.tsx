@@ -338,11 +338,17 @@ export function VehicleBookingWizard({
       return;
     }
     
-    if (currentStep < STEPS.length - 1) setCurrentStep((prev) => prev + 1);
+    if (currentStep < STEPS.length - 1) {
+      setCurrentStep((prev) => prev + 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const handleBack = () => {
-    if (currentStep > 0) setCurrentStep((prev) => prev - 1);
+    if (currentStep > 0) {
+      setCurrentStep((prev) => prev - 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   return (
