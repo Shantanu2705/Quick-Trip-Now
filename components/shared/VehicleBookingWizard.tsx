@@ -599,7 +599,7 @@ export function VehicleBookingWizard({
                                   <span className="text-sm line-through text-muted-foreground -mb-1">₹{v.price * qtyRequired}</span>
                                 )}
                                 <span className="font-bold text-xl text-primary">
-                                  ₹{hasDiscount ? (v.price * qtyRequired * discountMultiplier) : (v.price * qtyRequired)}
+                                  ₹{Math.round(hasDiscount ? (v.price * qtyRequired * discountMultiplier) : (v.price * qtyRequired)).toLocaleString("en-IN")}
                                 </span>
                                 {cabRouteData?.gstPercentage || v.gstPercentage ? (
                                   <span className="text-xs font-medium text-muted-foreground/60 mb-0.5 mt-[-2px]">
