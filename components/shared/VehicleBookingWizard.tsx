@@ -595,10 +595,15 @@ export function VehicleBookingWizard({
                                 )}
                               </div>
                               <div className="text-right flex flex-col items-end">
-                                <span className="font-bold text-xl text-primary">₹{v.price * qtyRequired}</span>
+                                {hasDiscount && (
+                                  <span className="text-sm line-through text-muted-foreground -mb-1">₹{v.price * qtyRequired}</span>
+                                )}
+                                <span className="font-bold text-xl text-primary">
+                                  ₹{hasDiscount ? (v.price * qtyRequired * discountMultiplier) : (v.price * qtyRequired)}
+                                </span>
                                 {cabRouteData?.gstPercentage || v.gstPercentage ? (
                                   <span className="text-xs font-medium text-muted-foreground/60 mb-0.5 mt-[-2px]">
-                                    + ₹{Number(((v.price * qtyRequired) * (cabRouteData?.gstPercentage || v.gstPercentage) / 100).toFixed(2))} GST
+                                    + ₹{Number(((hasDiscount ? (v.price * qtyRequired * discountMultiplier) : (v.price * qtyRequired)) * (cabRouteData?.gstPercentage || v.gstPercentage) / 100).toFixed(2))} GST
                                   </span>
                                 ) : null}
                                 <div className="text-xs text-muted-foreground">Total Fare (x{qtyRequired})</div>
