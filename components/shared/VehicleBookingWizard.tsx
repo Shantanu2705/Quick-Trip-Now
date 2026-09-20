@@ -103,7 +103,15 @@ export function VehicleBookingWizard({
     return <div className="py-24 text-center">Loading...</div>;
   }
 
-  const baseFare = selectedVehicle ? (selectedVehicle.price * selectedVehicle.qtyRequired) : 0;
+  const discountPercent = userData?.role === "agent" || userData?.role === "admin" 
+    ? (userData.discountPercentage ?? 20) 
+    : 0;
+  const hasDiscount = discountPercent > 0;
+  const discountMultiplier = hasDiscount ? (100 - discountPercent) / 100 : 1;
+
+  const originalBaseFare = selectedVehicle ? (selectedVehicle.price * selectedVehicle.qtyRequired) : 0;
+  const baseFare = hasDiscount ? originalBaseFare * discountMultiplier : originalBaseFare;
+
   const couponDiscountAmount = appliedCoupon ? (baseFare * appliedCoupon.discount) / 100 : 0;
   const priceAfterCoupon = baseFare - couponDiscountAmount;
   
@@ -158,7 +166,9 @@ export function VehicleBookingWizard({
       paidAmount: amountToPay,
       pendingAmount: finalPrice - amountToPay,
       paymentType: paymentSelection,
-      baseAmount: baseFare,
+      baseAmount: originalBaseFare,
+      discountApplied: hasDiscount,
+      discountPercentage: discountPercent,
       gstPercentage: gstPercent,
       gstAmount: Number(gstAmount.toFixed(2)),
       type: 'vehicle',
@@ -732,9 +742,15 @@ export function VehicleBookingWizard({
                         {localAdults} Adult{localAdults !== 1 ? 's' : ''}{localChildren > 0 ? `, ${localChildren} Child${localChildren !== 1 ? 'ren' : ''}` : ''}{localInfants > 0 ? `, ${localInfants} Infant${localInfants !== 1 ? 's' : ''}` : ''}
                       </span>
                     </div>
+                    {hasDiscount && (
+                      <div className="flex justify-between items-center pb-4 border-b border-border/50 text-emerald-600 dark:text-emerald-400">
+                        <span>Agent Discount ({discountPercent}%)</span>
+                        <span className="font-semibold text-right">-₹{Math.round(originalBaseFare * (discountPercent / 100)).toLocaleString("en-IN")}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between items-center pb-4 border-b border-border/50">
                       <span className="text-muted-foreground">Base Fare</span>
-                      <span className="font-semibold text-right">₹{baseFare.toLocaleString("en-IN")}</span>
+                      <span className="font-semibold text-right">₹{Math.round(baseFare).toLocaleString("en-IN")}</span>
                     </div>
                     <div className="flex justify-between items-center pb-4 border-b border-border/50">
                       <span className="text-muted-foreground">GST ({gstPercent}%)</span>
