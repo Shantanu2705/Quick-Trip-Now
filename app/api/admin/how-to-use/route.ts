@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/firebase-admin";
+import { adminDb } from "@/lib/firebase-admin";
 
 export async function GET(req: Request) {
   try {
-    const db = getDb();
+    const db = adminDb;
     const snapshot = await db.collection("howToUse").orderBy("createdAt", "desc").get();
     const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     return NextResponse.json({ success: true, data: items });
@@ -16,7 +16,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const data = await req.json();
-    const db = getDb();
+    const db = adminDb;
     
     if (!data.title || !data.videoUrl) {
       return NextResponse.json({ success: false, message: "Title and Video URL are required" }, { status: 400 });
@@ -41,7 +41,7 @@ export async function DELETE(req: Request) {
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ success: false, message: "ID required" }, { status: 400 });
 
-    const db = getDb();
+    const db = adminDb;
     await db.collection("howToUse").doc(id).delete();
     
     return NextResponse.json({ success: true, message: "Deleted successfully" });

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/firebase-admin";
+import { adminDb } from "@/lib/firebase-admin";
 
 export async function GET(req: Request) {
   try {
-    const db = getDb();
+    const db = adminDb;
     const snapshot = await db.collection("howToUse").orderBy("createdAt", "desc").get();
     const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     return NextResponse.json({ success: true, data: items });
