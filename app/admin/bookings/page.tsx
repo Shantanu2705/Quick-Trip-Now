@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, RefreshCw, Eye, CalendarDays, Receipt, Users, Download, Trash2 } from "lucide-react";
+import { Search, RefreshCw, Eye, CalendarDays, Receipt, Users, Download, Trash2, Copy } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { BookingInvoice } from "@/components/admin/BookingInvoice";
@@ -467,6 +467,62 @@ export default function AdminBookingsPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Booking Template */}
+                <div className="pt-4 border-t border-border/50">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Message Template</h3>
+                    <button 
+                      onClick={() => {
+                        const b = selectedBooking;
+                        const id = b.id?.startsWith('QTN') ? b.id : `QTN-${b.id}`;
+                        const name = b.customerName || b.fullName || (b.travelers && b.travelers.length > 0 ? b.travelers[0].fullName : 'N/A');
+                        const phone = b.phone || (b.travelers && b.travelers.length > 0 ? b.travelers[0].phone : 'N/A');
+                        const adults = b.adultsCount || (b.travelers ? b.travelers.filter((t: any) => t.type !== 'child').length : 0);
+                        const children = b.childrenCount || (b.travelers ? b.travelers.filter((t: any) => t.type === 'child').length : 0);
+                        const pax = `${adults || 1} Adults, ${children} Children`;
+                        const date = b.date || b.travelDate || 'N/A';
+                        const packageInfo = b.packageName || b.packageType || b.vehicleName || 'Custom Booking';
+                        const cab = b.vehicleQty || 1;
+                        const vehicle = b.vehicleName || 'N/A';
+                        
+                        const template = `Dear Sir/Madam,
+Greetings from *Quick Trip Now*!!!
+-------------
+File No : ${id}
+Guest Name : *${name}*
+Mobile No. : *${phone}*
+Pax : *${pax}*
+-------------
+*${date}*
+*${packageInfo}*
+Cab : *${cab}*
+Vechile : *${vehicle}*`;
+                        
+                        navigator.clipboard.writeText(template);
+                        alert("Template copied to clipboard!");
+                      }}
+                      className="text-xs bg-primary/10 text-primary hover:bg-primary/20 px-3 py-1.5 rounded-lg font-semibold transition-colors flex items-center gap-1.5"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      Copy Template
+                    </button>
+                  </div>
+                  <div className="bg-muted/30 border border-border/50 rounded-xl p-4 font-mono text-xs sm:text-sm whitespace-pre-wrap text-foreground/80 selection:bg-primary/20">
+{`Dear Sir/Madam,
+Greetings from *Quick Trip Now*!!!
+-------------
+File No : ${selectedBooking.id?.startsWith('QTN') ? selectedBooking.id : `QTN-${selectedBooking.id}`}
+Guest Name : *${selectedBooking.customerName || selectedBooking.fullName || (selectedBooking.travelers && selectedBooking.travelers.length > 0 ? selectedBooking.travelers[0].fullName : 'N/A')}*
+Mobile No. : *${selectedBooking.phone || (selectedBooking.travelers && selectedBooking.travelers.length > 0 ? selectedBooking.travelers[0].phone : 'N/A')}*
+Pax : *${selectedBooking.adultsCount || (selectedBooking.travelers ? selectedBooking.travelers.filter((t: any) => t.type !== 'child').length : 1)} Adults, ${selectedBooking.childrenCount || (selectedBooking.travelers ? selectedBooking.travelers.filter((t: any) => t.type === 'child').length : 0)} Children*
+-------------
+*${selectedBooking.date || selectedBooking.travelDate || 'N/A'}*
+*${selectedBooking.packageName || selectedBooking.packageType || selectedBooking.vehicleName || 'Custom Booking'}*
+Cab : *${selectedBooking.vehicleQty || 1}*
+Vechile : *${selectedBooking.vehicleName || 'N/A'}*`}
+                  </div>
+                </div>
               </div>
             </div>
           )}
