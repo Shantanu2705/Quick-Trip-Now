@@ -19,7 +19,7 @@ import { format } from "date-fns";
 import { getDestinations, getVehicles, getCabRoutes, getPackages, getTransferPackages, Destination, Vehicle, CabRoute, Package, TransferPackage } from "@/lib/firestore-utils";
 
 const TABS = [
-  { id: "cabs", label: "Private Transfers", icon: Car },
+  { id: "cabs", label: "one day trip", icon: Car },
   { id: "tours", label: "Tours and Packages", icon: Compass },
 ];
 
@@ -41,6 +41,9 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
   const [transferPackages, setTransferPackages] = useState<TransferPackage[]>([]);
   const [selectedPackageId, setSelectedPackageId] = useState("");
   const [selectedToursPackageId, setSelectedToursPackageId] = useState("");
+  const [isDateOpen, setIsDateOpen] = useState(false);
+  const [isTravelersOpen, setIsTravelersOpen] = useState(false);
+  const [travelersConfirmed, setTravelersConfirmed] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -256,7 +259,7 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
               <div className="hidden md:block w-px h-12 bg-border" />
 
               {/* Date Field */}
-              <Popover>
+              <Popover open={isDateOpen} onOpenChange={setIsDateOpen}>
                 <PopoverTrigger className="flex-1 min-w-0 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-3 md:gap-4 text-left outline-none">
                   <div className="bg-primary/10 p-2.5 md:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
                     <CalendarIcon className="w-5 h-5 md:w-6 md:h-6 text-primary" />
@@ -272,7 +275,7 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                   <Calendar
                     mode="single"
                     selected={date}
-                    onSelect={setDate}
+                    onSelect={(d) => { setDate(d); setIsDateOpen(false); }}
                     disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                   />
                 </PopoverContent>
@@ -282,16 +285,16 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
               <div className="hidden md:block w-px h-12 bg-border" />
 
               {/* Travelers Field */}
-              <Popover>
+              <Popover open={isTravelersOpen} onOpenChange={setIsTravelersOpen}>
                 <PopoverTrigger className="flex-1 min-w-0 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-3 md:gap-4 text-left outline-none">
                   <div className="bg-primary/10 p-2.5 md:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
                     <Users className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                   </div>
                   <div className="flex flex-col flex-1 min-w-0 relative">
-                    <span className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 truncate">Travelers</span>
+                    <span className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 truncate">Number of pax</span>
                     <div className="flex items-center gap-1 min-w-0">
                       <span className="text-[15px] md:text-base font-semibold text-foreground truncate">
-                        {adults} Adult{adults !== 1 ? 's' : ''}{children > 0 ? `, ${children} Child${children !== 1 ? 'ren' : ''}` : ''}{infants > 0 ? `, ${infants} Infant${infants !== 1 ? 's' : ''}` : ''}
+                        {travelersConfirmed ? `${adults} Adult${adults !== 1 ? 's' : ''}${children > 0 ? `, ${children} Child${children !== 1 ? 'ren' : ''}` : ''}${infants > 0 ? `, ${infants} Infant${infants !== 1 ? 's' : ''}` : ''}` : "Select travelers"}
                       </span>
                     </div>
                     {guestError && (
@@ -350,6 +353,17 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                         </button>
                       </div>
                     </div>
+                    <div className="pt-2">
+                      <button
+                        onClick={() => {
+                          setTravelersConfirmed(true);
+                          setIsTravelersOpen(false);
+                        }}
+                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 rounded-xl font-semibold transition-colors"
+                      >
+                        Submit
+                      </button>
+                    </div>
                   </div>
                 </PopoverContent>
               </Popover>
@@ -358,7 +372,11 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
               <div className="w-full md:w-auto p-2 relative flex-shrink-0">
                 <button 
                   onClick={handleExplore}
-                  className="w-full md:w-[150px] lg:w-[160px] h-[56px] md:h-[64px] bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl flex items-center justify-center gap-2 md:gap-3 font-semibold transition-all shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 text-base md:text-lg">
+                  disabled={!travelersConfirmed}
+                  className={cn(
+                    "w-full md:w-[150px] lg:w-[160px] h-[56px] md:h-[64px] bg-primary text-primary-foreground rounded-2xl flex items-center justify-center gap-2 md:gap-3 font-semibold transition-all shadow-lg text-base md:text-lg",
+                    travelersConfirmed ? "hover:bg-primary/90 hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0" : "opacity-50 cursor-not-allowed"
+                  )}>
                   <Search className="w-4 h-4 md:w-5 md:h-5" />
                   <span>Book Tour</span>
                 </button>
@@ -379,10 +397,10 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
               {/* Select Package Field (Dropdown) */}
               <div className="flex-1 min-w-0 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-3 md:gap-4">
                 <div className="bg-primary/10 p-2.5 md:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
-                  <Palmtree className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+                  <MapPin className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                 </div>
                 <div className="flex flex-col flex-1 min-w-0">
-                  <span className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 truncate">Select Package</span>
+                  <span className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 truncate">Select destination</span>
                   <Select value={selectedPackageId} onValueChange={(val) => {
                     setSelectedPackageId(val || "");
                     setCabRouteId(""); // Reset transfer when package changes
@@ -423,7 +441,7 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                   <MapPin className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                 </div>
                 <div className="flex flex-col flex-1 min-w-0">
-                  <span className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 truncate">Select Transfer</span>
+                  <span className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 truncate">One day trip</span>
                   <Select disabled={!selectedPackageId} value={cabRouteId} onValueChange={(val) => val && setCabRouteId(val)}>
                     <SelectTrigger className="border-none shadow-none p-0 h-auto focus:ring-0 bg-transparent text-left text-[15px] md:text-base font-semibold w-full [&>span]:truncate [&>span]:flex-1 [&>span]:min-w-0">
                       <SelectValue placeholder={!selectedPackageId ? "Select a package first" : "Which transfer?"}>
@@ -458,7 +476,7 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
               <div className="hidden md:block w-px h-12 bg-border" />
 
               {/* Date Field */}
-              <Popover>
+              <Popover open={isDateOpen} onOpenChange={setIsDateOpen}>
                 <PopoverTrigger className="flex-1 min-w-0 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-3 md:gap-4 text-left outline-none">
                   <div className="bg-primary/10 p-2.5 md:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
                     <CalendarIcon className="w-5 h-5 md:w-6 md:h-6 text-primary" />
@@ -474,7 +492,7 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                   <Calendar
                     mode="single"
                     selected={date}
-                    onSelect={setDate}
+                    onSelect={(d) => { setDate(d); setIsDateOpen(false); }}
                     disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                   />
                 </PopoverContent>
@@ -484,16 +502,16 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
               <div className="hidden md:block w-px h-12 bg-border" />
 
               {/* Travelers Field */}
-              <Popover>
+              <Popover open={isTravelersOpen} onOpenChange={setIsTravelersOpen}>
                 <PopoverTrigger className="flex-1 min-w-0 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-3 md:gap-4 text-left outline-none">
                   <div className="bg-primary/10 p-2.5 md:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
                     <Users className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                   </div>
                   <div className="flex flex-col flex-1 min-w-0 relative">
-                    <span className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 truncate">Travelers</span>
+                    <span className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 truncate">Number of pax</span>
                     <div className="flex items-center gap-1 min-w-0">
                       <span className="text-[15px] md:text-base font-semibold text-foreground truncate">
-                        {adults} Adult{adults !== 1 ? 's' : ''}{children > 0 ? `, ${children} Child${children !== 1 ? 'ren' : ''}` : ''}{infants > 0 ? `, ${infants} Infant${infants !== 1 ? 's' : ''}` : ''}
+                        {travelersConfirmed ? `${adults} Adult${adults !== 1 ? 's' : ''}${children > 0 ? `, ${children} Child${children !== 1 ? 'ren' : ''}` : ''}${infants > 0 ? `, ${infants} Infant${infants !== 1 ? 's' : ''}` : ''}` : "Select travelers"}
                       </span>
                     </div>
                     {guestError && (
@@ -552,6 +570,17 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                         </button>
                       </div>
                     </div>
+                    <div className="pt-2">
+                      <button
+                        onClick={() => {
+                          setTravelersConfirmed(true);
+                          setIsTravelersOpen(false);
+                        }}
+                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 rounded-xl font-semibold transition-colors"
+                      >
+                        Submit
+                      </button>
+                    </div>
                   </div>
                 </PopoverContent>
               </Popover>
@@ -560,7 +589,11 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
               <div className="w-full md:w-auto p-2 relative flex-shrink-0">
                 <button 
                   onClick={handleCabExplore}
-                  className="w-full md:w-[150px] lg:w-[160px] h-[56px] md:h-[64px] bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl flex items-center justify-center gap-2 md:gap-3 font-semibold transition-all shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 text-base md:text-lg">
+                  disabled={!travelersConfirmed}
+                  className={cn(
+                    "w-full md:w-[150px] lg:w-[160px] h-[56px] md:h-[64px] bg-primary text-primary-foreground rounded-2xl flex items-center justify-center gap-2 md:gap-3 font-semibold transition-all shadow-lg text-base md:text-lg",
+                    travelersConfirmed ? "hover:bg-primary/90 hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0" : "opacity-50 cursor-not-allowed"
+                  )}>
                   <Search className="w-4 h-4 md:w-5 md:h-5" />
                   <span>Book Vehicle</span>
                 </button>
