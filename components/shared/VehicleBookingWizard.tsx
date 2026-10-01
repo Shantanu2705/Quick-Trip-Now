@@ -424,37 +424,7 @@ export function VehicleBookingWizard({
             )}
           </div>
 
-          {(cabRouteData.terms || (cabRouteData.inclusions && cabRouteData.inclusions.length > 0)) && (
-            <div className="mt-2 p-4 bg-background/50 rounded-xl border border-border text-sm text-muted-foreground whitespace-pre-wrap">
-              <span className="font-bold text-foreground block mb-2">Route Terms & Conditions:</span>
-              {cabRouteData.terms}
-              
-              {cabRouteData.inclusions && cabRouteData.inclusions.length > 0 && (
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {cabRouteData.inclusions.some((i: any) => String(i.included) === "true") && (
-                    <div>
-                      <span className="font-bold text-emerald-600 block mb-1">Inclusions:</span>
-                      <ul className="list-disc pl-5 space-y-1 text-foreground/80">
-                        {cabRouteData.inclusions.filter((i: any) => String(i.included) === "true").map((item: any, idx: number) => (
-                          <li key={idx}>{item.text}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {cabRouteData.inclusions.some((i: any) => String(i.included) === "false") && (
-                    <div>
-                      <span className="font-bold text-destructive block mb-1">Exclusions:</span>
-                      <ul className="list-disc pl-5 space-y-1 text-foreground/80">
-                        {cabRouteData.inclusions.filter((i: any) => String(i.included) === "false").map((item: any, idx: number) => (
-                          <li key={idx}>{item.text}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+
         </div>
       </div>
 
@@ -709,6 +679,11 @@ export function VehicleBookingWizard({
                                 <div className="space-y-2">
                                   <label className="text-sm font-medium text-foreground">Phone Number</label>
                                   <input type="tel" placeholder="7047399677" value={traveler.phone} onChange={(e) => updateTraveler(idx, "phone", e.target.value)} className="w-full bg-background border border-input rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all" />
+                                  {traveler.phone.replace(/\D/g, '').length > 0 && traveler.phone.replace(/\D/g, '').length !== 10 && (
+                                    <div className="bg-destructive/10 text-destructive text-xs px-3 py-2 rounded-lg border border-destructive/20 mt-1">
+                                      * Please enter a valid 10-digit phone number
+                                    </div>
+                                  )}
                                 </div>
                               </>
                             ) : (
