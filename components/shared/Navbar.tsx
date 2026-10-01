@@ -15,7 +15,7 @@ const NAV_LINKS = [
   { label: "Destinations", href: "/destinations" },
   { label: "About Us", href: "/about" },
   { label: "Cancel Trip", href: "/cancel" },
-  { label: "Blog", href: "/blog" },
+  { label: "How to Use", href: "/how-to-use" },
   { label: "Contact", href: "/contact" },
 ];
 

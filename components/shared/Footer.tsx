@@ -6,7 +6,7 @@ const FOOTER_LINKS = {
   company: [
     { label: "About Us", href: "/about" },
     { label: "Careers", href: "/careers" },
-    { label: "Blog", href: "/blog" },
+    { label: "How to Use", href: "/how-to-use" },
     { label: "Contact", href: "/contact" },
   ],
   services: [
