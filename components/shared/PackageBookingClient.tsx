@@ -40,6 +40,7 @@ export function PackageBookingClient({
   const dateParam = searchParams?.get("date");
   const [date, setDate] = useState<Date | undefined>(dateParam ? new Date(dateParam) : undefined);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const totalTravelers = adults + children + infants;
 
@@ -116,6 +117,10 @@ export function PackageBookingClient({
     }
     if (!selectedVehicleId) {
       alert("Please select a vehicle.");
+      return;
+    }
+    if (!termsAccepted) {
+      alert("Please accept the terms and conditions.");
       return;
     }
 
@@ -216,7 +221,10 @@ export function PackageBookingClient({
                 {processedVehicles.map(v => (
                   <div 
                     key={v.id} 
-                    onClick={() => setSelectedVehicleId(v.id)}
+                    onClick={() => {
+                      setSelectedVehicleId(v.id);
+                      setTermsAccepted(false);
+                    }}
                     className={`cursor-pointer border-2 rounded-2xl p-4 transition-all ${
                       selectedVehicleId === v.id 
                         ? 'border-primary bg-primary/5 shadow-md ring-4 ring-primary/10' 
@@ -299,6 +307,20 @@ export function PackageBookingClient({
                   {(!packageData?.inclusions?.length && !packageData?.terms) && (
                     <p className="text-sm text-muted-foreground italic">No additional terms provided for this package.</p>
                   )}
+
+                  <div className="pt-4 border-t border-border/50">
+                    <label className="flex items-start gap-3 cursor-pointer group">
+                      <input 
+                        type="checkbox" 
+                        checked={termsAccepted} 
+                        onChange={(e) => setTermsAccepted(e.target.checked)}
+                        className="mt-1 w-5 h-5 rounded border-border text-primary focus:ring-primary focus:ring-offset-0"
+                      />
+                      <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                        I have read and accept the package terms and conditions.
+                      </span>
+                    </label>
+                  </div>
                 </div>
               </div>
             )}
@@ -337,8 +359,9 @@ export function PackageBookingClient({
                 
                 <Button 
                   onClick={handleBookNow} 
+                  disabled={!termsAccepted}
                   size="lg" 
-                  className="w-full rounded-xl py-6 text-lg font-bold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all mt-4"
+                  className="w-full rounded-xl py-6 text-lg font-bold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all mt-4 disabled:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Book Now
                 </Button>
