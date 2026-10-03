@@ -2,18 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { MessageSquare, Calendar, Mail, User, Clock, Trash2, CheckCircle } from "lucide-react";
-import { getAuth } from "firebase/auth";
-import { app } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 
 export default function AdminInquiriesPage() {
   const [inquiries, setInquiries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const auth = getAuth(app);
 
   const fetchInquiries = async () => {
     try {
-      const user = auth.currentUser;
+      const user = auth?.currentUser;
       if (!user) return;
       const token = await user.getIdToken();
       
@@ -35,15 +33,15 @@ export default function AdminInquiriesPage() {
   };
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth?.onAuthStateChanged((user) => {
       if (user) fetchInquiries();
     });
-    return () => unsubscribe();
+    return () => unsubscribe?.();
   }, []);
 
   const markAsRead = async (id: string) => {
     try {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await auth?.currentUser?.getIdToken();
       const res = await fetch(`/api/admin/inquiries?id=${id}`, {
         method: "PUT",
         headers: { 
@@ -61,7 +59,7 @@ export default function AdminInquiriesPage() {
   const deleteInquiry = async (id: string) => {
     if (!confirm("Are you sure you want to delete this inquiry?")) return;
     try {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await auth?.currentUser?.getIdToken();
       const res = await fetch(`/api/admin/inquiries?id=${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }

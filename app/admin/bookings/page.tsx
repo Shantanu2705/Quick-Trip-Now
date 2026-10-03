@@ -498,7 +498,7 @@ export default function AdminBookingsPage() {
                         const children = b.childrenCount || (b.travelers ? b.travelers.filter((t: any) => t.type === 'child').length : 0);
                         const pax = `${adults || 1} Adults, ${children} Children`;
                         const date = b.date || b.travelDate || 'N/A';
-                        const packageInfo = b.packageName || b.packageType || b.transferName || b.routeName || 'Private Transfer';
+                        const packageInfo = b.packageName || b.packageType || b.pickup || 'Private Transfer';
                         const cab = b.vehicleQty || 1;
                         const vehicle = b.vehicleName || 'N/A';
                         
@@ -534,7 +534,7 @@ Mobile No. : *${selectedBooking.phone || (selectedBooking.travelers && selectedB
 Pax : *${selectedBooking.adultsCount || (selectedBooking.travelers ? selectedBooking.travelers.filter((t: any) => t.type !== 'child').length : 1)} Adults, ${selectedBooking.childrenCount || (selectedBooking.travelers ? selectedBooking.travelers.filter((t: any) => t.type === 'child').length : 0)} Children*
 -------------
 *${selectedBooking.date || selectedBooking.travelDate || 'N/A'}*
-*${selectedBooking.packageName || selectedBooking.packageType || selectedBooking.transferName || selectedBooking.routeName || 'Private Transfer'}*
+*${selectedBooking.packageName || selectedBooking.packageType || selectedBooking.pickup || 'Private Transfer'}*
 Cab : *${selectedBooking.vehicleQty || 1}*
 Vechile : *${selectedBooking.vehicleName || 'N/A'}*`}
                   </div>
