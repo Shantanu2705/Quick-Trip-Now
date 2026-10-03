@@ -5,7 +5,7 @@ import { withAuth, AuthenticatedRequest } from "@/lib/auth-middleware";
 async function getInquiriesHandler(req: AuthenticatedRequest) {
   try {
     const snapshot = await adminDb.collection("inquiries").orderBy("createdAt", "desc").get();
-    const inquiries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const inquiries = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
     return NextResponse.json({ success: true, data: inquiries });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: "Failed to fetch inquiries", error: error.message }, { status: 500 });
