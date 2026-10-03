@@ -79,18 +79,34 @@ export default function AdminBookingsPage() {
     }
 
     const data = exportData.map(b => {
-      const baseFare = (b.baseAmount || ((b.amount || 0) - (b.gstAmount || 0)));
+      const amount = b.amount || 0;
       const gstPercent = b.gstPercentage || 0;
-      const displayGst = b.gstAmount || (baseFare * gstPercent) / 100;
+      const displayGst = b.gstAmount || (amount * gstPercent) / (100 + gstPercent);
+      
+      const originalBase = b.baseAmount || (amount - displayGst);
+      const agentDiscountPercent = b.discountApplied ? (b.discountPercentage || 0) : 0;
+      const agentDiscountAmount = originalBase * (agentDiscountPercent / 100);
+      
+      const priceAfterAgentDiscount = originalBase - agentDiscountAmount;
+      const priceAfterCoupon = amount - displayGst;
+      
+      let couponDiscountAmount = priceAfterAgentDiscount - priceAfterCoupon;
+      if (couponDiscountAmount < 0.01) couponDiscountAmount = 0;
+
       return {
         "Bill no": b.id,
         "date": b.createdAt ? new Date(b.createdAt).toLocaleDateString() : b.date || "N/A",
         "Gst no": "19DHGPR6231C1ZB",
         "Traveller name": b.customerName || b.fullName || b.travelers?.[0]?.fullName || "Valued Customer",
-        "Taxable value": baseFare,
+        "Original Base Fare": originalBase,
+        "Agent Discount %": agentDiscountPercent,
+        "Agent Discount Amount": agentDiscountAmount,
+        "Coupon Code": b.couponCode || "None",
+        "Coupon Discount Amount": couponDiscountAmount,
+        "Taxable value": priceAfterCoupon,
         "Gst rate": gstPercent,
         "Gst": displayGst,
-        "Invoice value": b.amount || 0
+        "Final Paid Price (Invoice Value)": amount
       };
     });
     

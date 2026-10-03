@@ -15,6 +15,7 @@ const SIDEBAR_LINKS = [
   { label: "Customers", href: "/admin/customers", icon: Users },
   { label: "Agent Approvals", href: "/admin/users", icon: ShieldCheck },
   { label: "Coupons", href: "/admin/coupons", icon: Ticket },
+  { label: "Inquiries", href: "/admin/inquiries", icon: MessageSquare },
   { label: "How to Use", href: "/admin/how-to-use", icon: MonitorPlay },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
