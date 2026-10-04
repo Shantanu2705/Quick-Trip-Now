@@ -123,13 +123,56 @@ export function Footer({ phone = "+91 7047399677", email = "quicktripnow1@gmail.
 
         <div className="h-px bg-secondary-foreground/20 w-full mb-8" />
 
+        {/* Digital Dictionary Agency Banner */}
+        <div className="w-full pb-10">
+          <a 
+            href="https://www.digitaldictionarysiliguri.com" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="group block w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden hover:-translate-y-1 transition-all duration-300"
+          >
+            <div className="p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
+              {/* Decorative background elements */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-amber-100 rounded-full blur-3xl opacity-50 -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
+              
+              {/* Left Content */}
+              <div className="flex-1 relative z-10 w-full">
+                <h3 className="text-secondary font-black text-2xl md:text-3xl lg:text-4xl mb-6 uppercase tracking-wider drop-shadow-sm">
+                  Comprehensive Agency Solutions
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-slate-800 font-bold text-sm md:text-base lg:text-lg mb-8">
+                  <div className="flex items-center gap-3"><div className="w-2 h-2 rounded-full bg-secondary shrink-0"></div>Website Development</div>
+                  <div className="flex items-center gap-3"><div className="w-2 h-2 rounded-full bg-secondary shrink-0"></div>Digital Marketing</div>
+                  <div className="flex items-center gap-3"><div className="w-2 h-2 rounded-full bg-secondary shrink-0"></div>Performance Marketing</div>
+                  <div className="flex items-center gap-3"><div className="w-2 h-2 rounded-full bg-secondary shrink-0"></div>Google Ads</div>
+                  <div className="flex items-center gap-3"><div className="w-2 h-2 rounded-full bg-secondary shrink-0"></div>Software Development</div>
+                  <div className="flex items-center gap-3"><div className="w-2 h-2 rounded-full bg-secondary shrink-0"></div>Mobile App</div>
+                  <div className="flex items-center gap-3"><div className="w-2 h-2 rounded-full bg-secondary shrink-0"></div>SEO</div>
+                  <div className="flex items-center gap-3"><div className="w-2 h-2 rounded-full bg-secondary shrink-0"></div>ORM</div>
+                </div>
+                <div className="inline-flex items-center gap-2 text-slate-800 font-bold text-lg md:text-xl border-b-2 border-secondary pb-1">
+                  www.digitaldictionarysiliguri.com
+                </div>
+              </div>
+
+              {/* Right Logo */}
+              <div className="relative z-10 shrink-0 flex flex-col items-center justify-center bg-slate-50 p-6 md:p-8 rounded-3xl shadow-inner border border-slate-100 group-hover:scale-105 transition-transform duration-500">
+                <div className="relative flex items-center justify-center w-28 h-28 md:w-32 md:h-32 rounded-full border-[6px] border-amber-400 bg-white shadow-lg mb-4">
+                  <div className="absolute inset-0 rounded-full border-[3px] border-amber-200 m-1"></div>
+                  <span className="text-6xl md:text-7xl font-black bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 bg-clip-text text-transparent" style={{ fontFamily: "serif" }}>D</span>
+                </div>
+                <div className="text-center">
+                  <span className="block text-2xl md:text-3xl font-black bg-gradient-to-r from-amber-500 to-amber-700 bg-clip-text text-transparent" style={{ fontFamily: "serif", letterSpacing: "-0.5px" }}>Digital Dictionary</span>
+                  <span className="block text-base md:text-lg font-black tracking-[0.2em] text-amber-600 mt-1 uppercase">Siliguri</span>
+                </div>
+              </div>
+            </div>
+          </a>
+        </div>
+
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-secondary-foreground/60 text-sm">
             © {new Date().getFullYear()} Quick Trip Now. All rights reserved.
-          </p>
-
-          <p className="text-secondary-foreground/60 text-sm text-center">
-            Designed by <a href="https://digitaldictionary.in/" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors font-medium">Digital Dictionary</a>
           </p>
           
           <div className="flex items-center gap-4">
