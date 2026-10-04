@@ -20,6 +20,7 @@ async function createVehicleHandler(req: AuthenticatedRequest) {
     data.inclusions = Array.isArray(data.inclusions) ? data.inclusions : [];
     data.exclusions = Array.isArray(data.exclusions) ? data.exclusions : [];
     data.seasonalPrices = Array.isArray(data.seasonalPrices) ? data.seasonalPrices : [];
+    data.unavailableDates = Array.isArray(data.unavailableDates) ? data.unavailableDates : [];
     data.termsAndConditions = data.termsAndConditions || "";
 
     const docRef = await adminDb.collection('vehicles').add(data);
@@ -61,6 +62,7 @@ async function updateVehicleHandler(req: AuthenticatedRequest) {
     updateData.inclusions = Array.isArray(data.inclusions) ? data.inclusions : [];
     updateData.exclusions = Array.isArray(data.exclusions) ? data.exclusions : [];
     updateData.seasonalPrices = Array.isArray(data.seasonalPrices) ? data.seasonalPrices : [];
+    updateData.unavailableDates = Array.isArray(data.unavailableDates) ? data.unavailableDates : [];
     updateData.termsAndConditions = data.termsAndConditions || "";
 
     await adminDb.collection('vehicles').doc(id).update(updateData);

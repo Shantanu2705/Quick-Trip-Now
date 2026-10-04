@@ -468,9 +468,12 @@ export function VehicleBookingWizard({
             >
               {currentStep === 0 && (() => {
                 const formattedDate = selectedDate ? format(selectedDate, "yyyy-MM-dd") : "";
-                const filteredVehicles = availableVehicles.filter(v => 
-                  !v.unavailableDates || !v.unavailableDates.includes(formattedDate)
-                );
+                const filteredVehicles = availableVehicles.filter(v => {
+                  if (!v.unavailableDates || v.unavailableDates.length === 0) return true;
+                  return !v.unavailableDates.some((range: {start: string, end: string}) => 
+                    formattedDate >= range.start && formattedDate <= range.end
+                  );
+                });
 
                 return (
                   <div className="space-y-6 flex-1">

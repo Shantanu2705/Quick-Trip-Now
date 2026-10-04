@@ -26,7 +26,8 @@ export default function AdminVehiclesPage() {
     maxChildren: 0,
     maxChildAge: 12,
     ac: true,
-    status: "Active"
+    status: "Active",
+    unavailableDates: [] as {start: string, end: string}[]
   });
 
   const fetchVehicles = async () => {
@@ -66,7 +67,8 @@ export default function AdminVehiclesPage() {
       maxChildren: v.maxChildren || 0,
       maxChildAge: v.maxChildAge || 12,
       ac: v.ac !== undefined ? v.ac : true,
-      status: v.status || "Active"
+      status: v.status || "Active",
+      unavailableDates: v.unavailableDates || []
     });
     setImageFile(null);
     setImagePreview(v.image || "");
@@ -193,7 +195,7 @@ export default function AdminVehiclesPage() {
     setImageFile(null);
     setImagePreview("");
     setFormData({
-      name: "", type: "SUV", image: "", seats: 4, maxAdults: 4, maxChildren: 0, maxChildAge: 12, ac: true, status: "Active"
+      name: "", type: "SUV", image: "", seats: 4, maxAdults: 4, maxChildren: 0, maxChildAge: 12, ac: true, status: "Active", unavailableDates: []
     });
   };
 
@@ -290,6 +292,76 @@ export default function AdminVehiclesPage() {
                   </select>
                 </div>
 
+              </div>
+
+              {/* Unavailable Dates Section */}
+              <div className="mt-6 border-t border-border pt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Unavailable Dates</h3>
+                    <p className="text-xs text-muted-foreground mt-1">Specify dates or date ranges when this vehicle cannot be booked.</p>
+                  </div>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setFormData({ ...formData, unavailableDates: [...formData.unavailableDates, { start: "", end: "" }] })}
+                  >
+                    <Plus className="w-4 h-4 mr-2" /> Add Range
+                  </Button>
+                </div>
+
+                {formData.unavailableDates.length > 0 ? (
+                  <div className="space-y-3">
+                    {formData.unavailableDates.map((range, index) => (
+                      <div key={index} className="flex items-center gap-3 bg-muted/20 p-3 rounded-xl border border-border">
+                        <div className="flex-1">
+                          <label className="block text-[10px] uppercase text-muted-foreground mb-1">Start Date</label>
+                          <input 
+                            type="date" 
+                            required
+                            value={range.start} 
+                            onChange={(e) => {
+                              const newDates = [...formData.unavailableDates];
+                              newDates[index].start = e.target.value;
+                              setFormData({ ...formData, unavailableDates: newDates });
+                            }}
+                            className="w-full bg-background border border-border rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:border-primary" 
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-[10px] uppercase text-muted-foreground mb-1">End Date</label>
+                          <input 
+                            type="date" 
+                            required
+                            value={range.end} 
+                            min={range.start}
+                            onChange={(e) => {
+                              const newDates = [...formData.unavailableDates];
+                              newDates[index].end = e.target.value;
+                              setFormData({ ...formData, unavailableDates: newDates });
+                            }}
+                            className="w-full bg-background border border-border rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:border-primary" 
+                          />
+                        </div>
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const newDates = formData.unavailableDates.filter((_, i) => i !== index);
+                            setFormData({ ...formData, unavailableDates: newDates });
+                          }}
+                          className="mt-5 p-2 text-muted-foreground hover:text-destructive transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 bg-muted/10 border border-dashed border-border rounded-xl">
+                    <p className="text-sm text-muted-foreground">No unavailable dates added yet.</p>
+                  </div>
+                )}
               </div>
 
               <button type="submit" disabled={saving} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl py-3 mt-4 disabled:opacity-70">

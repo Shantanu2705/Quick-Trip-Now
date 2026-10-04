@@ -51,8 +51,11 @@ export function PackageBookingClient({
     if (date) {
       const dateStr = format(date, "yyyy-MM-dd");
       availableVehicles = availableVehicles.filter(v => {
-        if (v.unavailableDates && v.unavailableDates.includes(dateStr)) return false;
-        return true;
+        if (!v.unavailableDates || v.unavailableDates.length === 0) return true;
+        const isUnavailable = v.unavailableDates.some((range: {start: string, end: string}) => 
+          dateStr >= range.start && dateStr <= range.end
+        );
+        return !isUnavailable;
       });
     }
 
