@@ -129,68 +129,24 @@ export function Footer({ phone = "+91 7047399677", email = "quicktripnow1@gmail.
             href="https://www.digitaldictionarysiliguri.com" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="group block w-full max-w-5xl mx-auto bg-[#111] p-3 md:p-5 shadow-2xl hover:scale-[1.01] transition-transform duration-300"
+            className="group block w-full max-w-5xl mx-auto"
           >
-            {/* Teal Torn Paper Background */}
-            <div className="w-full bg-secondary relative">
-              {/* Top Teal Torn Edge */}
-              <svg viewBox="0 0 100 5" preserveAspectRatio="none" className="w-full h-3 md:h-5 text-secondary fill-current absolute -top-3 md:-top-5 left-0">
-                <path d="M0,5 L0,1 L2,4 L5,2 L8,5 L11,1 L15,4 L18,2 L22,5 L26,1 L30,5 L33,2 L36,5 L40,1 L43,4 L47,2 L50,5 L53,2 L57,5 L61,1 L65,5 L68,3 L72,6 L76,2 L80,5 L84,1 L88,5 L91,2 L95,5 L98,3 L100,5 Z" />
-              </svg>
-
-              {/* Bottom Teal Torn Edge */}
-              <svg viewBox="0 0 100 5" preserveAspectRatio="none" className="w-full h-3 md:h-5 text-secondary fill-current absolute -bottom-3 md:-bottom-5 left-0">
-                <path d="M0,0 L0,4 L2,1 L5,3 L8,0 L11,4 L15,1 L18,3 L22,0 L26,4 L30,0 L33,3 L36,0 L40,4 L43,1 L47,3 L50,0 L53,3 L57,0 L61,4 L65,0 L68,2 L72,-1 L76,3 L80,0 L84,4 L88,0 L91,3 L95,0 L98,2 L100,0 Z" />
-              </svg>
-
-              {/* White Torn Paper Foreground */}
-              <div className="bg-slate-50 relative mx-1 md:mx-3 my-2 md:my-4 px-6 md:px-10 py-8 md:py-12">
-                {/* Top White Torn Edge */}
-                <svg viewBox="0 0 100 5" preserveAspectRatio="none" className="w-full h-2 md:h-4 text-slate-50 fill-current absolute -top-2 md:-top-4 left-0 drop-shadow-sm">
-                  <path d="M0,5 L0,2 L3,4 L6,1 L9,5 L12,2 L16,4 L19,1 L23,5 L27,2 L31,5 L34,2 L37,4 L41,1 L44,4 L48,2 L51,5 L54,2 L58,5 L62,1 L66,5 L69,3 L73,6 L77,2 L81,5 L85,1 L89,5 L92,2 L96,5 L99,3 L100,5 Z" />
-                </svg>
-
-                {/* Bottom White Torn Edge */}
-                <svg viewBox="0 0 100 5" preserveAspectRatio="none" className="w-full h-2 md:h-4 text-slate-50 fill-current absolute -bottom-2 md:-bottom-4 left-0 drop-shadow-sm">
-                  <path d="M0,0 L0,3 L3,1 L6,4 L9,0 L12,3 L16,1 L19,4 L23,0 L27,3 L31,0 L34,3 L37,1 L41,4 L44,1 L48,3 L51,0 L54,3 L58,0 L62,4 L66,0 L69,2 L73,-1 L77,3 L81,0 L85,4 L89,0 L92,3 L96,0 L99,2 L100,0 Z" />
-                </svg>
-
-                <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
-                  {/* Left Content */}
-                  <div className="flex-1 w-full">
-                    <h3 className="text-secondary font-black text-2xl md:text-3xl lg:text-4xl mb-6 uppercase tracking-tight drop-shadow-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
-                      Comprehensive Agency Solutions
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-slate-800 font-bold text-base md:text-lg lg:text-xl mb-6">
-                      <div className="flex items-center gap-2"><span className="text-secondary text-2xl leading-none">•</span> Website Development</div>
-                      <div className="flex items-center gap-2"><span className="text-secondary text-2xl leading-none">•</span> Digital Marketing</div>
-                      <div className="flex items-center gap-2"><span className="text-secondary text-2xl leading-none">•</span> Performance Marketing</div>
-                      <div className="flex items-center gap-2"><span className="text-secondary text-2xl leading-none">•</span> Google Ads</div>
-                      <div className="flex items-center gap-2"><span className="text-secondary text-2xl leading-none">•</span> Software Development</div>
-                      <div className="flex items-center gap-2"><span className="text-secondary text-2xl leading-none">•</span> Mobile App</div>
-                      <div className="flex items-center gap-2"><span className="text-secondary text-2xl leading-none">•</span> SEO</div>
-                      <div className="flex items-center gap-2"><span className="text-secondary text-2xl leading-none">•</span> ORM</div>
-                    </div>
-                    <div className="text-slate-800 font-medium text-lg md:text-xl lg:text-2xl mt-4">
-                      www.digitaldictionarysiliguri.com
-                    </div>
-                  </div>
-
-                  {/* Right Logo */}
-                  <div className="shrink-0 flex flex-col items-center justify-center">
-                    <div className="relative flex items-center justify-center w-32 h-32 md:w-40 md:h-40 rounded-full border-[8px] border-[#D4AF37] bg-white shadow-xl mb-2" style={{ boxShadow: 'inset 0 0 15px rgba(212,175,55,0.5), 0 10px 20px rgba(0,0,0,0.15)' }}>
-                      <div className="absolute inset-0 rounded-full border-[2px] border-[#FFDF73] m-1"></div>
-                      <div className="absolute inset-0 rounded-full border-[1px] border-[#AA7C11] m-2"></div>
-                      <span className="text-7xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-[#FFDF73] via-[#D4AF37] to-[#AA7C11] drop-shadow-md" style={{ fontFamily: "Georgia, serif" }}>D</span>
-                    </div>
-                    <div className="text-center mt-2">
-                      <span className="block text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FFDF73] via-[#D4AF37] to-[#AA7C11]" style={{ fontFamily: "Georgia, serif" }}>Digital Dictionary</span>
-                      <span className="block text-base md:text-lg font-black tracking-[0.25em] text-[#AA7C11] mt-0.5 uppercase drop-shadow-sm">Siliguri</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* SVG Filter to intelligently shift Green to the Footer's Teal color without affecting Gold/Yellow */}
+            <svg width="0" height="0" className="absolute hidden">
+              <filter id="green-to-teal">
+                <feColorMatrix type="matrix" values="
+                  1  0  0  0 0
+                  0  1  0  0 0
+                 -1  1  1  0 0
+                  0  0  0  1 0" />
+              </filter>
+            </svg>
+            <img 
+              src="/images/digital-dictionary-banner.png" 
+              alt="Digital Dictionary Agency Solutions" 
+              className="w-full h-auto rounded-sm shadow-2xl hover:scale-[1.01] transition-transform duration-300"
+              style={{ filter: "url(#green-to-teal)" }}
+            />
           </a>
         </div>
 
