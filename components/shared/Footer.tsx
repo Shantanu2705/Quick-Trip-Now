@@ -131,30 +131,11 @@ export function Footer({ phone = "+91 7047399677", email = "quicktripnow1@gmail.
             rel="noopener noreferrer"
             className="group block w-full max-w-5xl mx-auto"
           >
-            {/* SVG Filter to intelligently shift Green to the Footer's Teal color without affecting Gold/Yellow */}
-            <svg width="0" height="0" className="absolute hidden">
-              <filter id="green-to-teal">
-                <feColorMatrix type="matrix" values="
-                  1  0  0  0 0
-                  0  1  0  0 0
-                 -1  1  1  0 0
-                  0  0  0  1 0" />
-              </filter>
-            </svg>
-            <div 
-              className="w-full h-full relative"
-              style={{
-                WebkitMaskImage: "radial-gradient(ellipse 90% 80% at 50% 50%, black 60%, transparent 100%)",
-                maskImage: "radial-gradient(ellipse 90% 80% at 50% 50%, black 60%, transparent 100%)"
-              }}
-            >
-              <img 
-                src="/images/digital-dictionary-banner.png" 
-                alt="Digital Dictionary Agency Solutions" 
-                className="w-full h-auto hover:scale-[1.01] transition-transform duration-300"
-                style={{ filter: "url(#green-to-teal)" }}
-              />
-            </div>
+            <img 
+              src="/images/digital-dictionary-banner.png" 
+              alt="Digital Dictionary Agency Solutions" 
+              className="w-full h-auto hover:scale-[1.01] transition-transform duration-300"
+            />
           </a>
         </div>
 
