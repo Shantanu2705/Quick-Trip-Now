@@ -5,7 +5,7 @@ import { withAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
 async function createVehicleHandler(req: AuthenticatedRequest) {
   try {
     const data = await req.json();
-    if (!data.name || !data.type || !data.image || !data.price) {
+    if (!data.name || !data.type || !data.image) {
       return NextResponse.json({ success: false, message: 'Missing required fields' }, { status: 400 });
     }
 
@@ -48,7 +48,7 @@ async function updateVehicleHandler(req: AuthenticatedRequest) {
     const { id, ...updateData } = data;
     
     if (!id) return NextResponse.json({ success: false, message: 'Vehicle ID required' }, { status: 400 });
-    if (!data.name || !data.type || !data.image || !data.price) {
+    if (!data.name || !data.type || !data.image) {
       return NextResponse.json({ success: false, message: 'Missing required fields' }, { status: 400 });
     }
 
