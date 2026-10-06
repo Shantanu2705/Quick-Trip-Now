@@ -131,10 +131,21 @@ export function Footer({ phone = "+91 7047399677", email = "quicktripnow1@gmail.
             rel="noopener noreferrer"
             className="group block w-full max-w-5xl mx-auto"
           >
+            {/* SVG Filter to perfectly shift Green to a darker shade of the Footer's Teal without affecting Gold/White/Black */}
+            <svg width="0" height="0" className="absolute hidden">
+              <filter id="green-to-dark-teal">
+                <feColorMatrix type="matrix" values="
+                  0.84  0.20 -0.04  0  0
+                  0.08  0.90  0.02  0  0
+                 -0.88  1.10  0.78  0  0
+                  0     0     0     1  0" />
+              </filter>
+            </svg>
             <img 
               src="/images/digital-dictionary-banner.png" 
               alt="Digital Dictionary Agency Solutions" 
               className="w-full h-auto hover:scale-[1.01] transition-transform duration-300"
+              style={{ filter: "url(#green-to-dark-teal)" }}
             />
           </a>
         </div>
