@@ -8,6 +8,7 @@ const SIDEBAR_LINKS = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Bookings", href: "/admin/bookings", icon: CalendarDays },
   { label: "Packages", href: "/admin/packages", icon: Package },
+  { label: "Group Tours", href: "/admin/group-tours", icon: Users },
   { label: "Destinations", href: "/admin/destinations", icon: MapPin },
   { label: "Vehicles", href: "/admin/vehicles", icon: Car },
   { label: "Transfer Packages", href: "/admin/transfer-packages", icon: Package },

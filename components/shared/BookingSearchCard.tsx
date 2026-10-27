@@ -16,11 +16,12 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { getDestinations, getVehicles, getCabRoutes, getPackages, getTransferPackages, Destination, Vehicle, CabRoute, Package, TransferPackage } from "@/lib/firestore-utils";
+import { getDestinations, getVehicles, getCabRoutes, getPackages, getTransferPackages, getGroupTours, Destination, Vehicle, CabRoute, Package, TransferPackage, GroupTour } from "@/lib/firestore-utils";
 
 const TABS = [
   { id: "cabs", label: "one day trip", icon: Car },
   { id: "tours", label: "Tours and Packages", icon: Compass },
+  { id: "group-tours", label: "Group Tours", icon: Users },
 ];
 
 export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAge?: number }) {
@@ -39,11 +40,21 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
   const [cabRoutes, setCabRoutes] = useState<CabRoute[]>([]);
   const [packages, setPackages] = useState<Package[]>([]);
   const [transferPackages, setTransferPackages] = useState<TransferPackage[]>([]);
+  const [groupTours, setGroupTours] = useState<GroupTour[]>([]);
   const [selectedPackageId, setSelectedPackageId] = useState("");
   const [selectedToursPackageId, setSelectedToursPackageId] = useState("");
+  const [selectedGroupTourId, setSelectedGroupTourId] = useState("");
+  const [groupDate, setGroupDate] = useState<Date>();
+  const [groupAdults, setGroupAdults] = useState<number>(2);
+  const [groupChildren, setGroupChildren] = useState<number>(0);
+  const [groupInfants, setGroupInfants] = useState<number>(0);
   const [isDateOpen, setIsDateOpen] = useState(false);
   const [isTravelersOpen, setIsTravelersOpen] = useState(false);
   const [travelersConfirmed, setTravelersConfirmed] = useState(false);
+  const [isGroupDateOpen, setIsGroupDateOpen] = useState(false);
+  const [isGroupTravelersOpen, setIsGroupTravelersOpen] = useState(false);
+  const [groupTravelersConfirmed, setGroupTravelersConfirmed] = useState(true);
+  const [groupTourError, setGroupTourError] = useState("");
 
   useEffect(() => {
     async function loadData() {
@@ -70,6 +81,11 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
       try {
         const tpkgs = await getTransferPackages().catch(e => { console.error("TransferPackages error", e); return []; });
         setTransferPackages(tpkgs);
+      } catch (err) {}
+
+      try {
+        const gtours = await getGroupTours().catch(e => { console.error("GroupTours error", e); return []; });
+        setGroupTours(gtours);
       } catch (err) {}
     }
     loadData();
@@ -122,6 +138,32 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
     params.set("infants", infants.toString());
     
     router.push(`/book?${params.toString()}`);
+  };
+
+  const handleGroupTourExplore = () => {
+    if (!selectedGroupTourId) {
+      setGroupTourError("Please select a package");
+      return;
+    }
+    if (!groupDate) {
+      setGroupTourError("Please select date of journey");
+      return;
+    }
+    if (groupAdults < 1) {
+      setGroupTourError("Need at least 1 adult");
+      return;
+    }
+
+    const selectedTour = groupTours.find(t => t.id === selectedGroupTourId);
+    if (!selectedTour) return;
+
+    const params = new URLSearchParams();
+    params.set("date", groupDate.toISOString());
+    params.set("adults", groupAdults.toString());
+    params.set("children", groupChildren.toString());
+    params.set("infants", groupInfants.toString());
+
+    router.push(`/group-tour/${selectedTour.slug || selectedTour.id}?${params.toString()}`);
   };
 
   return (
@@ -601,7 +643,215 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
             </motion.div>
           )}
 
+          {/* GROUP TOURS TAB */}
+          {activeTab === "group-tours" && (
+            <motion.div
+              key="group-tours"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.3 }}
+              className="flex flex-col md:flex-row items-center w-full gap-2"
+            >
+              {/* 1. Select Package Field (Dropdown) */}
+              <div className="flex-1 min-w-0 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-3 md:gap-4">
+                <div className="bg-primary/10 p-2.5 md:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                  <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+                </div>
+                <div className="flex flex-col flex-1 min-w-0 relative">
+                  <span className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 truncate">Select Package</span>
+                  <Select value={selectedGroupTourId} onValueChange={(val) => {
+                    setSelectedGroupTourId(val || "");
+                    setGroupTourError("");
+                  }}>
+                    <SelectTrigger className="border-none shadow-none p-0 h-auto focus:ring-0 bg-transparent text-left text-[15px] md:text-base font-semibold w-full [&>span]:truncate [&>span]:flex-1 [&>span]:min-w-0">
+                      <SelectValue placeholder="Choose a group tour">
+                        {selectedGroupTourId && groupTours.find(p => p.id === selectedGroupTourId) ? (
+                          <div className="flex flex-col gap-0.5 min-w-0">
+                            <span className="font-semibold text-[15px] md:text-base text-foreground truncate">
+                              {groupTours.find(p => p.id === selectedGroupTourId)!.title}
+                            </span>
+                            <div className="flex items-center gap-2 text-[12px] md:text-[13px] text-muted-foreground truncate font-normal">
+                              <span>{groupTours.find(p => p.id === selectedGroupTourId)!.duration || `${groupTours.find(p => p.id === selectedGroupTourId)!.days}D / ${groupTours.find(p => p.id === selectedGroupTourId)!.nights}N`}</span>
+                              <span>•</span>
+                              <span className="font-semibold text-primary">₹{groupTours.find(p => p.id === selectedGroupTourId)!.price?.toLocaleString("en-IN")}/person</span>
+                            </div>
+                          </div>
+                        ) : undefined}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent alignItemWithTrigger={false} align="start" className="min-w-[320px] p-2">
+                      {groupTours.length > 0 ? (
+                        groupTours.map((tour) => (
+                          <SelectItem key={tour.id} value={tour.id} className="py-3 px-4 rounded-xl mb-1 cursor-pointer hover:bg-muted/50 transition-colors">
+                            <div className="flex flex-col gap-1">
+                              <span className="font-semibold text-base text-foreground">{tour.title}</span>
+                              <div className="flex items-center gap-3 text-[13px] text-muted-foreground">
+                                <span>{tour.duration || `${tour.days} Days / ${tour.nights} Nights`}</span>
+                                <span>•</span>
+                                <span className="font-bold text-primary">From ₹{tour.price?.toLocaleString("en-IN")}/person</span>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="py-3 px-4 text-center">
+                          <span className="text-muted-foreground text-sm">Loading group tours...</span>
+                        </div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
+              {/* Divider */}
+              <div className="hidden md:block w-px h-12 bg-border" />
+
+              {/* 2. Date of Journey Field */}
+              <Popover open={isGroupDateOpen} onOpenChange={setIsGroupDateOpen}>
+                <PopoverTrigger className="flex-1 min-w-0 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-3 md:gap-4 text-left outline-none">
+                  <div className="bg-primary/10 p-2.5 md:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                    <CalendarIcon className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+                  </div>
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <span className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 truncate">Date of Journey</span>
+                    <span className="font-semibold text-[15px] md:text-base text-foreground/80 truncate">
+                      {groupDate ? format(groupDate, "PPP") : "Select date"}
+                    </span>
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={groupDate}
+                    onSelect={(d) => { setGroupDate(d); setIsGroupDateOpen(false); setGroupTourError(""); }}
+                    disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {/* Divider */}
+              <div className="hidden md:block w-px h-12 bg-border" />
+
+              {/* 3. Travellers Field */}
+              <Popover open={isGroupTravelersOpen} onOpenChange={setIsGroupTravelersOpen}>
+                <PopoverTrigger className="flex-1 min-w-0 w-full rounded-2xl hover:bg-muted transition-colors p-3 md:p-4 cursor-pointer group border border-transparent hover:border-border flex items-center gap-3 md:gap-4 text-left outline-none">
+                  <div className="bg-primary/10 p-2.5 md:p-3 rounded-xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                    <Users className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+                  </div>
+                  <div className="flex flex-col flex-1 min-w-0 relative">
+                    <span className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 truncate">Travellers</span>
+                    <div className="flex items-center gap-1 min-w-0">
+                      <span className="text-[15px] md:text-base font-semibold text-foreground truncate">
+                        {groupTravelersConfirmed
+                          ? `${groupAdults} Adult${groupAdults !== 1 ? 's' : ''}${groupChildren > 0 ? `, ${groupChildren} Child${groupChildren !== 1 ? 'ren' : ''}` : ''}${groupInfants > 0 ? `, ${groupInfants} Infant${groupInfants !== 1 ? 's' : ''}` : ''}`
+                          : "Select travellers"}
+                      </span>
+                    </div>
+                    {groupTourError && (
+                      <span className="absolute -bottom-6 left-0 text-[10px] text-red-500 font-bold tracking-wide truncate max-w-full">
+                        {groupTourError}
+                      </span>
+                    )}
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-4" align="start">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-sm">Adults</span>
+                        <span className="text-xs text-muted-foreground">Ages 13 or above</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => setGroupAdults(Math.max(1, groupAdults - 1))}
+                          className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={groupAdults <= 1}
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="w-4 text-center font-medium">{groupAdults}</span>
+                        <button
+                          onClick={() => setGroupAdults(groupAdults + 1)}
+                          className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="h-px bg-border/50 w-full" />
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-sm">Children</span>
+                        <span className="text-xs text-muted-foreground">Ages 2-{globalMaxChildAge}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => setGroupChildren(Math.max(0, groupChildren - 1))}
+                          className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={groupChildren <= 0}
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="w-4 text-center font-medium">{groupChildren}</span>
+                        <button
+                          onClick={() => setGroupChildren(groupChildren + 1)}
+                          className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="h-px bg-border/50 w-full" />
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-sm">Infants</span>
+                        <span className="text-xs text-muted-foreground">Under 2</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => setGroupInfants(Math.max(0, groupInfants - 1))}
+                          className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={groupInfants <= 0}
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="w-4 text-center font-medium">{groupInfants}</span>
+                        <button
+                          onClick={() => setGroupInfants(groupInfants + 1)}
+                          className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="pt-2">
+                      <button
+                        onClick={() => {
+                          setGroupTravelersConfirmed(true);
+                          setIsGroupTravelersOpen(false);
+                        }}
+                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 rounded-xl font-semibold transition-colors"
+                      >
+                        Submit
+                      </button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Search Button */}
+              <div className="w-full md:w-auto p-2 relative flex-shrink-0">
+                <button 
+                  onClick={handleGroupTourExplore}
+                  className="w-full md:w-[150px] lg:w-[160px] h-[56px] md:h-[64px] bg-primary text-primary-foreground rounded-2xl flex items-center justify-center gap-2 md:gap-3 font-semibold transition-all shadow-lg text-base md:text-lg hover:bg-primary/90 hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                >
+                  <Search className="w-4 h-4 md:w-5 md:h-5" />
+                  <span>Book Tour</span>
+                </button>
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
     </motion.div>

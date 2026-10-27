@@ -78,6 +78,38 @@ export interface Package {
   vehicleSeasonalPrices?: Record<string, { startDate: string; endDate: string; price: number }[]>;
 }
 
+export interface GroupTour {
+  id: string;
+  slug?: string;
+  title: string;
+  description: string;
+  image: string;
+  destination: string;
+  duration: string;
+  days: number;
+  nights: number;
+  status: string;
+  isFeatured?: boolean;
+  highlights: string[];
+  itinerary: { day: number; title: string; desc: string }[];
+  inclusions: { text: string; included: boolean }[];
+  rating: number;
+  reviews: number;
+  termsAndConditions: string;
+  terms?: string;
+  maxAdults: number;
+  maxChildren: number;
+  maxInfants: number;
+  gstPercentage: number;
+  // Package-based pricing:
+  price: number; // Base Price Per Person (Adult)
+  childPrice?: number; // Base Price Per Child
+  seasonalPrices?: { startDate: string; endDate: string; price: number; childPrice?: number }[];
+  partPayment?: { enabled: boolean; percentage: number };
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface TransferPackage {
   id: string;
   title: string;
@@ -88,6 +120,28 @@ export async function getPackages() {
   if (!db) return [];
   const snapshot = await getDocs(collection(db, 'packages'));
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Package));
+}
+
+export async function getGroupTours(): Promise<GroupTour[]> {
+  try {
+    if (db) {
+      const snapshot = await getDocs(collection(db, 'group_tours'));
+      if (!snapshot.empty) {
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as GroupTour));
+      }
+    }
+    // Fallback via API
+    const res = await fetch('/api/group-tours', { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        return data.data;
+      }
+    }
+  } catch (err) {
+    console.error("Error fetching group tours:", err);
+  }
+  return [];
 }
 
 export async function getTransferPackages() {
@@ -117,3 +171,4 @@ export async function getCabRoutes() {
   const snapshot = await getDocs(q);
   return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as CabRoute));
 }
+

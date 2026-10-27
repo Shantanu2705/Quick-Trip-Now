@@ -82,6 +82,16 @@ export async function GET(req: Request) {
       }
     }
 
+    // Add Group Tours
+    const { DEFAULT_GROUP_TOURS } = await import('@/app/api/group-tours/route');
+    const groupToursRef = adminDb.collection('group_tours');
+    for (const gtour of DEFAULT_GROUP_TOURS) {
+      const q = await groupToursRef.where('slug', '==', gtour.slug).get();
+      if (q.empty) {
+        await groupToursRef.add({ ...gtour, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+      }
+    }
+
     return NextResponse.json({ success: true, message: 'Database seeded successfully' });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: 'Failed to seed database', error: error.message }, { status: 500 });
