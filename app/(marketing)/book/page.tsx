@@ -37,17 +37,31 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
       const snapshot = await adminDb.collection("packages").where("slug", "==", packageSlug).limit(1).get();
       if (!snapshot.empty) {
         packageData = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
-      } else {
-        const docSnap = await adminDb.collection("packages").doc(packageSlug).get();
-        if (docSnap.exists) {
-          packageData = { id: docSnap.id, ...docSnap.data() };
-        }
       }
       
-      if (packageData) {
-        packageData.gstPercentage = packageData.gstPercentage || (settings?.taxRate || 0);
-        packageData.terms = packageData.terms || packageData.termsAndConditions || "";
+      const vehiclesSnap = await adminDb.collection("vehicles").get();
+      let allVehicles = vehiclesSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+      
+      if (packageData.allowedVehicles && packageData.allowedVehicles.length > 0) {
+        allVehicles = allVehicles.filter((v: any) => packageData.allowedVehicles.includes(v.id));
       }
+      
+      if (packageData.vehiclePrices || packageData.vehicleSeasonalPrices) {
+        allVehicles = allVehicles.map((v: any) => {
+          const updatedV = { ...v };
+          if (packageData.vehiclePrices && packageData.vehiclePrices[v.id] !== undefined) {
+            updatedV.price = packageData.vehiclePrices[v.id];
+          }
+          if (packageData.vehicleSeasonalPrices && packageData.vehicleSeasonalPrices[v.id]) {
+            updatedV.seasonalPrices = packageData.vehicleSeasonalPrices[v.id];
+          }
+          return updatedV;
+        });
+      }
+      
+      packageData.gstPercentage = packageData.gstPercentage || (settings?.taxRate || 0);
+      
+      availableVehicles = allVehicles;
     } catch (error) {
       console.error("Error fetching package data:", error);
     }
@@ -64,38 +78,36 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
         cabRouteData = { id: routeSnap.id, ...routeSnap.data() };
       }
       
-      if (cabRouteData) {
-        const vehiclesSnap = await adminDb.collection("vehicles").get();
-        let allVehicles = vehiclesSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+      const vehiclesSnap = await adminDb.collection("vehicles").get();
+      let allVehicles = vehiclesSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
 
-        if (cabRouteData.packageId) {
-          const pkgSnap = await adminDb.collection("transfer_packages").doc(cabRouteData.packageId).get();
-          if (pkgSnap.exists) {
-            packageData = { id: pkgSnap.id, ...pkgSnap.data() };
-          }
+      if (cabRouteData && cabRouteData.packageId) {
+        const pkgSnap = await adminDb.collection("transfer_packages").doc(cabRouteData.packageId).get();
+        if (pkgSnap.exists) {
+          packageData = { id: pkgSnap.id, ...pkgSnap.data() };
         }
-
-        if (cabRouteData.allowedVehicles && cabRouteData.allowedVehicles.length > 0) {
-          allVehicles = allVehicles.filter((v: any) => cabRouteData.allowedVehicles.includes(v.id));
-        }
-
-        if (cabRouteData.vehiclePrices || cabRouteData.vehicleSeasonalPrices) {
-          allVehicles = allVehicles.map((v: any) => {
-            const updatedV = { ...v };
-            if (cabRouteData.vehiclePrices && cabRouteData.vehiclePrices[v.id] !== undefined) {
-              updatedV.price = cabRouteData.vehiclePrices[v.id];
-            }
-            if (cabRouteData.vehicleSeasonalPrices && cabRouteData.vehicleSeasonalPrices[v.id]) {
-              updatedV.seasonalPrices = cabRouteData.vehicleSeasonalPrices[v.id];
-            }
-            return updatedV;
-          });
-        }
-        
-        cabRouteData.gstPercentage = cabRouteData.gstPercentage || (settings?.taxRate || 0);
-
-        availableVehicles = allVehicles;
       }
+
+      if (cabRouteData && cabRouteData.allowedVehicles && cabRouteData.allowedVehicles.length > 0) {
+        allVehicles = allVehicles.filter((v: any) => cabRouteData.allowedVehicles.includes(v.id));
+      }
+
+      if (cabRouteData && (cabRouteData.vehiclePrices || cabRouteData.vehicleSeasonalPrices)) {
+        allVehicles = allVehicles.map((v: any) => {
+          const updatedV = { ...v };
+          if (cabRouteData.vehiclePrices && cabRouteData.vehiclePrices[v.id] !== undefined) {
+            updatedV.price = cabRouteData.vehiclePrices[v.id];
+          }
+          if (cabRouteData.vehicleSeasonalPrices && cabRouteData.vehicleSeasonalPrices[v.id]) {
+            updatedV.seasonalPrices = cabRouteData.vehicleSeasonalPrices[v.id];
+          }
+          return updatedV;
+        });
+      }
+      
+      cabRouteData.gstPercentage = cabRouteData.gstPercentage || (settings?.taxRate || 0);
+
+      availableVehicles = allVehicles;
     } catch (error) {
       console.error("Error fetching cab data:", error);
     }
@@ -134,7 +146,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
             {isVehicle ? "Complete Vehicle Booking" : `Booking: ${packageData?.title}`}
           </h1>
           <p className="text-lg text-muted-foreground">
-            {isVehicle ? "Select your vehicle and fill in the details." : "Fill in the lead traveler details to proceed to secure payment."}
+            {isVehicle ? "Select your vehicle and fill in the details." : "Fill in the details for all travelers to proceed to secure payment."}
           </p>
         </div>
         
@@ -151,12 +163,15 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
           />
         ) : (
           <BookingWizard 
-            packageData={packageData}
+            packageData={packageData} 
+            availableVehicles={availableVehicles}
             selectedDate={parsedDate} 
             adultsCount={adultsCount} 
             childrenCount={childrenCount}
             infantsCount={infantsCount}
             maxChildAge={maxChildAge}
+            selectedVehicleId={vehicleId}
+            vehiclesRequired={reqVehicles}
           />
         )}
       </div>

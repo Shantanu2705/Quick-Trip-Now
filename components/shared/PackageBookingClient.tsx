@@ -2,95 +2,128 @@
 
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
-import { Users, Check, X, Calendar as CalendarIcon, ShieldCheck, Sparkles, Clock, AlertCircle } from "lucide-react";
+import { Users, Car, Check, X, Calendar as CalendarIcon, Info } from "lucide-react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useAuth } from "@/hooks/useAuth";
+import { PackagePriceDisplay } from "./PackagePriceDisplay";
 
 export function PackageBookingClient({
   packageSlug,
   packageData,
-  maxAdults = 20,
-  maxChildren = 10,
-  maxInfants = 10,
-  gstPercentage = 0,
+  maxAdults,
+  maxChildren,
+  maxInfants,
+  gstPercentage,
+  vehicles,
   packageDetailsContent
 }: {
   packageSlug: string;
   packageData?: any;
-  maxAdults?: number;
-  maxChildren?: number;
-  maxInfants?: number;
-  gstPercentage?: number;
+  maxAdults: number;
+  maxChildren: number;
+  maxInfants: number;
+  gstPercentage: number;
+  vehicles: any[];
   packageDetailsContent: React.ReactNode;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { userData } = useAuth();
 
-  // State from URL query or defaults
+  // State
   const [adults, setAdults] = useState(() => parseInt(searchParams?.get("adults") || "2", 10) || 2);
   const [children, setChildren] = useState(() => parseInt(searchParams?.get("children") || "0", 10) || 0);
   const [infants, setInfants] = useState(() => parseInt(searchParams?.get("infants") || "0", 10) || 0);
   
   const dateParam = searchParams?.get("date");
   const [date, setDate] = useState<Date | undefined>(dateParam ? new Date(dateParam) : undefined);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>("");
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  // Default prices from package data
-  const defaultAdultPrice = Number(packageData?.price) || 0;
-  const defaultChildPrice = (packageData?.childPrice !== undefined && Number(packageData.childPrice) > 0)
-    ? Number(packageData.childPrice)
-    : defaultAdultPrice;
+  const totalTravelers = adults + children + infants;
 
-  // Check seasonal price override if a date is selected
-  const activeSeason = useMemo(() => {
-    if (!date || !packageData?.seasonalPrices || !Array.isArray(packageData.seasonalPrices)) return null;
-    const dateStr = format(date, "yyyy-MM-dd");
-    return packageData.seasonalPrices.find((sp: any) => 
-      sp.startDate && sp.endDate && dateStr >= sp.startDate && dateStr <= sp.endDate
-    ) || null;
-  }, [date, packageData?.seasonalPrices]);
+  // Process vehicles to determine required quantities and seasonal prices
+  const processedVehicles = useMemo(() => {
+    let availableVehicles = vehicles;
+    
+    if (date) {
+      const dateStr = format(date, "yyyy-MM-dd");
+      availableVehicles = availableVehicles.filter(v => {
+        if (!v.unavailableDates || v.unavailableDates.length === 0) return true;
+        const isUnavailable = v.unavailableDates.some((range: {start: string, end: string}) => 
+          dateStr >= range.start && dateStr <= range.end
+        );
+        return !isUnavailable;
+      });
+    }
 
-  const applicableAdultPrice = activeSeason ? (Number(activeSeason.price) || defaultAdultPrice) : defaultAdultPrice;
-  const applicableChildPrice = activeSeason
-    ? (activeSeason.childPrice !== undefined && Number(activeSeason.childPrice) > 0 
-        ? Number(activeSeason.childPrice) 
-        : (Number(activeSeason.price) || defaultChildPrice))
-    : defaultChildPrice;
+    return availableVehicles.map(v => {
+      let currentPrice = v.price || 0;
+      let hasValidSeason = true;
+      if (date && v.seasonalPrices && v.seasonalPrices.length > 0) {
+        const dateStr = format(date, "yyyy-MM-dd");
+        const validPriceObj = v.seasonalPrices.find((sp: any) => dateStr >= sp.startDate && dateStr <= sp.endDate);
+        if (validPriceObj) {
+          currentPrice = validPriceObj.price;
+        } else {
+          hasValidSeason = false;
+        }
+      }
 
-  // Real-time automatic calculations based on persons
-  const adultsSubtotal = adults * applicableAdultPrice;
-  const childrenSubtotal = children * applicableChildPrice;
-  const totalBasePrice = adultsSubtotal + childrenSubtotal;
+      const calculateCars = () => {
+        let cars = 0;
+        let a = adults;
+        let c = children;
+        let i = infants;
+        let maxA = v.maxAdults || v.seats || 4;
+        let totalSeats = v.seats || 4;
+      
+        if (a === 0 && c === 0 && i === 0) return 1;
+      
+        while (a > 0 || c > 0 || i > 0) {
+          cars++;
+          let adultsInThisCar = Math.min(a, maxA);
+          a -= adultsInThisCar;
+          
+          let seatsLeft = totalSeats - adultsInThisCar;
+          
+          let childrenInThisCar = Math.min(c, seatsLeft);
+          c -= childrenInThisCar;
+          seatsLeft -= childrenInThisCar;
+          
+          let infantsInThisCar = Math.min(i, seatsLeft);
+          i -= infantsInThisCar;
+          
+          if (totalSeats <= 0) break;
+        }
+        return cars;
+      };
 
-  // Agent discount calculation
-  const discountPercent = userData?.role === "agent" || userData?.role === "admin" 
-    ? (userData.discountPercentage ?? 20) 
-    : 0;
-  const hasDiscount = discountPercent > 0;
-  const discountAmount = hasDiscount ? (totalBasePrice * discountPercent) / 100 : 0;
-  const discountedBasePrice = totalBasePrice - discountAmount;
+      const qtyRequired = calculateCars();
+      return { ...v, qtyRequired, currentPrice, hasValidSeason };
+    }).filter(v => v.hasValidSeason);
+  }, [vehicles, adults, children, infants, date]);
 
-  // GST
-  const gstAmount = (discountedBasePrice * gstPercentage) / 100;
-  const finalPrice = discountedBasePrice + gstAmount;
-
-  const totalPersons = adults + children;
+  const selectedVehicle = processedVehicles.find(v => v.id === selectedVehicleId);
+  const requiredVehiclesCount = selectedVehicle?.qtyRequired || 1;
+  const vehiclePrice = selectedVehicle?.currentPrice || 0;
+  
+  // Total Base Price is calculated purely from vehicles
+  const calculatedBasePrice = selectedVehicle ? vehiclePrice * requiredVehiclesCount : 0;
 
   const handleBookNow = () => {
     if (!date) {
       alert("Please select a travel date.");
       return;
     }
-    if (adults < 1) {
-      alert("At least 1 adult traveler is required.");
+    if (!selectedVehicleId) {
+      alert("Please select a vehicle.");
       return;
     }
     if (!termsAccepted) {
-      alert("Please read and accept the package terms and conditions.");
+      alert("Please accept the terms and conditions.");
       return;
     }
 
@@ -99,385 +132,247 @@ export function PackageBookingClient({
       date: date.toISOString(),
       adults: adults.toString(),
       children: children.toString(),
-      infants: infants.toString()
+      infants: infants.toString(),
+      vehicleId: selectedVehicleId,
+      vehiclesRequired: requiredVehiclesCount.toString()
     });
     
     router.push(`/book?${params.toString()}`);
   };
 
-  const termsText = packageData?.termsAndConditions || packageData?.terms || "";
-
   return (
     <div className="container mx-auto px-4 md:px-8 py-12 flex flex-col lg:flex-row gap-12 relative">
       
-      {/* LEFT COLUMN: Package Details & Configuration */}
+      {/* LEFT COLUMN: Package Details & Booking Inputs */}
       <div className="w-full lg:w-2/3">
         {packageDetailsContent}
 
         <hr className="my-12 border-border/50" />
 
-        {/* PACKAGE BOOKING CONFIGURATION */}
+        {/* BOOKING CONFIGURATION */}
         <div className="mb-12" id="booking-configuration">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
-            <h3 className="text-2xl font-heading font-bold flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-primary" />
-              Configure Your Tour Package
-            </h3>
-            <span className="text-sm font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full w-fit">
-              Package Rate: ₹{applicableAdultPrice.toLocaleString("en-IN")} / person
-            </span>
-          </div>
+          <h3 className="text-2xl font-heading font-bold mb-6 flex items-center gap-2">
+            Configure Your Trip
+          </h3>
 
-          <div className="bg-muted/10 border border-border/60 p-6 md:p-8 rounded-3xl space-y-8 shadow-sm">
+          <div className="bg-muted/10 border border-border/50 p-6 md:p-8 rounded-3xl space-y-8">
             
-            {/* 1. Travel Date Picker */}
+            {/* Travel Date */}
             <div>
-              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                1. Select Travel Date
-              </label>
+              <label className="block text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">Travel Date</label>
               <Popover>
                 <PopoverTrigger 
-                  className={`inline-flex items-center justify-start whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground px-4 py-3 w-full sm:w-auto font-medium rounded-xl h-14 ${!date && "text-muted-foreground"}`}
+                  className={`inline-flex items-center justify-start whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground px-4 py-2 w-full md:w-auto font-normal rounded-xl h-14 ${!date && "text-muted-foreground"}`}
                 >
-                  <CalendarIcon className="mr-3 h-5 w-5 text-primary" />
-                  {date ? format(date, "PPP") : "Choose your departure date"}
+                  <CalendarIcon className="mr-2 h-5 w-5" />
+                  {date ? format(date, "PPP") : "Select travel date"}
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar 
                     mode="single" 
                     selected={date} 
                     onSelect={setDate} 
-                    disabled={(d) => d < new Date(new Date().setHours(0,0,0,0))} 
+                    disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))} 
                   />
                 </PopoverContent>
               </Popover>
-
-              {activeSeason && (
-                <div className="mt-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/30 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800 w-fit">
-                  <Check className="w-3.5 h-3.5" /> Special seasonal pricing active for this travel window!
-                </div>
-              )}
             </div>
 
-            {/* 2. Number of Travelers (Persons) */}
+            {/* Travelers */}
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  2. Number of Travelers
-                </label>
-                <span className="text-xs font-semibold text-foreground">
-                  Total: {totalPersons} {totalPersons === 1 ? "Person" : "Persons"}
+              <label className="block text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">Travelers</label>
+              <div className="flex flex-wrap gap-4">
+                <div className="flex flex-col bg-background border border-border p-3 rounded-2xl">
+                  <span className="text-xs font-semibold text-muted-foreground mb-2">Adults</span>
+                  <div className="flex items-center gap-4">
+                    <button onClick={() => setAdults(Math.max(1, adults - 1))} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center font-bold hover:bg-primary/20 hover:text-primary transition-colors">-</button>
+                    <span className="w-4 text-center font-bold">{adults}</span>
+                    <button onClick={() => setAdults(adults + 1)} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center font-bold hover:bg-primary/20 hover:text-primary transition-colors">+</button>
+                  </div>
+                </div>
+
+                <div className="flex flex-col bg-background border border-border p-3 rounded-2xl">
+                  <span className="text-xs font-semibold text-muted-foreground mb-2">Children</span>
+                  <div className="flex items-center gap-4">
+                    <button onClick={() => setChildren(Math.max(0, children - 1))} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center font-bold hover:bg-primary/20 hover:text-primary transition-colors">-</button>
+                    <span className="w-4 text-center font-bold">{children}</span>
+                    <button onClick={() => setChildren(children + 1)} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center font-bold hover:bg-primary/20 hover:text-primary transition-colors">+</button>
+                  </div>
+                </div>
+
+                <div className="flex flex-col bg-background border border-border p-3 rounded-2xl">
+                  <span className="text-xs font-semibold text-muted-foreground mb-2">Infants</span>
+                  <div className="flex items-center gap-4">
+                    <button onClick={() => setInfants(Math.max(0, infants - 1))} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center font-bold hover:bg-primary/20 hover:text-primary transition-colors">-</button>
+                    <span className="w-4 text-center font-bold">{infants}</span>
+                    <button onClick={() => setInfants(infants + 1)} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center font-bold hover:bg-primary/20 hover:text-primary transition-colors">+</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Vehicle Selection */}
+            <div>
+              <label className="block text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center justify-between">
+                <span>Select Vehicle</span>
+                <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs normal-case font-semibold">
+                  Required: {totalTravelers} Travelers
                 </span>
-              </div>
+              </label>
               
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {/* Adults */}
-                <div className="bg-background border border-border/70 p-4 rounded-2xl flex flex-col justify-between shadow-xs">
-                  <div>
-                    <span className="font-bold text-sm text-foreground block">Adults</span>
-                    <span className="text-xs text-muted-foreground block mt-0.5">Ages 13 and above</span>
-                  </div>
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/40">
-                    <button 
-                      type="button"
-                      onClick={() => setAdults(Math.max(1, adults - 1))} 
-                      disabled={adults <= 1}
-                      className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center font-bold text-lg hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      -
-                    </button>
-                    <span className="text-lg font-bold w-8 text-center">{adults}</span>
-                    <button 
-                      type="button"
-                      onClick={() => setAdults(adults + 1)} 
-                      disabled={adults >= maxAdults}
-                      className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center font-bold text-lg hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                {/* Children */}
-                <div className="bg-background border border-border/70 p-4 rounded-2xl flex flex-col justify-between shadow-xs">
-                  <div>
-                    <span className="font-bold text-sm text-foreground block">Children</span>
-                    <span className="text-xs text-muted-foreground block mt-0.5">Ages 2 to 12</span>
-                  </div>
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/40">
-                    <button 
-                      type="button"
-                      onClick={() => setChildren(Math.max(0, children - 1))} 
-                      disabled={children <= 0}
-                      className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center font-bold text-lg hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      -
-                    </button>
-                    <span className="text-lg font-bold w-8 text-center">{children}</span>
-                    <button 
-                      type="button"
-                      onClick={() => setChildren(children + 1)} 
-                      disabled={children >= maxChildren}
-                      className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center font-bold text-lg hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                {/* Infants */}
-                <div className="bg-background border border-border/70 p-4 rounded-2xl flex flex-col justify-between shadow-xs">
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-sm text-foreground">Infants</span>
-                      <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">Free</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground block mt-0.5">Under 2 years</span>
-                  </div>
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/40">
-                    <button 
-                      type="button"
-                      onClick={() => setInfants(Math.max(0, infants - 1))} 
-                      disabled={infants <= 0}
-                      className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center font-bold text-lg hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      -
-                    </button>
-                    <span className="text-lg font-bold w-8 text-center">{infants}</span>
-                    <button 
-                      type="button"
-                      onClick={() => setInfants(infants + 1)} 
-                      disabled={infants >= maxInfants}
-                      className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center font-bold text-lg hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 3. Automatic Price Breakdown Live Card */}
-            <div className="bg-background border border-border/70 p-5 rounded-2xl space-y-3">
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
-                3. Live Calculation Breakdown
-              </span>
-              
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between items-center text-foreground">
-                  <span className="text-muted-foreground">
-                    Adults ({adults} × ₹{applicableAdultPrice.toLocaleString("en-IN")})
-                  </span>
-                  <span className="font-semibold">₹{adultsSubtotal.toLocaleString("en-IN")}</span>
-                </div>
-
-                {children > 0 && (
-                  <div className="flex justify-between items-center text-foreground">
-                    <span className="text-muted-foreground">
-                      Children ({children} × ₹{applicableChildPrice.toLocaleString("en-IN")})
-                    </span>
-                    <span className="font-semibold">₹{childrenSubtotal.toLocaleString("en-IN")}</span>
-                  </div>
-                )}
-
-                {infants > 0 && (
-                  <div className="flex justify-between items-center text-muted-foreground text-xs">
-                    <span>Infants ({infants})</span>
-                    <span className="text-emerald-600 font-semibold">Free</span>
-                  </div>
-                )}
-
-                <div className="h-px bg-border/50 my-2" />
-
-                <div className="flex justify-between items-center text-foreground">
-                  <span className="text-muted-foreground">Base Package Price</span>
-                  <span className="font-bold">₹{totalBasePrice.toLocaleString("en-IN")}</span>
-                </div>
-
-                {hasDiscount && (
-                  <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 font-medium">
-                    <span>Agent Discount ({discountPercent}%)</span>
-                    <span>-₹{Math.round(discountAmount).toLocaleString("en-IN")}</span>
-                  </div>
-                )}
-
-                {gstPercentage > 0 && (
-                  <div className="flex justify-between items-center text-muted-foreground text-xs">
-                    <span>GST ({gstPercentage}%)</span>
-                    <span>+₹{Number(gstAmount.toFixed(2)).toLocaleString("en-IN")}</span>
-                  </div>
-                )}
-
-                <div className="flex justify-between items-center pt-2 text-base font-bold border-t border-border/50">
-                  <span className="text-foreground">Total for {totalPersons} {totalPersons === 1 ? "Person" : "Persons"}</span>
-                  <span className="text-2xl font-bold font-heading text-primary">
-                    ₹{Number(finalPrice.toFixed(2)).toLocaleString("en-IN")}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* 4. Package Inclusions & Exclusions */}
-            {packageData?.inclusions && packageData.inclusions.length > 0 && (
-              <div className="bg-background rounded-2xl border border-border/60 p-6 space-y-4">
-                <h4 className="font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-primary" />
-                  What's Included & Excluded
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {packageData.inclusions.map((item: any, idx: number) => (
-                    <div key={idx} className="flex items-start gap-2.5">
-                      {item.included ? (
-                        <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {processedVehicles.map(v => (
+                  <div 
+                    key={v.id} 
+                    onClick={() => {
+                      setSelectedVehicleId(v.id);
+                      setTermsAccepted(false);
+                    }}
+                    className={`cursor-pointer border-2 rounded-2xl p-4 transition-all ${
+                      selectedVehicleId === v.id 
+                        ? 'border-primary bg-primary/5 shadow-md ring-4 ring-primary/10' 
+                        : 'border-border/50 bg-background hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="flex gap-4">
+                      {v.image ? (
+                        <div className="w-20 h-16 rounded-xl overflow-hidden relative shrink-0">
+                          <Image src={v.image} alt={v.name} fill className="object-cover" />
+                        </div>
                       ) : (
-                        <X className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                        <div className="w-20 h-16 rounded-xl bg-muted flex items-center justify-center shrink-0 text-muted-foreground">
+                          <Car className="w-6 h-6" />
+                        </div>
                       )}
-                      <span className={`text-sm ${item.included ? "text-foreground font-medium" : "text-muted-foreground line-through"}`}>
-                        {item.text}
-                      </span>
+                      <div className="flex flex-col justify-center flex-1">
+                        <h4 className="font-bold text-foreground">{v.name}</h4>
+                        <div className="text-sm text-muted-foreground flex justify-between items-center mt-1">
+                          <span>{v.seats} Seats/Car</span>
+                          <span className="font-semibold text-foreground">
+                            {date ? `₹${(v.currentPrice * v.qtyRequired).toLocaleString("en-IN")}` : "Select date for price"}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  ))}
+                    {v.qtyRequired > 1 && (
+                      <div className="mt-3 bg-amber-500/10 text-amber-600 border border-amber-500/20 px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2">
+                        <Info className="w-4 h-4" />
+                        Due to party size, {v.qtyRequired} vehicles are required.
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Package Terms & Details */}
+            {selectedVehicle && (
+              <div className="mt-6 bg-background rounded-2xl border border-border/50 overflow-hidden">
+                <div className="bg-muted/30 px-6 py-4 border-b border-border/50">
+                  <h4 className="font-bold flex items-center gap-2">
+                    <Car className="w-5 h-5 text-primary" /> 
+                    Package Details & Terms
+                  </h4>
+                </div>
+                <div className="p-6 space-y-6">
+                  
+                  {/* Package Inclusions/Exclusions */}
+                  {(packageData?.inclusions && packageData.inclusions.length > 0) && (
+                    <div>
+                      <h5 className="text-sm font-bold text-foreground mb-3">Package Inclusions & Exclusions</h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {packageData.inclusions.map((item: any, idx: number) => (
+                          <div key={idx} className="flex items-start gap-2">
+                            {item.included ? (
+                              <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                            ) : (
+                              <X className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                            )}
+                            <span className={`text-sm ${item.included ? "text-foreground/80" : "text-muted-foreground line-through"}`}>
+                              {item.text}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Package Terms */}
+                  {packageData?.terms && (
+                    <div>
+                      <h5 className="text-sm font-bold text-foreground mb-2">Package Terms & Conditions</h5>
+                      <div className="text-sm text-muted-foreground whitespace-pre-wrap p-4 bg-muted/20 rounded-xl">
+                        {packageData.terms}
+                      </div>
+                    </div>
+                  )}
+
+                  {(!packageData?.inclusions?.length && !packageData?.terms) && (
+                    <p className="text-sm text-muted-foreground italic">No additional terms provided for this package.</p>
+                  )}
+
+                  <div className="pt-4 border-t border-border/50">
+                    <label className="flex items-start gap-3 cursor-pointer group">
+                      <input 
+                        type="checkbox" 
+                        checked={termsAccepted} 
+                        onChange={(e) => setTermsAccepted(e.target.checked)}
+                        className="mt-1 w-5 h-5 rounded border-border text-primary focus:ring-primary focus:ring-offset-0"
+                      />
+                      <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                        I have read and accept the package terms and conditions.
+                      </span>
+                    </label>
+                  </div>
                 </div>
               </div>
             )}
-
-            {/* 5. Terms & Conditions (Configured by Admin) */}
-            <div className="bg-background rounded-2xl border border-border/60 p-6 space-y-4">
-              <h4 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">
-                Terms & Conditions
-              </h4>
-
-              {termsText ? (
-                <div className="text-sm text-muted-foreground whitespace-pre-wrap p-4 bg-muted/20 rounded-xl leading-relaxed border border-border/30 max-h-48 overflow-y-auto">
-                  {termsText}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground italic">
-                  Standard tour package terms and conditions apply. Full itinerary subject to weather and local conditions.
-                </p>
-              )}
-
-              <div className="pt-2">
-                <label className="flex items-start gap-3 cursor-pointer group">
-                  <input 
-                    type="checkbox" 
-                    checked={termsAccepted} 
-                    onChange={(e) => setTermsAccepted(e.target.checked)}
-                    className="mt-1 w-5 h-5 rounded border-border text-primary focus:ring-primary focus:ring-offset-0 cursor-pointer"
-                  />
-                  <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
-                    I have read and accept the package prices, terms, and booking conditions.
-                  </span>
-                </label>
-              </div>
-            </div>
 
           </div>
         </div>
       </div>
 
-      {/* RIGHT COLUMN: Sticky Sidebar Price Summary */}
+      {/* RIGHT COLUMN: Sticky Sidebar */}
       <div className="w-full lg:w-1/3 relative">
         <div className="sticky top-28 space-y-6">
-          <div className="bg-background rounded-3xl p-6 md:p-8 shadow-xl border border-border/60 space-y-6">
-            <div>
-              <span className="text-xs uppercase font-bold text-primary tracking-widest block mb-1">
-                Booking Summary
-              </span>
-              <h3 className="text-2xl font-heading font-bold text-foreground">
-                {packageData?.title || "Tour Package"}
-              </h3>
-            </div>
-
-            <div className="space-y-3 py-4 border-y border-border/50 text-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Travel Date</span>
-                <span className="font-semibold text-right text-foreground">
-                  {date ? format(date, "MMM dd, yyyy") : (
-                    <span className="text-amber-500 text-xs font-semibold">Select date</span>
-                  )}
-                </span>
+          <div className="bg-background rounded-3xl p-6 md:p-8 shadow-xl border border-border/50">
+            <h3 className="text-2xl font-heading font-bold mb-6">Price Summary</h3>
+            
+            {!selectedVehicle ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">Select a vehicle to see your total price.</p>
+                <div className="w-16 h-1 bg-border rounded-full mx-auto"></div>
               </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Persons</span>
-                <span className="font-semibold text-right text-foreground">
-                  {adults} Adult{adults > 1 ? "s" : ""}{children > 0 ? `, ${children} Child${children > 1 ? "ren" : ""}` : ""}{infants > 0 ? `, ${infants} Infant` : ""}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Rate per Adult</span>
-                <span className="font-semibold text-right text-foreground">
-                  ₹{applicableAdultPrice.toLocaleString("en-IN")}
-                </span>
-              </div>
-
-              {children > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Rate per Child</span>
-                  <span className="font-semibold text-right text-foreground">
-                    ₹{applicableChildPrice.toLocaleString("en-IN")}
-                  </span>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center pb-4 border-b border-border/50">
+                  <span className="text-muted-foreground">Vehicle</span>
+                  <span className="font-medium text-right">{selectedVehicle.name}</span>
                 </div>
-              )}
-
-              {hasDiscount && (
-                <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
-                  <span>Agent Discount ({discountPercent}%)</span>
-                  <span>-₹{Math.round(discountAmount).toLocaleString("en-IN")}</span>
+                <div className="flex justify-between items-center pb-4 border-b border-border/50">
+                  <span className="text-muted-foreground">Quantity Required</span>
+                  <span className="font-semibold text-right text-primary">x {requiredVehiclesCount}</span>
                 </div>
-              )}
-
-              {gstPercentage > 0 && (
-                <div className="flex justify-between items-center text-muted-foreground text-xs">
-                  <span>GST ({gstPercentage}%)</span>
-                  <span>+₹{Number(gstAmount.toFixed(2)).toLocaleString("en-IN")}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Total Display */}
-            <div>
-              <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold block mb-1">
-                Total Price ({totalPersons} {totalPersons === 1 ? "Person" : "Persons"})
-              </span>
-              <div className="text-4xl font-heading font-bold text-primary">
-                ₹{Number(finalPrice.toFixed(2)).toLocaleString("en-IN")}
-              </div>
-              {gstPercentage > 0 && (
-                <span className="text-xs text-muted-foreground">Includes applicable GST ({gstPercentage}%)</span>
-              )}
-            </div>
-
-            {/* Book Now Button */}
-            <div className="space-y-2 pt-2">
-              <Button 
-                onClick={handleBookNow} 
-                disabled={!date || !termsAccepted}
-                size="lg" 
-                className="w-full rounded-xl py-6 text-lg font-bold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all disabled:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Book Package Now
-              </Button>
-
-              {!date && (
-                <p className="text-xs text-center text-amber-500 font-medium">
-                  Please select your travel date above to continue.
-                </p>
-              )}
-              {date && !termsAccepted && (
-                <p className="text-xs text-center text-muted-foreground font-medium">
-                  Please accept the terms and conditions to proceed.
-                </p>
-              )}
-              {date && termsAccepted && (
-                <p className="text-xs text-center text-muted-foreground">
+                
+                <PackagePriceDisplay 
+                  basePrice={calculatedBasePrice}
+                  gstPercentage={gstPercentage}
+                  isTotal={true}
+                />
+                
+                <Button 
+                  onClick={handleBookNow} 
+                  disabled={!termsAccepted}
+                  size="lg" 
+                  className="w-full rounded-xl py-6 text-lg font-bold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all mt-4 disabled:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Book Now
+                </Button>
+                <p className="text-xs text-center text-muted-foreground mt-4">
                   You won't be charged yet.
                 </p>
-              )}
-            </div>
-
+              </div>
+            )}
           </div>
         </div>
       </div>

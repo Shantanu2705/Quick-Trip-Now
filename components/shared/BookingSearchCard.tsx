@@ -235,13 +235,8 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                       {packages.filter(p => p.destination === destination).length > 0 ? (
                         packages.filter(p => p.destination === destination).map((pkg) => (
                           <SelectItem key={pkg.id} value={pkg.id} className="py-3 px-4 rounded-xl mb-1 cursor-pointer hover:bg-muted/50 transition-colors">
-                            <div className="flex flex-col gap-1 w-full">
-                              <div className="flex items-center justify-between w-full">
-                                <span className="font-semibold text-base text-foreground">{pkg.title}</span>
-                                {pkg.price ? (
-                                  <span className="text-xs font-bold text-primary ml-2 shrink-0">₹{pkg.price.toLocaleString("en-IN")}/person</span>
-                                ) : null}
-                              </div>
+                            <div className="flex flex-col gap-1">
+                              <span className="font-semibold text-base text-foreground">{pkg.title}</span>
                               {(pkg.days || pkg.nights || pkg.duration) ? (
                                 <span className="text-[13px] text-muted-foreground whitespace-normal font-normal">
                                   {pkg.days || pkg.nights ? `${pkg.days || 0} Days / ${pkg.nights || 0} Nights` : pkg.duration}

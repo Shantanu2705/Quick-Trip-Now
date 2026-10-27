@@ -68,16 +68,10 @@ export interface Package {
   rating: number;
   reviews: number;
   termsAndConditions: string;
-  terms?: string;
   maxAdults: number;
   maxChildren: number;
   maxInfants: number;
   gstPercentage: number;
-  price?: number; // Base price per person (Adult)
-  pricePerPerson?: number;
-  childPrice?: number; // Price per child
-  seasonalPrices?: { startDate: string; endDate: string; price: number; childPrice?: number }[];
-  partPayment?: { enabled: boolean; percentage: number };
   vehiclePartPayments?: Record<string, { enabled: boolean; percentage: number }>;
   allowedVehicles?: string[]; // Array of vehicle IDs
   vehiclePrices?: Record<string, number>; // Vehicle ID to Price mapping

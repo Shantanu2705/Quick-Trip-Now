@@ -40,10 +40,10 @@ export default function AdminPackagesPage() {
     maxChildren: 2,
     maxInfants: 2,
     gstPercentage: 0,
-    price: 0,
-    childPrice: 0,
-    seasonalPrices: [] as { startDate: string; endDate: string; price: number; childPrice?: number }[],
-    partPayment: { enabled: false, percentage: 50 },
+    allowedVehicles: [] as string[],
+    vehiclePrices: {} as Record<string, number>,
+    vehicleSeasonalPrices: {} as Record<string, { startDate: string; endDate: string; price: number }[]>,
+    vehiclePartPayments: {} as Record<string, { enabled: boolean; percentage: number }>,
   });
   const [itinerary, setItinerary] = useState([{ day: 1, title: "", desc: "" }]);
   const [inclusions, setInclusions] = useState([{ text: "", included: true }]);
@@ -112,10 +112,10 @@ export default function AdminPackagesPage() {
       maxChildren: pkg.maxChildren || 2,
       maxInfants: pkg.maxInfants || 2,
       gstPercentage: pkg.gstPercentage || 0,
-      price: pkg.price || 0,
-      childPrice: pkg.childPrice || 0,
-      seasonalPrices: pkg.seasonalPrices || [],
-      partPayment: pkg.partPayment || { enabled: false, percentage: 50 },
+      allowedVehicles: pkg.allowedVehicles || [],
+      vehiclePrices: pkg.vehiclePrices || {},
+      vehicleSeasonalPrices: pkg.vehicleSeasonalPrices || {},
+      vehiclePartPayments: pkg.vehiclePartPayments || {},
     });
     setItinerary(pkg.itinerary && pkg.itinerary.length > 0 ? pkg.itinerary : [{ day: 1, title: "", desc: "" }]);
     setInclusions(pkg.inclusions && pkg.inclusions.length > 0 ? pkg.inclusions : [{ text: "", included: true }]);
@@ -180,7 +180,6 @@ export default function AdminPackagesPage() {
     if (!formData.title) missingFields.push("Package Name");
     if (!formData.destination || formData.destination.trim() === "") missingFields.push(`Destination`);
     if (!formData.description) missingFields.push("Description");
-    if (formData.price === undefined || formData.price <= 0) missingFields.push("Price Per Person");
 
     if (missingFields.length > 0) {
       alert(`Please fill out the following required fields:\n- ${missingFields.join("\n- ")}`);
@@ -224,12 +223,6 @@ export default function AdminPackagesPage() {
       const pkgData = {
         ...(editingId ? { id: editingId } : {}),
         ...formData,
-        price: Number(formData.price) || 0,
-        childPrice: Number(formData.childPrice) || 0,
-        seasonalPrices: formData.seasonalPrices || [],
-        partPayment: formData.partPayment,
-        terms: formData.termsAndConditions,
-        termsAndConditions: formData.termsAndConditions,
         duration: `${formData.days} Days / ${formData.nights} ${formData.nights > 1 ? 'Nights' : 'Night'}`,
         maxAdults: Number(formData.maxAdults),
         maxChildren: Number(formData.maxChildren),
@@ -238,6 +231,7 @@ export default function AdminPackagesPage() {
         highlights: formData.highlightsStr.split(",").map(s => s.trim()).filter(Boolean),
         itinerary,
         inclusions,
+        vehiclePartPayments: formData.vehiclePartPayments
       };
 
       const method = editingId ? "PUT" : "POST";
@@ -272,13 +266,23 @@ export default function AdminPackagesPage() {
     setFormData({
       title: "", description: "", image: "", duration: "", days: 3, nights: 2,
       category: "Shared Tour", destination: "", status: "Active", isFeatured: false, highlightsStr: "",
-      rating: 5.0, reviews: 0, termsAndConditions: "", maxAdults: 4, maxChildren: 2, maxInfants: 2, gstPercentage: 0,
-      price: 0, childPrice: 0, seasonalPrices: [], partPayment: { enabled: false, percentage: 50 }
+      rating: 5.0, reviews: 0, termsAndConditions: "", maxAdults: 4, maxChildren: 2, maxInfants: 2, gstPercentage: 0, allowedVehicles: [], vehiclePrices: {}, vehicleSeasonalPrices: {},
+      vehiclePartPayments: {}
     });
     setItinerary([{ day: 1, title: "", desc: "" }]);
     setInclusions([{ text: "", included: true }]);
     setImageFile(null);
     setImagePreview("");
+  };
+
+  const toggleVehicle = (vehicleId: string) => {
+    setFormData(prev => {
+      if (prev.allowedVehicles.includes(vehicleId)) {
+        return { ...prev, allowedVehicles: prev.allowedVehicles.filter(id => id !== vehicleId) };
+      } else {
+        return { ...prev, allowedVehicles: [...prev.allowedVehicles, vehicleId] };
+      }
+    });
   };
 
   return (
@@ -416,186 +420,150 @@ export default function AdminPackagesPage() {
                   <input type="text" value={formData.highlightsStr} onChange={e => setFormData({...formData, highlightsStr: e.target.value})} className="w-full bg-muted/30 border border-border rounded-xl py-2 px-4 focus:outline-none focus:border-primary" placeholder="Mountain View, Breakfast, Free WiFi" />
                 </div>
                 
-                {/* Package Pricing & Policy */}
-                <div className="md:col-span-2 bg-muted/10 p-5 rounded-2xl border border-border/50 space-y-5">
-                  <div className="flex items-center justify-between border-b border-border/50 pb-3">
-                    <div>
-                      <h3 className="font-heading font-bold text-base text-foreground">Package Pricing & Policy</h3>
-                      <p className="text-xs text-muted-foreground">Set default per-person rates, child rates, seasonal variations, and payment rules.</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                        Price Per Person / Adult (₹) <span className="text-destructive">*</span>
-                      </label>
-                      <input 
-                        type="number" 
-                        min="0"
-                        value={formData.price || ""} 
-                        onChange={e => setFormData({ ...formData, price: Number(e.target.value) })}
-                        placeholder="e.g. 4000"
-                        className="w-full bg-background border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary font-semibold text-foreground" 
-                      />
-                      <p className="text-[11px] text-muted-foreground mt-1">Base rate per person (adult) when booked.</p>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                        Price Per Child (₹) <span className="text-xs text-muted-foreground font-normal">(Optional)</span>
-                      </label>
-                      <input 
-                        type="number" 
-                        min="0"
-                        value={formData.childPrice || ""} 
-                        onChange={e => setFormData({ ...formData, childPrice: Number(e.target.value) })}
-                        placeholder="e.g. 2500 (Leave 0 to match adult price)"
-                        className="w-full bg-background border border-border rounded-xl py-2.5 px-4 focus:outline-none focus:border-primary" 
-                      />
-                      <p className="text-[11px] text-muted-foreground mt-1">Special rate for children (ages 2-12). If 0, adult price is applied.</p>
-                    </div>
-                  </div>
-
-                  {/* Part Payment */}
-                  <div className="p-4 bg-background border border-border rounded-xl space-y-3">
-                    <label className="flex items-center gap-2.5 text-sm font-semibold text-foreground cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={formData.partPayment?.enabled || false}
-                        onChange={e => setFormData({
-                          ...formData,
-                          partPayment: {
-                            enabled: e.target.checked,
-                            percentage: formData.partPayment?.percentage || 50
-                          }
-                        })}
-                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-                      />
-                      Allow Part Payment on Booking
-                    </label>
-                    {formData.partPayment?.enabled && (
-                      <div className="pl-6 pt-1 max-w-xs">
-                        <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                          Part Payment Percentage (%)
+                {/* Available Vehicles Selection */}
+                <div className="md:col-span-2 bg-muted/10 p-4 rounded-xl border border-border/50">
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Allowed Vehicles</label>
+                  <p className="text-xs text-muted-foreground mb-3">Select the vehicles that can be booked with this package. (If none selected, all are allowed).</p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {availableVehicles.map(veh => (
+                      <div key={veh.id} className="flex flex-col gap-2 p-2 bg-background border border-border rounded-lg hover:border-primary/50 transition-colors">
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={formData.allowedVehicles.includes(veh.id)}
+                            onChange={() => toggleVehicle(veh.id)}
+                            className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                          />
+                          <span className="truncate">{veh.name}</span>
                         </label>
-                        <input 
-                          type="number" 
-                          min="10" 
-                          max="90"
-                          value={formData.partPayment?.percentage || 50} 
-                          onChange={e => setFormData({
-                            ...formData,
-                            partPayment: {
-                              ...formData.partPayment,
-                              percentage: Number(e.target.value)
-                            }
-                          })}
-                          className="w-full bg-muted/20 border border-border rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:border-primary"
-                        />
-                        <p className="text-[11px] text-muted-foreground mt-1">Customer pays this percentage at booking, balance due later.</p>
-                      </div>
-                    )}
-                  </div>
+                        {formData.allowedVehicles.includes(veh.id) && (
+                          <div className="flex flex-col gap-3 mt-2 pt-2 border-t border-border/50">
 
-                  {/* Seasonal Pricing per Person */}
-                  <div className="space-y-3 pt-2 border-t border-border/50">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">Seasonal Rates (Optional)</span>
-                        <p className="text-xs text-muted-foreground">Override rates for peak seasons or holiday date ranges.</p>
-                      </div>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => {
-                          setFormData({
-                            ...formData,
-                            seasonalPrices: [
-                              ...(formData.seasonalPrices || []),
-                              { startDate: "", endDate: "", price: formData.price || 0, childPrice: formData.childPrice || 0 }
-                            ]
-                          });
-                        }}
-                        className="rounded-lg text-xs"
-                      >
-                        + Add Seasonal Rate
-                      </Button>
-                    </div>
-
-                    {(formData.seasonalPrices || []).map((sp, idx) => (
-                      <div key={idx} className="bg-background border border-border rounded-xl p-3 space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs font-bold text-foreground">Season {idx + 1}</span>
-                          <button 
-                            type="button" 
-                            onClick={() => {
-                              const updated = [...(formData.seasonalPrices || [])];
-                              updated.splice(idx, 1);
-                              setFormData({ ...formData, seasonalPrices: updated });
-                            }}
-                            className="text-destructive hover:text-destructive/80 text-xs font-medium"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
-                          <div>
-                            <span className="text-[10px] text-muted-foreground block mb-0.5">Start Date</span>
-                            <input 
-                              type="date" 
-                              value={sp.startDate} 
-                              onChange={e => {
-                                const updated = [...(formData.seasonalPrices || [])];
-                                updated[idx].startDate = e.target.value;
-                                setFormData({ ...formData, seasonalPrices: updated });
-                              }}
-                              className="w-full bg-muted/20 border border-border rounded-lg py-1 px-2 text-xs"
-                            />
+                            <div className="flex flex-col gap-2">
+                              <label className="flex items-center gap-2 text-sm">
+                                <input 
+                                  type="checkbox"
+                                  checked={formData.vehiclePartPayments?.[veh.id]?.enabled || false}
+                                  onChange={(e) => {
+                                    setFormData({
+                                      ...formData,
+                                      vehiclePartPayments: {
+                                        ...formData.vehiclePartPayments,
+                                        [veh.id]: {
+                                          ...formData.vehiclePartPayments?.[veh.id],
+                                          enabled: e.target.checked,
+                                          percentage: formData.vehiclePartPayments?.[veh.id]?.percentage || 50
+                                        }
+                                      }
+                                    });
+                                  }}
+                                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                                />
+                                Enable Part Payment
+                              </label>
+                              
+                              {formData.vehiclePartPayments?.[veh.id]?.enabled && (
+                                <div className="pl-6">
+                                  <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Part Payment (%)</label>
+                                  <input 
+                                    type="number" 
+                                    value={formData.vehiclePartPayments?.[veh.id]?.percentage || 50}
+                                    onChange={(e) => {
+                                      setFormData({
+                                        ...formData,
+                                        vehiclePartPayments: {
+                                          ...formData.vehiclePartPayments,
+                                          [veh.id]: {
+                                            ...formData.vehiclePartPayments?.[veh.id],
+                                            percentage: Number(e.target.value)
+                                          }
+                                        }
+                                      });
+                                    }}
+                                    className="w-full bg-background border border-border rounded py-1 px-2 text-sm" 
+                                  />
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="space-y-2 mt-2 pt-2 border-t border-border/50">
+                              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">Seasonal Prices</span>
+                              {(formData.vehicleSeasonalPrices[veh.id] || []).map((sp, idx) => (
+                                <div key={idx} className="flex flex-col gap-1.5 bg-muted/50 p-2 rounded-md border border-border/50">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-[10px] font-medium">Season {idx + 1}</span>
+                                    <button 
+                                      type="button" 
+                                      onClick={() => {
+                                        const newSp = [...(formData.vehicleSeasonalPrices[veh.id] || [])];
+                                        newSp.splice(idx, 1);
+                                        setFormData({
+                                          ...formData,
+                                          vehicleSeasonalPrices: {
+                                            ...formData.vehicleSeasonalPrices,
+                                            [veh.id]: newSp
+                                          }
+                                        });
+                                      }}
+                                      className="text-destructive hover:text-destructive/80 text-[10px]"
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <input 
+                                      type="date" 
+                                      value={sp.startDate}
+                                      onChange={(e) => {
+                                        const newSp = [...(formData.vehicleSeasonalPrices[veh.id] || [])];
+                                        newSp[idx].startDate = e.target.value;
+                                        setFormData({ ...formData, vehicleSeasonalPrices: { ...formData.vehicleSeasonalPrices, [veh.id]: newSp } });
+                                      }}
+                                      className="w-1/2 bg-background border border-border rounded py-1 px-2 text-[10px]"
+                                    />
+                                    <input 
+                                      type="date" 
+                                      value={sp.endDate}
+                                      onChange={(e) => {
+                                        const newSp = [...(formData.vehicleSeasonalPrices[veh.id] || [])];
+                                        newSp[idx].endDate = e.target.value;
+                                        setFormData({ ...formData, vehicleSeasonalPrices: { ...formData.vehicleSeasonalPrices, [veh.id]: newSp } });
+                                      }}
+                                      className="w-1/2 bg-background border border-border rounded py-1 px-2 text-[10px]"
+                                    />
+                                  </div>
+                                  <input 
+                                    type="number" 
+                                    placeholder="Price"
+                                    value={sp.price || ''}
+                                    onChange={(e) => {
+                                      const newSp = [...(formData.vehicleSeasonalPrices[veh.id] || [])];
+                                      newSp[idx].price = Number(e.target.value);
+                                      setFormData({ ...formData, vehicleSeasonalPrices: { ...formData.vehicleSeasonalPrices, [veh.id]: newSp } });
+                                    }}
+                                    className="w-full bg-background border border-border rounded py-1 px-2 text-[10px]"
+                                  />
+                                </div>
+                              ))}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newSp = [...(formData.vehicleSeasonalPrices[veh.id] || []), { startDate: '', endDate: '', price: 0 }];
+                                  setFormData({
+                                    ...formData,
+                                    vehicleSeasonalPrices: {
+                                      ...formData.vehicleSeasonalPrices,
+                                      [veh.id]: newSp
+                                    }
+                                  });
+                                }}
+                                className="text-[10px] text-primary hover:underline font-medium block"
+                              >
+                                + Add Seasonal Price
+                              </button>
+                            </div>
                           </div>
-                          <div>
-                            <span className="text-[10px] text-muted-foreground block mb-0.5">End Date</span>
-                            <input 
-                              type="date" 
-                              value={sp.endDate} 
-                              onChange={e => {
-                                const updated = [...(formData.seasonalPrices || [])];
-                                updated[idx].endDate = e.target.value;
-                                setFormData({ ...formData, seasonalPrices: updated });
-                              }}
-                              className="w-full bg-muted/20 border border-border rounded-lg py-1 px-2 text-xs"
-                            />
-                          </div>
-                          <div>
-                            <span className="text-[10px] text-muted-foreground block mb-0.5">Adult Price (₹)</span>
-                            <input 
-                              type="number" 
-                              placeholder="Adult Price"
-                              value={sp.price || ""} 
-                              onChange={e => {
-                                const updated = [...(formData.seasonalPrices || [])];
-                                updated[idx].price = Number(e.target.value);
-                                setFormData({ ...formData, seasonalPrices: updated });
-                              }}
-                              className="w-full bg-muted/20 border border-border rounded-lg py-1 px-2 text-xs font-semibold"
-                            />
-                          </div>
-                          <div>
-                            <span className="text-[10px] text-muted-foreground block mb-0.5">Child Price (₹)</span>
-                            <input 
-                              type="number" 
-                              placeholder="Child Price"
-                              value={sp.childPrice || ""} 
-                              onChange={e => {
-                                const updated = [...(formData.seasonalPrices || [])];
-                                updated[idx].childPrice = Number(e.target.value);
-                                setFormData({ ...formData, seasonalPrices: updated });
-                              }}
-                              className="w-full bg-muted/20 border border-border rounded-lg py-1 px-2 text-xs"
-                            />
-                          </div>
-                        </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -673,7 +641,6 @@ export default function AdminPackagesPage() {
                 <th className="px-6 py-4 font-semibold tracking-wider">Package Name</th>
                 <th className="px-6 py-4 font-semibold tracking-wider">Destination</th>
                 <th className="px-6 py-4 font-semibold tracking-wider">Category</th>
-                <th className="px-6 py-4 font-semibold tracking-wider">Price / Person</th>
                 <th className="px-6 py-4 font-semibold tracking-wider">Status</th>
                 <th className="px-6 py-4 font-semibold tracking-wider text-right">Actions</th>
               </tr>
@@ -693,15 +660,6 @@ export default function AdminPackagesPage() {
                   </td>
                   <td className="px-6 py-4 text-muted-foreground">{pkg.destination}</td>
                   <td className="px-6 py-4 text-muted-foreground">{pkg.category}</td>
-                  <td className="px-6 py-4 font-semibold text-foreground">
-                    ₹{(pkg.price || 0).toLocaleString("en-IN")}
-                    <span className="text-xs text-muted-foreground font-normal ml-1">/ person</span>
-                    {pkg.childPrice ? (
-                      <div className="text-[11px] text-muted-foreground font-normal">
-                        Child: ₹{pkg.childPrice.toLocaleString("en-IN")}
-                      </div>
-                    ) : null}
-                  </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400`}>
                       {pkg.status || 'Active'}

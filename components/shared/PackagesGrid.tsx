@@ -81,11 +81,8 @@ export function PackagesGrid({ tours, globalMaxChildAge = 12 }: { tours: any[], 
                 
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col">
-                    <span className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider">Starting From</span>
-                    <span className="text-lg font-bold text-primary font-heading">
-                      {tour.price ? `₹${Number(tour.price).toLocaleString("en-IN")}` : "Contact for Price"}
-                      {tour.price ? <span className="text-xs text-muted-foreground font-normal ml-1">/ person</span> : null}
-                    </span>
+                    <span className="text-xs text-primary uppercase font-bold tracking-wider">Dynamic Pricing</span>
+                    <span className="text-sm text-muted-foreground font-medium">Based on Vehicle</span>
                   </div>
                   <Link href={hrefWithParams}>
                     <Button className="rounded-xl font-medium px-6">

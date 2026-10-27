@@ -17,14 +17,8 @@ async function createPackageHandler(req: AuthenticatedRequest) {
     data.updatedAt = new Date().toISOString();
 
     // Validate required fields
-    const missingCreate: string[] = [];
-    if (!data.title) missingCreate.push('Package Name');
-    if (!data.destination) missingCreate.push('Destination');
-    if (!data.duration) missingCreate.push('Duration');
-    if (!data.image) missingCreate.push('Cover Image');
-    if (!data.description) missingCreate.push('Description');
-    if (missingCreate.length > 0) {
-      return NextResponse.json({ success: false, message: `Missing required fields: ${missingCreate.join(', ')}` }, { status: 400 });
+    if (!data.title || !data.destination || !data.duration || !data.image || !data.description) {
+      return NextResponse.json({ success: false, message: 'Missing required fields' }, { status: 400 });
     }
 
     if (data.maxAdults) data.maxAdults = Number(data.maxAdults);
@@ -33,13 +27,6 @@ async function createPackageHandler(req: AuthenticatedRequest) {
 
     data.days = Number(data.days) || 0;
     data.nights = Number(data.nights) || 0;
-
-    if (data.price !== undefined) data.price = Number(data.price) || 0;
-    if (data.childPrice !== undefined) data.childPrice = Number(data.childPrice) || 0;
-    if (data.termsAndConditions || data.terms) {
-      data.terms = data.termsAndConditions || data.terms || '';
-      data.termsAndConditions = data.terms;
-    }
 
     const docRef = await adminDb.collection('packages').add(data);
     
@@ -71,14 +58,8 @@ async function updatePackageHandler(req: AuthenticatedRequest) {
     updateData.updatedAt = new Date().toISOString();
     
     // Validate required fields
-    const missingUpdate: string[] = [];
-    if (!updateData.title) missingUpdate.push('Package Name');
-    if (!updateData.destination) missingUpdate.push('Destination');
-    if (!updateData.duration) missingUpdate.push('Duration');
-    if (!updateData.image) missingUpdate.push('Cover Image');
-    if (!updateData.description) missingUpdate.push('Description');
-    if (missingUpdate.length > 0) {
-      return NextResponse.json({ success: false, message: `Missing required fields: ${missingUpdate.join(', ')}` }, { status: 400 });
+    if (!updateData.title || !updateData.destination || !updateData.duration || !updateData.image || !updateData.description) {
+      return NextResponse.json({ success: false, message: 'Missing required fields' }, { status: 400 });
     }
 
     if (updateData.maxAdults) updateData.maxAdults = Number(updateData.maxAdults);
@@ -88,12 +69,11 @@ async function updatePackageHandler(req: AuthenticatedRequest) {
     updateData.days = Number(updateData.days) || 0;
     updateData.nights = Number(updateData.nights) || 0;
 
-    if (updateData.price !== undefined) updateData.price = Number(updateData.price) || 0;
-    if (updateData.childPrice !== undefined) updateData.childPrice = Number(updateData.childPrice) || 0;
-    if (updateData.termsAndConditions || updateData.terms) {
-      updateData.terms = updateData.termsAndConditions || updateData.terms || '';
-      updateData.termsAndConditions = updateData.terms;
-    }
+    // Remove old properties if they exist
+    if ('price' in updateData) delete updateData.price;
+    if ('pricePerChild' in updateData) delete updateData.pricePerChild;
+    if ('seasonalPrices' in updateData) delete updateData.seasonalPrices;
+    if ('childPrice' in updateData) delete updateData.childPrice;
 
     await adminDb.collection('packages').doc(id).update(updateData);
     

@@ -19,14 +19,34 @@ export default async function PackageDetailsPage({ params }: { params: Promise<{
     const snapshot = await adminDb.collection("packages").where("slug", "==", slug).limit(1).get();
     if (!snapshot.empty) {
       pkgData = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
-    } else {
-      const docSnap = await adminDb.collection("packages").doc(slug).get();
-      if (docSnap.exists) {
-        pkgData = { id: docSnap.id, ...docSnap.data() };
-      }
     }
   } catch (error) {
     console.error("Error fetching package:", error);
+  }
+
+  let vehiclesData: any[] = [];
+  try {
+    const vSnapshot = await adminDb.collection("vehicles").get();
+    vehiclesData = vSnapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+
+    if (pkgData && pkgData.allowedVehicles && pkgData.allowedVehicles.length > 0) {
+      vehiclesData = vehiclesData.filter((v: any) => pkgData.allowedVehicles.includes(v.id));
+    }
+    
+    if (pkgData && (pkgData.vehiclePrices || pkgData.vehicleSeasonalPrices)) {
+      vehiclesData = vehiclesData.map((v: any) => {
+        const updatedV = { ...v };
+        if (pkgData.vehiclePrices && pkgData.vehiclePrices[v.id] !== undefined) {
+          updatedV.price = pkgData.vehiclePrices[v.id];
+        }
+        if (pkgData.vehicleSeasonalPrices && pkgData.vehicleSeasonalPrices[v.id]) {
+          updatedV.seasonalPrices = pkgData.vehicleSeasonalPrices[v.id];
+        }
+        return updatedV;
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching vehicles:", error);
   }
 
   if (!pkgData) {
@@ -39,6 +59,8 @@ export default async function PackageDetailsPage({ params }: { params: Promise<{
   } = pkgData;
 
   const settings = await getGlobalSettings();
+
+
 
   // Use a fallback image if missing
   const heroImage = image || "https://images.unsplash.com/photo-1626079973809-541dd441b83d?q=80&w=1200&auto=format&fit=crop";
@@ -57,10 +79,11 @@ export default async function PackageDetailsPage({ params }: { params: Promise<{
       <PackageBookingClient 
         packageSlug={slug}
         packageData={pkgData}
-        maxAdults={maxAdults || 20}
-        maxChildren={maxChildren || 10}
-        maxInfants={maxInfants || 10}
+        maxAdults={maxAdults || 4}
+        maxChildren={maxChildren || 2}
+        maxInfants={maxInfants || 2}
         gstPercentage={pkgData.gstPercentage || (settings?.taxRate || 0)}
+        vehicles={vehiclesData}
         packageDetailsContent={
           <>
             <div className="flex items-center gap-2 text-primary font-medium mb-4 uppercase tracking-wider text-sm">
