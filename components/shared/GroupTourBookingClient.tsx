@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { GroupTour, calculateGroupTourPricing } from "@/lib/firestore-utils";
 import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
 
 export function GroupTourBookingClient({
   tour,
@@ -35,6 +36,7 @@ export function GroupTourBookingClient({
   const [infants, setInfants] = useState<number>(initialInfants);
   const [isDateOpen, setIsDateOpen] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [paymentOption, setPaymentOption] = useState<"part" | "full">("part");
 
   // Lead Traveler Info
   const [fullName, setFullName] = useState("");
@@ -88,6 +90,10 @@ export function GroupTourBookingClient({
     setIsSubmitting(true);
 
     try {
+      const isPartPaymentSelected = pricing.partPaymentEnabled && paymentOption === "part";
+      const amountToPay = isPartPaymentSelected ? pricing.advancePayable : pricing.grandTotal;
+      const balanceToPay = isPartPaymentSelected ? pricing.balancePayable : 0;
+
       const bookingData = {
         bookingType: "group-tour",
         tourId: tour.id,
@@ -112,6 +118,7 @@ export function GroupTourBookingClient({
         customerEmail: email,
         specialRequests,
         pricingModel: pricing.hasDynamicTiers ? "dynamic-person-tiered" : "per-person",
+        paymentOption: isPartPaymentSelected ? "part" : "full",
         adultPrice: pricing.adultPricePerPerson,
         adultsTotal: pricing.adultsTotal,
         childPrice: pricing.childPrice,
@@ -120,10 +127,10 @@ export function GroupTourBookingClient({
         gstPercentage: pricing.gstRate,
         gstAmount: pricing.gstAmount,
         totalAmount: pricing.grandTotal,
-        amount: pricing.advancePayable,
-        paidAmount: pricing.advancePayable,
-        balanceAmount: pricing.balancePayable,
-        partPayment: pricing.partPaymentEnabled ? {
+        amount: amountToPay,
+        paidAmount: amountToPay,
+        balanceAmount: balanceToPay,
+        partPayment: isPartPaymentSelected ? {
           enabled: true,
           percentage: pricing.partPercentage,
           advancePaid: pricing.advancePayable,
@@ -419,15 +426,92 @@ export function GroupTourBookingClient({
                 <span className="text-primary font-heading text-lg">₹{pricing.grandTotal.toLocaleString("en-IN")}</span>
               </div>
 
+              {/* Payment Option Selection */}
               {pricing.partPaymentEnabled && (
-                <div className="bg-primary/10 rounded-xl p-3 border border-primary/20 space-y-1 mt-2 text-xs">
-                  <div className="flex justify-between font-bold text-primary">
-                    <span>Pay Now ({pricing.partPercentage}% Advance):</span>
-                    <span>₹{pricing.advancePayable.toLocaleString("en-IN")}</span>
+                <div className="pt-3 border-t border-border/60 space-y-2.5">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
+                    Choose Payment Option
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {/* Part Payment Option */}
+                    <div
+                      onClick={() => setPaymentOption("part")}
+                      className={cn(
+                        "p-3 rounded-xl border cursor-pointer transition-all flex flex-col justify-between gap-1",
+                        paymentOption === "part"
+                          ? "bg-primary/10 border-primary shadow-sm ring-1 ring-primary"
+                          : "bg-muted/30 border-border hover:bg-muted/60"
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-foreground">
+                          Pay Advance ({pricing.partPercentage}%)
+                        </span>
+                        <div
+                          className={cn(
+                            "w-4 h-4 rounded-full border flex items-center justify-center",
+                            paymentOption === "part"
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-muted-foreground/40"
+                          )}
+                        >
+                          {paymentOption === "part" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        </div>
+                      </div>
+                      <span className="text-base font-bold text-primary font-heading">
+                        ₹{pricing.advancePayable.toLocaleString("en-IN")}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">
+                        Payable now • Rest ₹{pricing.balancePayable.toLocaleString("en-IN")} on arrival
+                      </span>
+                    </div>
+
+                    {/* Full Payment Option */}
+                    <div
+                      onClick={() => setPaymentOption("full")}
+                      className={cn(
+                        "p-3 rounded-xl border cursor-pointer transition-all flex flex-col justify-between gap-1",
+                        paymentOption === "full"
+                          ? "bg-primary/10 border-primary shadow-sm ring-1 ring-primary"
+                          : "bg-muted/30 border-border hover:bg-muted/60"
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-foreground">Pay Full Amount</span>
+                        <div
+                          className={cn(
+                            "w-4 h-4 rounded-full border flex items-center justify-center",
+                            paymentOption === "full"
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-muted-foreground/40"
+                          )}
+                        >
+                          {paymentOption === "full" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        </div>
+                      </div>
+                      <span className="text-base font-bold text-primary font-heading">
+                        ₹{pricing.grandTotal.toLocaleString("en-IN")}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">
+                        100% full payment • ₹0 on arrival
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>Payable on Arrival:</span>
-                    <span>₹{pricing.balancePayable.toLocaleString("en-IN")}</span>
+
+                  {/* Active Payment Notice */}
+                  <div className="bg-primary/5 rounded-xl p-3 border border-primary/20 space-y-1 text-xs">
+                    <div className="flex justify-between font-bold text-primary">
+                      <span>Amount Payable Now:</span>
+                      <span>
+                        ₹{(paymentOption === "part" ? pricing.advancePayable : pricing.grandTotal).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                    {paymentOption === "part" && (
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Payable on Arrival:</span>
+                        <span>₹{pricing.balancePayable.toLocaleString("en-IN")}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -439,7 +523,10 @@ export function GroupTourBookingClient({
                 type="checkbox"
                 id="terms"
                 checked={termsAccepted}
-                onChange={(e) => setTermsAccepted(e.target.checked)}
+                onChange={(e) => {
+                  setTermsAccepted(e.target.checked);
+                  if (e.target.checked) setValidationError("");
+                }}
                 className="mt-1 w-4 h-4 rounded border-border accent-primary cursor-pointer"
               />
               <label htmlFor="terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer select-none">
@@ -458,10 +545,17 @@ export function GroupTourBookingClient({
             {/* Book Now Button */}
             <Button
               onClick={handleBooking}
-              disabled={isSubmitting}
-              className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg rounded-2xl shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 active:translate-y-0"
+              disabled={!termsAccepted || isSubmitting}
+              className={cn(
+                "w-full h-14 font-bold text-lg rounded-2xl shadow-lg transition-all",
+                termsAccepted && !isSubmitting
+                  ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/25 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                  : "bg-muted text-muted-foreground opacity-50 cursor-not-allowed shadow-none"
+              )}
             >
-              {isSubmitting ? "Confirming Booking..." : pricing.partPaymentEnabled ? `Pay ₹${pricing.advancePayable.toLocaleString("en-IN")} & Book` : `Book Group Tour (₹${pricing.grandTotal.toLocaleString("en-IN")})`}
+              {isSubmitting
+                ? "Confirming Booking..."
+                : `Pay ₹${(pricing.partPaymentEnabled && paymentOption === "part" ? pricing.advancePayable : pricing.grandTotal).toLocaleString("en-IN")} & Book`}
             </Button>
           </div>
         </div>
