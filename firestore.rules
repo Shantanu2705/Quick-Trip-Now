@@ -40,6 +40,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false;
     }
+    match /group_tours/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
     match /coupons/{document=**} {
       allow read: if isAuthenticated();
       allow write: if false;

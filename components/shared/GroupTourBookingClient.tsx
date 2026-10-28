@@ -7,7 +7,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { GroupTour } from "@/lib/firestore-utils";
+import { GroupTour, calculateGroupTourPricing } from "@/lib/firestore-utils";
 import { useAuth } from "@/hooks/useAuth";
 
 export function GroupTourBookingClient({
@@ -46,56 +46,14 @@ export function GroupTourBookingClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
 
-  // Price resolution based on selected date (Seasonal or Base)
+  // Price resolution based on selected date (Seasonal, Dynamic Person Tiers, or Base)
   const pricing = useMemo(() => {
-    let adultPrice = tour.price || 0;
-    let childPrice = tour.childPrice || 0;
-    let isSeasonal = false;
-
-    if (date && tour.seasonalPrices && tour.seasonalPrices.length > 0) {
-      const dateStr = format(date, "yyyy-MM-dd");
-      const activeSeason = tour.seasonalPrices.find(
-        sp => dateStr >= sp.startDate && dateStr <= sp.endDate
-      );
-      if (activeSeason) {
-        adultPrice = activeSeason.price;
-        if (activeSeason.childPrice !== undefined) {
-          childPrice = activeSeason.childPrice;
-        }
-        isSeasonal = true;
-      }
-    }
-
-    const adultsTotal = adults * adultPrice;
-    const childrenTotal = children * childPrice;
-    const subtotal = adultsTotal + childrenTotal;
-    const gstRate = tour.gstPercentage || 0;
-    const gstAmount = Math.round((subtotal * gstRate) / 100);
-    const grandTotal = subtotal + gstAmount;
-
-    // Part payment calculation
-    const partPaymentEnabled = tour.partPayment?.enabled || false;
-    const partPercentage = tour.partPayment?.percentage || 50;
-    const advancePayable = partPaymentEnabled
-      ? Math.round((grandTotal * partPercentage) / 100)
-      : grandTotal;
-    const balancePayable = grandTotal - advancePayable;
-
-    return {
-      adultPrice,
-      childPrice,
-      isSeasonal,
-      adultsTotal,
-      childrenTotal,
-      subtotal,
-      gstRate,
-      gstAmount,
-      grandTotal,
-      partPaymentEnabled,
-      partPercentage,
-      advancePayable,
-      balancePayable
-    };
+    return calculateGroupTourPricing({
+      tour,
+      adults,
+      children,
+      date
+    });
   }, [date, adults, children, tour]);
 
   const handleBooking = async () => {
@@ -153,9 +111,11 @@ export function GroupTourBookingClient({
         customerPhone: phone,
         customerEmail: email,
         specialRequests,
-        pricingModel: "per-person",
-        adultPrice: pricing.adultPrice,
+        pricingModel: pricing.hasDynamicTiers ? "dynamic-person-tiered" : "per-person",
+        adultPrice: pricing.adultPricePerPerson,
+        adultsTotal: pricing.adultsTotal,
         childPrice: pricing.childPrice,
+        childrenTotal: pricing.childrenTotal,
         subtotal: pricing.subtotal,
         gstPercentage: pricing.gstRate,
         gstAmount: pricing.gstAmount,
@@ -211,14 +171,64 @@ export function GroupTourBookingClient({
           <div className="bg-background rounded-3xl p-6 md:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-border space-y-6">
             {/* Price Header */}
             <div className="border-b border-border pb-6">
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl md:text-4xl font-bold font-heading text-primary">
-                  ₹{pricing.adultPrice.toLocaleString("en-IN")}
-                </span>
-                <span className="text-muted-foreground text-sm font-medium">/ person (Adult)</span>
-              </div>
+              {pricing.hasDynamicTiers ? (
+                <div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl md:text-4xl font-bold font-heading text-primary">
+                      ₹{pricing.adultsTotal.toLocaleString("en-IN")}
+                    </span>
+                    <span className="text-muted-foreground text-sm font-medium">
+                      total for {adults} Adult{adults > 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                    <span>(₹{pricing.adultPricePerPerson.toLocaleString("en-IN")} / person)</span>
+                    {pricing.activeTierMatch && adults > 1 && (
+                      <span className="bg-emerald-500/10 text-emerald-600 font-semibold px-2 py-0.5 rounded-full text-[11px]">
+                        Dynamic Tier Applied
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Tier pills selector */}
+                  {pricing.availableTiers.length > 0 && (
+                    <div className="mt-3.5 space-y-1.5">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block">
+                        Quick Select Person Package:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {pricing.availableTiers.map((tier) => (
+                          <button
+                            key={tier.persons}
+                            type="button"
+                            onClick={() => setAdults(tier.persons)}
+                            className={`text-xs px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1.5 ${
+                              adults === tier.persons
+                                ? "bg-primary text-primary-foreground border-primary font-bold shadow-sm"
+                                : "bg-muted/40 hover:bg-muted text-foreground border-border font-medium"
+                            }`}
+                          >
+                            <span>{tier.persons} {tier.persons === 1 ? "Person" : "Persons"}:</span>
+                            <span className={adults === tier.persons ? "text-primary-foreground font-bold" : "text-primary font-bold"}>
+                              ₹{tier.price.toLocaleString("en-IN")}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl md:text-4xl font-bold font-heading text-primary">
+                    ₹{pricing.adultPricePerPerson.toLocaleString("en-IN")}
+                  </span>
+                  <span className="text-muted-foreground text-sm font-medium">/ person (Adult)</span>
+                </div>
+              )}
+
               {pricing.childPrice > 0 && (
-                <div className="text-xs text-muted-foreground mt-1">
+                <div className="text-xs text-muted-foreground mt-2">
                   ₹{pricing.childPrice.toLocaleString("en-IN")} per child (Ages 2-{globalMaxChildAge})
                 </div>
               )}
@@ -386,7 +396,10 @@ export function GroupTourBookingClient({
             {/* Live Pricing Breakdown */}
             <div className="bg-muted/30 border border-border rounded-2xl p-4 space-y-2.5 text-sm">
               <div className="flex justify-between text-muted-foreground">
-                <span>{adults} × Adult{adults > 1 ? "s" : ""}</span>
+                <span>
+                  {adults} × Adult{adults > 1 ? "s" : ""}
+                  {pricing.hasDynamicTiers ? " (Dynamic Tier)" : ""}
+                </span>
                 <span className="font-semibold text-foreground">₹{pricing.adultsTotal.toLocaleString("en-IN")}</span>
               </div>
               {children > 0 && (

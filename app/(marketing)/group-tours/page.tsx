@@ -85,9 +85,16 @@ export default async function GroupToursCatalogPage() {
                   <div>
                     <span className="text-xs text-muted-foreground block font-medium">Starting from</span>
                     <span className="text-2xl font-bold font-heading text-primary">
-                      ₹{tour.price?.toLocaleString("en-IN")}
+                      ₹{(() => {
+                        if (tour.personPricing && tour.personPricing.length > 0) {
+                          return Math.min(...tour.personPricing.map(p => p.price)).toLocaleString("en-IN");
+                        }
+                        return tour.price?.toLocaleString("en-IN");
+                      })()}
                     </span>
-                    <span className="text-xs text-muted-foreground"> / person</span>
+                    <span className="text-xs text-muted-foreground">
+                      {tour.personPricing && tour.personPricing.length > 0 ? " (Dynamic Pricing)" : " / person"}
+                    </span>
                   </div>
 
                   <Link

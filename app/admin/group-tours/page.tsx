@@ -41,6 +41,7 @@ export default function AdminGroupToursPage() {
     price: 4000,
     childPrice: 2000,
     partPayment: { enabled: false, percentage: 50 },
+    personPricing: [] as { persons: number; price: number }[],
     seasonalPrices: [] as { startDate: string; endDate: string; price: number; childPrice?: number }[],
   });
 
@@ -115,6 +116,7 @@ export default function AdminGroupToursPage() {
       price: tour.price || 0,
       childPrice: tour.childPrice || 0,
       partPayment: tour.partPayment || { enabled: false, percentage: 50 },
+      personPricing: tour.personPricing || [],
       seasonalPrices: tour.seasonalPrices || [],
     });
     setItinerary(tour.itinerary && tour.itinerary.length > 0 ? tour.itinerary : [{ day: 1, title: "", desc: "" }]);
@@ -209,6 +211,10 @@ export default function AdminGroupToursPage() {
         price: Number(formData.price) || 0,
         childPrice: Number(formData.childPrice) || 0,
         gstPercentage: Number(formData.gstPercentage) || 0,
+        personPricing: (formData.personPricing || [])
+          .filter(p => Number(p.persons) > 0 && Number(p.price) > 0)
+          .map(p => ({ persons: Number(p.persons), price: Number(p.price) }))
+          .sort((a, b) => a.persons - b.persons),
         seasonalPrices: formData.seasonalPrices || [],
         partPayment: formData.partPayment,
         terms: formData.termsAndConditions,
@@ -246,6 +252,7 @@ export default function AdminGroupToursPage() {
       destination: "", status: "Active", isFeatured: false, highlightsStr: "",
       rating: 5.0, reviews: 0, termsAndConditions: "", maxAdults: 20, maxChildren: 10, maxInfants: 5,
       gstPercentage: 5, price: 4000, childPrice: 2000, partPayment: { enabled: false, percentage: 50 },
+      personPricing: [],
       seasonalPrices: [],
     });
     setItinerary([{ day: 1, title: "", desc: "" }]);
@@ -349,6 +356,11 @@ export default function AdminGroupToursPage() {
                     <td className="py-4 px-6 text-muted-foreground">{tour.duration || `${tour.days}D / ${tour.nights}N`}</td>
                     <td className="py-4 px-6 font-semibold text-foreground">
                       ₹{tour.price?.toLocaleString("en-IN") || 0}
+                      {tour.personPricing && tour.personPricing.length > 0 && (
+                        <span className="block text-[11px] text-primary font-normal">
+                          {tour.personPricing.length} dynamic tiers
+                        </span>
+                      )}
                     </td>
                     <td className="py-4 px-6 text-muted-foreground">
                       {tour.childPrice ? `₹${tour.childPrice.toLocaleString("en-IN")}` : "—"}
@@ -599,6 +611,153 @@ export default function AdminGroupToursPage() {
                         className="w-20 bg-muted/40 border border-border rounded-lg py-1 px-2 text-center text-sm font-bold"
                       />
                       <span className="text-sm font-bold">%</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Dynamic Person Pricing System */}
+                <div className="bg-background border border-primary/20 rounded-xl p-4 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h4 className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
+                        <Users className="w-4 h-4" /> Dynamic Pricing for Number of Persons
+                      </h4>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Set dynamic total package price based on number of persons (e.g. 1 Person = ₹6,000, 2 Persons = ₹8,500, 3 Persons = ₹11,000)
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            personPricing: [
+                              { persons: 1, price: 6000 },
+                              { persons: 2, price: 8500 },
+                              { persons: 3, price: 11000 },
+                            ]
+                          });
+                        }}
+                        className="text-xs h-7 px-2.5 rounded-lg border-primary/30 text-primary hover:bg-primary/10"
+                      >
+                        Load Example (1: ₹6k, 2: ₹8.5k, 3: ₹11k)
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          const currentTiers = formData.personPricing || [];
+                          const nextPerson = currentTiers.length > 0 ? Math.max(...currentTiers.map(t => t.persons)) + 1 : 1;
+                          setFormData({
+                            ...formData,
+                            personPricing: [
+                              ...currentTiers,
+                              { persons: nextPerson, price: (formData.price || 4000) * nextPerson }
+                            ]
+                          });
+                        }}
+                        className="text-xs h-7 px-2.5 rounded-lg flex items-center gap-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Add Person Tier
+                      </Button>
+                    </div>
+                  </div>
+
+                  {formData.personPricing && formData.personPricing.length > 0 ? (
+                    <div className="space-y-2 pt-1">
+                      <div className="grid grid-cols-12 gap-2 text-[11px] font-bold text-muted-foreground uppercase px-2">
+                        <span className="col-span-4">Number of Persons</span>
+                        <span className="col-span-4">Total Package Price (₹)</span>
+                        <span className="col-span-3">Rate Breakdown</span>
+                        <span className="col-span-1 text-center">Action</span>
+                      </div>
+                      {formData.personPricing.map((tier, idx) => {
+                        const perPersonEquiv = tier.persons > 0 && tier.price > 0 ? Math.round(tier.price / tier.persons) : 0;
+                        return (
+                          <div key={idx} className="grid grid-cols-12 gap-2 items-center bg-muted/30 border border-border/70 rounded-xl p-2.5 transition-colors hover:border-primary/40">
+                            <div className="col-span-4 flex items-center gap-1.5">
+                              <input
+                                type="number"
+                                min="1"
+                                max="50"
+                                value={tier.persons}
+                                onChange={(e) => {
+                                  const updated = [...formData.personPricing];
+                                  updated[idx].persons = parseInt(e.target.value) || 1;
+                                  setFormData({ ...formData, personPricing: updated });
+                                }}
+                                className="w-20 bg-background border border-border rounded-lg py-1.5 px-3 text-sm font-bold text-foreground text-center focus:outline-none focus:border-primary"
+                              />
+                              <span className="text-xs font-semibold text-muted-foreground">
+                                {tier.persons === 1 ? "Person" : "Persons"}
+                              </span>
+                            </div>
+
+                            <div className="col-span-4">
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-semibold">₹</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="100"
+                                  value={tier.price}
+                                  onChange={(e) => {
+                                    const updated = [...formData.personPricing];
+                                    updated[idx].price = parseFloat(e.target.value) || 0;
+                                    setFormData({ ...formData, personPricing: updated });
+                                  }}
+                                  className="w-full bg-background border border-border rounded-lg py-1.5 pl-7 pr-3 text-sm font-bold text-primary focus:outline-none focus:border-primary"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="col-span-3">
+                              <span className="text-xs font-medium text-muted-foreground block truncate">
+                                ₹{perPersonEquiv.toLocaleString("en-IN")}/person
+                              </span>
+                            </div>
+
+                            <div className="col-span-1 flex justify-center">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = formData.personPricing.filter((_, i) => i !== idx);
+                                  setFormData({ ...formData, personPricing: updated });
+                                }}
+                                className="text-muted-foreground hover:text-destructive p-1 rounded-lg hover:bg-destructive/10 transition-colors"
+                                title="Remove tier"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 px-2 border border-dashed border-border rounded-xl bg-muted/10">
+                      <p className="text-xs text-muted-foreground">
+                        No person-wise tiers added yet. Pricing will default to <strong className="text-foreground">₹{formData.price}/person</strong>.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            personPricing: [
+                              { persons: 1, price: 6000 },
+                              { persons: 2, price: 8500 },
+                              { persons: 3, price: 11000 },
+                            ]
+                          });
+                        }}
+                        className="mt-2 text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Enable Dynamic Pricing (1: ₹6,000, 2: ₹8,500, 3: ₹11,000)
+                      </button>
                     </div>
                   )}
                 </div>

@@ -30,6 +30,18 @@ async function createGroupTourHandler(req: AuthenticatedRequest) {
     if (data.rating) data.rating = Number(data.rating);
     if (data.reviews) data.reviews = Number(data.reviews);
 
+    if (data.personPricing && Array.isArray(data.personPricing)) {
+      data.personPricing = data.personPricing
+        .map((p: any) => ({
+          persons: Number(p.persons) || 1,
+          price: Number(p.price) || 0
+        }))
+        .filter((p: any) => p.persons > 0 && p.price > 0)
+        .sort((a: any, b: any) => a.persons - b.persons);
+    } else {
+      data.personPricing = [];
+    }
+
     if (data.termsAndConditions && !data.terms) {
       data.terms = data.termsAndConditions;
     }
@@ -79,6 +91,20 @@ async function updateGroupTourHandler(req: AuthenticatedRequest) {
     if (updateData.maxInfants !== undefined) updateData.maxInfants = Number(updateData.maxInfants);
     if (updateData.rating !== undefined) updateData.rating = Number(updateData.rating);
     if (updateData.reviews !== undefined) updateData.reviews = Number(updateData.reviews);
+
+    if (updateData.personPricing !== undefined) {
+      if (Array.isArray(updateData.personPricing)) {
+        updateData.personPricing = updateData.personPricing
+          .map((p: any) => ({
+            persons: Number(p.persons) || 1,
+            price: Number(p.price) || 0
+          }))
+          .filter((p: any) => p.persons > 0 && p.price > 0)
+          .sort((a: any, b: any) => a.persons - b.persons);
+      } else {
+        updateData.personPricing = [];
+      }
+    }
 
     if (updateData.termsAndConditions) {
       updateData.terms = updateData.termsAndConditions;

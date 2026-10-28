@@ -55,6 +55,7 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
   const [isGroupTravelersOpen, setIsGroupTravelersOpen] = useState(false);
   const [groupTravelersConfirmed, setGroupTravelersConfirmed] = useState(true);
   const [groupTourError, setGroupTourError] = useState("");
+  const [loadingGroupTours, setLoadingGroupTours] = useState(true);
 
   useEffect(() => {
     async function loadData() {
@@ -84,9 +85,22 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
       } catch (err) {}
 
       try {
-        const gtours = await getGroupTours().catch(e => { console.error("GroupTours error", e); return []; });
-        setGroupTours(gtours);
-      } catch (err) {}
+        setLoadingGroupTours(true);
+        let gtours = await getGroupTours().catch(e => { console.error("GroupTours error", e); return []; });
+        if (!gtours || gtours.length === 0) {
+          try {
+            const res = await fetch("/api/group-tours", { cache: "no-store" });
+            const data = await res.json();
+            if (data?.success && Array.isArray(data.data) && data.data.length > 0) {
+              gtours = data.data;
+            }
+          } catch (e) {}
+        }
+        setGroupTours(gtours || []);
+      } catch (err) {
+      } finally {
+        setLoadingGroupTours(false);
+      }
     }
     loadData();
   }, []);
@@ -674,7 +688,15 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                             <div className="flex items-center gap-2 text-[12px] md:text-[13px] text-muted-foreground truncate font-normal">
                               <span>{groupTours.find(p => p.id === selectedGroupTourId)!.duration || `${groupTours.find(p => p.id === selectedGroupTourId)!.days}D / ${groupTours.find(p => p.id === selectedGroupTourId)!.nights}N`}</span>
                               <span>•</span>
-                              <span className="font-semibold text-primary">₹{groupTours.find(p => p.id === selectedGroupTourId)!.price?.toLocaleString("en-IN")}/person</span>
+                              <span className="font-semibold text-primary">
+                                {(() => {
+                                  const t = groupTours.find(p => p.id === selectedGroupTourId)!;
+                                  if (t.personPricing && t.personPricing.length > 0) {
+                                    return `Dynamic Pricing (From ₹${Math.min(...t.personPricing.map(p => p.price)).toLocaleString("en-IN")})`;
+                                  }
+                                  return `₹${t.price?.toLocaleString("en-IN")}/person`;
+                                })()}
+                              </span>
                             </div>
                           </div>
                         ) : undefined}
@@ -682,21 +704,32 @@ export function BookingSearchCard({ globalMaxChildAge = 12 }: { globalMaxChildAg
                     </SelectTrigger>
                     <SelectContent alignItemWithTrigger={false} align="start" className="min-w-[320px] p-2">
                       {groupTours.length > 0 ? (
-                        groupTours.map((tour) => (
-                          <SelectItem key={tour.id} value={tour.id} className="py-3 px-4 rounded-xl mb-1 cursor-pointer hover:bg-muted/50 transition-colors">
-                            <div className="flex flex-col gap-1">
-                              <span className="font-semibold text-base text-foreground">{tour.title}</span>
-                              <div className="flex items-center gap-3 text-[13px] text-muted-foreground">
-                                <span>{tour.duration || `${tour.days} Days / ${tour.nights} Nights`}</span>
-                                <span>•</span>
-                                <span className="font-bold text-primary">From ₹{tour.price?.toLocaleString("en-IN")}/person</span>
+                        groupTours.map((tour) => {
+                          const minPrice = tour.personPricing && tour.personPricing.length > 0
+                            ? Math.min(...tour.personPricing.map(p => p.price))
+                            : tour.price;
+                          return (
+                            <SelectItem key={tour.id} value={tour.id} className="py-3 px-4 rounded-xl mb-1 cursor-pointer hover:bg-muted/50 transition-colors">
+                              <div className="flex flex-col gap-1">
+                                <span className="font-semibold text-base text-foreground">{tour.title}</span>
+                                <div className="flex items-center gap-3 text-[13px] text-muted-foreground">
+                                  <span>{tour.duration || `${tour.days} Days / ${tour.nights} Nights`}</span>
+                                  <span>•</span>
+                                  <span className="font-bold text-primary">
+                                    From ₹{minPrice?.toLocaleString("en-IN")}{tour.personPricing && tour.personPricing.length > 0 ? "" : "/person"}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                          </SelectItem>
-                        ))
-                      ) : (
+                            </SelectItem>
+                          );
+                        })
+                      ) : loadingGroupTours ? (
                         <div className="py-3 px-4 text-center">
                           <span className="text-muted-foreground text-sm">Loading group tours...</span>
+                        </div>
+                      ) : (
+                        <div className="py-3 px-4 text-center">
+                          <span className="text-muted-foreground text-sm">No group tours found.</span>
                         </div>
                       )}
                     </SelectContent>

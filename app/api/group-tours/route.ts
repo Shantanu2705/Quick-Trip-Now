@@ -16,8 +16,14 @@ export const DEFAULT_GROUP_TOURS = [
     nights: 2,
     status: "Active",
     isFeatured: true,
-    price: 4200,
+    price: 6000,
     childPrice: 2400,
+    personPricing: [
+      { persons: 1, price: 6000 },
+      { persons: 2, price: 8500 },
+      { persons: 3, price: 11000 },
+      { persons: 4, price: 13500 },
+    ],
     gstPercentage: 5,
     maxAdults: 20,
     maxChildren: 10,
@@ -73,6 +79,12 @@ export const DEFAULT_GROUP_TOURS = [
     isFeatured: true,
     price: 5500,
     childPrice: 3200,
+    personPricing: [
+      { persons: 1, price: 5500 },
+      { persons: 2, price: 8000 },
+      { persons: 3, price: 10500 },
+      { persons: 4, price: 13000 }
+    ],
     gstPercentage: 5,
     maxAdults: 18,
     maxChildren: 6,
@@ -121,6 +133,12 @@ export const DEFAULT_GROUP_TOURS = [
     isFeatured: true,
     price: 3800,
     childPrice: 2100,
+    personPricing: [
+      { persons: 1, price: 3800 },
+      { persons: 2, price: 5800 },
+      { persons: 3, price: 7800 },
+      { persons: 4, price: 9800 }
+    ],
     gstPercentage: 5,
     maxAdults: 24,
     maxChildren: 12,
